@@ -10,6 +10,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.0',
+    date: '2026-08-03',
+    changes: [
+      'Anrufbeantworter wird zur Neuigkeiten-Anzeige über alle Kassetten hinweg',
+      'Zwei getrennte Rubriken: Kassetten mit Neuem und Leitungen mit Ungelesenem',
+      'Nur noch eine blinkende Lampe, keine Zahl mehr — Details erst beim Öffnen',
+      'Hot-Line-Knopf blinkt jetzt selbst, wenn dort etwas Neues wartet',
+      '„Neu" bei Kassetten ist rein lokal gespeichert, kein Server-Tracking',
+    ],
+  },
+  {
     version: '0.7.1',
     date: '2026-08-03',
     changes: ['Hot-Line-Knopf jetzt vollflächig gelb, ohne den dunklen Gehäuse-Rand'],

@@ -21,15 +21,19 @@ export default function HotlineComposer() {
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState<{ name: string; threadId?: string } | null>(null);
 
+  // Nicht erst beim Oeffnen laden: die Taste soll schon vorher wissen, ob sie
+  // blinken muss.
   const { data: threads = [] } = useQuery({
     queryKey: ['hotline-threads', me],
     queryFn: () => fetchHotlineThreads(me),
-    enabled: open,
+    enabled: Boolean(me),
+    refetchInterval: 20_000,
   });
   const { data: profiles = [] } = useProfiles();
 
   const inThread = new Set(threads.map((t) => t.other));
   const fresh = profiles.map((p) => p.name).filter((n) => n !== me && !inThread.has(n));
+  const unread = threads.reduce((n, t) => n + t.unread, 0);
 
   return (
     <>
@@ -40,16 +44,17 @@ export default function HotlineComposer() {
         </span>
         <button
           type="button"
-          aria-label="Hot Line — jemandem direkt und privat schreiben"
+          aria-label={unread > 0 ? `Hot Line, ${unread} neu` : 'Hot Line — jemandem direkt und privat schreiben'}
           onClick={() => {
             setTarget(null);
             setOpen(true);
           }}
-          className="grid h-10 w-10 place-items-center rounded-[3px] transition-transform active:translate-y-px active:scale-95"
+          className={`grid h-10 w-10 place-items-center rounded-[3px] transition-transform active:translate-y-px active:scale-95 ${unread > 0 ? 'blink' : ''}`}
           style={{
             background: HOTLINE_AMBER,
             // Weicher Schein statt hartem Rand — die Taste selbst leuchtet,
-            // statt in einem Gehaeuse zu sitzen.
+            // statt in einem Gehaeuse zu sitzen. Ist etwas Neues da, blinkt
+            // sie genau wie die Anzeigelampe links.
             boxShadow: `0 0 0.65rem ${HOTLINE_AMBER}bb`,
           }}
         />
@@ -134,8 +139,8 @@ export default function HotlineComposer() {
             </section>
 
             <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-              Nur Text. Eine Leitung schließt 24 Stunden nach der ersten Nachricht — Antworten
-              verlängern sie nicht.
+              Nur Text. Eine Leitung lebt, solange geschrieben wird — nur die letzten 24 Stunden
+              bleiben sichtbar.
             </p>
           </div>
         )}

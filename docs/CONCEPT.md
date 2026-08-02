@@ -118,8 +118,15 @@ fallen die letzten Nachrichten einzeln raus, bis die Leitung leer ist und versch
 
 Das löst zwei Probleme auf einmal: aktives Schreiben hält die Leitung offen (kein Gespräch
 bricht mitten drin ab), aber es sammelt sich nie ein permanenter Verlauf an — auch bei Freunden,
-die täglich schreiben, bleiben immer nur die letzten 24 Stunden sichtbar. Eingehende landen auf
-dem **Anrufbeantworter** mit blinkender LED und öffnen direkt den Verlauf mit dieser Person.
+die täglich schreiben, bleiben immer nur die letzten 24 Stunden sichtbar. Der Hot-Line-Knopf
+selbst blinkt bei Ungelesenem.
+
+**Neuigkeiten-Anzeige** (die alte „Anrufbeantworter"-Lampe, unten links): eine blinkende LED,
+kein Zähler. Fasst zwei getrennte Rubriken zusammen — offene Leitungen mit Ungelesenem, und
+Kassetten, auf denen seit dem letzten Einlegen etwas Neues dazukam. Bewusst nicht zu einer Zahl
+verrechnet: „wer dir schreiben will" ist etwas anderes als „wer was gepostet hat". Welche
+Kassette „neu" ist, entscheidet ein rein lokaler Zeitstempel pro Kassette (kein Server-Zustand,
+kein Tracking) gegen deren `lastAt`.
 
 ## 8. Sicherheitsmodell — was der Server sieht
 

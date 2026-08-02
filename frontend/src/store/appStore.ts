@@ -25,6 +25,9 @@ interface AppState {
   startSide: Side;
   /** Welche Kassette gerade eingelegt ist. */
   cassetteId: string | null;
+  /** Wann eine Kassette zuletzt eingelegt war — lokal, nur für die
+   *  "Neuigkeiten"-Anzeige, kein Serverzustand. */
+  cassetteSeenAt: Record<string, number>;
   setMe: (name: string) => void;
   setSide: (side: Side) => void;
   setStartSide: (side: Side) => void;
@@ -38,10 +41,18 @@ export const useApp = create<AppState>()(
       side: 'a',
       startSide: 'a',
       cassetteId: null,
+      cassetteSeenAt: {},
       setMe: (me) => set({ me: me.trim().slice(0, 40) }),
       setSide: (side) => set({ side }),
       setStartSide: (startSide) => set({ startSide }),
-      setCassette: (cassetteId) => set({ cassetteId, side: 'a' }),
+      // Einlegen zaehlt als "gesehen" — die Kassette faellt danach aus der
+      // Neuigkeiten-Liste, bis wieder etwas Neueres dazukommt.
+      setCassette: (cassetteId) =>
+        set((s) => ({
+          cassetteId,
+          side: 'a',
+          cassetteSeenAt: cassetteId ? { ...s.cassetteSeenAt, [cassetteId]: Date.now() } : s.cassetteSeenAt,
+        })),
     }),
     { name: 'kliqtape' },
   ),

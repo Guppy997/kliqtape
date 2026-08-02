@@ -21,7 +21,25 @@ export function useCassettes() {
     queryKey: ['cassettes', me],
     queryFn: () => fetchCassettes(me),
     enabled: Boolean(me),
+    // Regelmaessig nachsehen, ob auf einer anderen Kassette etwas Neues
+    // ankam — sonst wuerde die Neuigkeiten-Anzeige nur beim Seitenwechsel
+    // aktualisieren.
+    refetchInterval: 30_000,
   });
+}
+
+/**
+ * Kassetten mit unsichtbarem "Neues seit dem letzten Einlegen" — die
+ * eingelegte Kassette zaehlt nie mit, die sieht man ja gerade.
+ */
+export function useCassetteNews(): Cassette[] {
+  const cassettes = useCassettes().data ?? [];
+  const cassetteId = useApp((s) => s.cassetteId);
+  const seenAt = useApp((s) => s.cassetteSeenAt);
+  return useMemo(
+    () => cassettes.filter((c) => c.id !== cassetteId && c.lastAt != null && c.lastAt > (seenAt[c.id] ?? 0)),
+    [cassettes, cassetteId, seenAt],
+  );
 }
 
 /**
