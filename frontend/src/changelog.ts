@@ -10,6 +10,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.6.0',
+    date: '2026-08-03',
+    changes: [
+      'Hot Line ist jetzt ein echter Verlauf — der Normalfall, nicht die Ausnahme',
+      'Die 24-Stunden-Frist läuft ab der ersten Nachricht, Antworten verlängern sie nicht',
+      'Anrufbeantworter zeigt offene Leitungen, antippen öffnet den Verlauf',
+      'Der Hot-Line-Knopf zeigt zuerst „Weiterschreiben", dann neue Leitungen',
+      '„Hot Line" wird jetzt überall auseinandergeschrieben',
+      'REC-Auswahl kommt als kleiner Kranz aus Feldern um den Knopf, keine eigene Seite mehr',
+    ],
+  },
+  {
     version: '0.5.3',
     date: '2026-08-02',
     changes: [

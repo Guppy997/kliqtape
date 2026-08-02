@@ -497,101 +497,166 @@ app.post('/api/posts/:id/react', (req, res) => {
 });
 
 /* -------------------------------------------------------------------------
- * Hot Line
+ * Hot Line — eine offene Leitung zwischen zwei Personen
+ *
+ * Normalfall ist jetzt ein echter Verlauf: die erste Nachricht eroeffnet die
+ * Leitung, danach laesst sich hin und her schreiben. Die 24-Stunden-Frist
+ * laeuft ab der ERSTEN Nachricht — Antworten verlaengern sie nicht, sonst
+ * wuerde eine aktive Leitung nie schliessen.
  * ---------------------------------------------------------------------- */
 
 const HOTLINE_TTL_MS = 24 * 60 * 60 * 1000;
 const HOTLINE_MAX = 240;
 
-/** Abgelaufene Hotlines entfernen. Laeuft faul bei jedem Zugriff — bei dieser
- *  Datenmenge braucht es dafuer keinen Hintergrundjob. */
-function sweepHotlines(): void {
-  db.prepare(`DELETE FROM hotlines WHERE expires_at < ?`).run(Date.now());
+/** Zwei Namen alphabetisch sortiert — macht das Paar unabhaengig davon,
+ *  wer zuerst geschrieben hat. */
+function pairOf(a: string, b: string): [string, string] {
+  return a < b ? [a, b] : [b, a];
 }
 
-app.post('/api/hotlines', (req, res) => {
-  const { postId, from, to, body } = req.body ?? {};
-  const text = String(body ?? '').trim();
+/** Abgelaufene Leitungen entfernen (samt Nachrichten, per CASCADE). Laeuft
+ *  faul bei jedem Zugriff — bei dieser Datenmenge braucht es keinen
+ *  Hintergrundjob. */
+function sweepHotlineThreads(): void {
+  const gone = db.prepare(`SELECT id FROM hotline_threads WHERE expires_at < ?`).all(Date.now()) as {
+    id: string;
+  }[];
+  if (gone.length === 0) return;
+  const del = db.prepare(`DELETE FROM hotline_threads WHERE id = ?`);
+  for (const t of gone) del.run(t.id);
+}
 
-  if (!text) throw new HttpError(400, 'Leere Hotline');
-  if (text.length > HOTLINE_MAX) throw new HttpError(400, `Maximal ${HOTLINE_MAX} Zeichen`);
-  if (typeof from !== 'string' || !from.trim()) throw new HttpError(400, 'Absender fehlt');
-  if (typeof to !== 'string' || !to.trim()) throw new HttpError(400, 'Empfänger fehlt');
-  if (from.trim() === to.trim()) throw new HttpError(400, 'Man ruft sich nicht selbst an');
-
-  // Beitragsbezug ist optional — die Hotline wird direkt an eine Person gewaehlt.
-  if (postId && !db.prepare(`SELECT 1 FROM posts WHERE id = ?`).get(postId)) {
-    throw new HttpError(404, 'Beitrag nicht gefunden');
-  }
-
-  sweepHotlines();
-
-  const now = Date.now();
-  const id = randomUUID();
-  db.prepare(
-    `INSERT INTO hotlines (id, post_id, from_name, to_name, body, created_at, expires_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).run(id, postId ?? null, from.trim(), to.trim(), text, now, now + HOTLINE_TTL_MS);
-
-  res.status(201).json({ id, expiresAt: now + HOTLINE_TTL_MS });
-});
-
-app.get('/api/hotlines', (req, res) => {
+app.get('/api/hotlines/threads', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
 
-  sweepHotlines();
+  sweepHotlineThreads();
 
   const rows = db
     .prepare(
-      `SELECT h.id, h.from_name, h.body, h.created_at, h.expires_at, h.heard_at,
-              p.id AS post_id, p.side, p.kind, p.body AS post_body
-         FROM hotlines h
-         LEFT JOIN posts p ON p.id = h.post_id
-        WHERE h.to_name = ?
-        ORDER BY h.created_at DESC`,
+      `SELECT t.id, t.person_a, t.person_b, t.created_at, t.expires_at,
+              (SELECT body FROM hotline_messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_body,
+              (SELECT from_name FROM hotline_messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_from,
+              (SELECT MAX(created_at) FROM hotline_messages m WHERE m.thread_id = t.id) AS last_at,
+              (SELECT COUNT(*) FROM hotline_messages m WHERE m.thread_id = t.id AND m.from_name != ? AND m.heard_at IS NULL) AS unread
+         FROM hotline_threads t
+        WHERE t.person_a = ? OR t.person_b = ?
+        ORDER BY COALESCE(last_at, t.created_at) DESC`,
     )
-    .all(me) as {
+    .all(me, me, me) as {
     id: string;
-    from_name: string;
-    body: string;
+    person_a: string;
+    person_b: string;
     created_at: number;
     expires_at: number;
-    heard_at: number | null;
-    post_id: string | null;
-    side: string | null;
-    kind: string | null;
-    post_body: string | null;
+    last_body: string | null;
+    last_from: string | null;
+    last_at: number | null;
+    unread: number;
   }[];
 
   res.json(
     rows.map((r) => ({
       id: r.id,
-      from: r.from_name,
-      body: r.body,
+      other: r.person_a === me ? r.person_b : r.person_a,
       createdAt: r.created_at,
       expiresAt: r.expires_at,
-      heard: r.heard_at != null,
-      post: r.post_id
-        ? { id: r.post_id, side: r.side, kind: r.kind, body: r.post_body }
-        : null,
+      lastBody: r.last_body,
+      lastFrom: r.last_from,
+      lastAt: r.last_at,
+      unread: r.unread,
     })),
   );
 });
 
-app.post('/api/hotlines/:id/heard', (req, res) => {
-  const info = db
-    .prepare(`UPDATE hotlines SET heard_at = ? WHERE id = ? AND heard_at IS NULL`)
-    .run(Date.now(), req.params.id);
-  if (info.changes === 0 && !db.prepare(`SELECT 1 FROM hotlines WHERE id = ?`).get(req.params.id)) {
-    throw new HttpError(404, 'Hotline nicht gefunden');
+app.get('/api/hotlines/threads/:id/messages', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+
+  sweepHotlineThreads();
+
+  const thread = db.prepare(`SELECT * FROM hotline_threads WHERE id = ?`).get(req.params.id) as
+    | { id: string; person_a: string; person_b: string; created_at: number; expires_at: number }
+    | undefined;
+  if (!thread) throw new HttpError(404, 'Leitung nicht gefunden — vielleicht schon überspielt');
+  if (thread.person_a !== me && thread.person_b !== me) {
+    throw new HttpError(403, 'Du bist nicht in dieser Leitung');
   }
-  res.json({ heard: true });
+
+  const messages = db
+    .prepare(
+      `SELECT id, from_name, body, created_at, heard_at FROM hotline_messages
+        WHERE thread_id = ? ORDER BY created_at ASC`,
+    )
+    .all(thread.id) as { id: string; from_name: string; body: string; created_at: number; heard_at: number | null }[];
+
+  res.json({
+    id: thread.id,
+    other: thread.person_a === me ? thread.person_b : thread.person_a,
+    createdAt: thread.created_at,
+    expiresAt: thread.expires_at,
+    messages: messages.map((m) => ({
+      id: m.id,
+      from: m.from_name,
+      body: m.body,
+      createdAt: m.created_at,
+      heard: m.heard_at != null,
+    })),
+  });
 });
 
-app.delete('/api/hotlines/:id', (req, res) => {
-  db.prepare(`DELETE FROM hotlines WHERE id = ?`).run(req.params.id);
-  res.status(204).end();
+app.post('/api/hotlines/threads', (req, res) => {
+  const from = String(req.body?.from ?? '').trim();
+  const to = String(req.body?.to ?? '').trim();
+  const text = String(req.body?.body ?? '').trim();
+
+  if (!text) throw new HttpError(400, 'Leere Nachricht');
+  if (text.length > HOTLINE_MAX) throw new HttpError(400, `Maximal ${HOTLINE_MAX} Zeichen`);
+  if (!from) throw new HttpError(400, 'Absender fehlt');
+  if (!to) throw new HttpError(400, 'Empfänger fehlt');
+  if (from === to) throw new HttpError(400, 'Man ruft sich nicht selbst an');
+
+  sweepHotlineThreads();
+
+  const [a, b] = pairOf(from, to);
+  const now = Date.now();
+
+  let thread = db
+    .prepare(`SELECT id, expires_at FROM hotline_threads WHERE person_a = ? AND person_b = ?`)
+    .get(a, b) as { id: string; expires_at: number } | undefined;
+
+  if (!thread) {
+    const id = randomUUID();
+    const expiresAt = now + HOTLINE_TTL_MS;
+    db.prepare(
+      `INSERT INTO hotline_threads (id, person_a, person_b, created_at, expires_at) VALUES (?, ?, ?, ?, ?)`,
+    ).run(id, a, b, now, expiresAt);
+    thread = { id, expires_at: expiresAt };
+  }
+
+  const messageId = randomUUID();
+  db.prepare(
+    `INSERT INTO hotline_messages (id, thread_id, from_name, body, created_at) VALUES (?, ?, ?, ?, ?)`,
+  ).run(messageId, thread.id, from, text, now);
+
+  res.status(201).json({ threadId: thread.id, messageId, expiresAt: thread.expires_at });
+});
+
+app.post('/api/hotlines/threads/:id/heard', (req, res) => {
+  const me = String(req.body?.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+
+  const thread = db.prepare(`SELECT person_a, person_b FROM hotline_threads WHERE id = ?`).get(req.params.id) as
+    | { person_a: string; person_b: string }
+    | undefined;
+  if (!thread) throw new HttpError(404, 'Leitung nicht gefunden');
+  if (thread.person_a !== me && thread.person_b !== me) throw new HttpError(403, 'Du bist nicht in dieser Leitung');
+
+  db.prepare(
+    `UPDATE hotline_messages SET heard_at = ? WHERE thread_id = ? AND from_name != ? AND heard_at IS NULL`,
+  ).run(Date.now(), req.params.id, me);
+
+  res.json({ ok: true });
 });
 
 /* -------------------------------------------------------------------------
@@ -797,8 +862,10 @@ app.get('/api/export', (req, res) => {
     profil: db.prepare(`SELECT name, avatar_id AS avatarId FROM profiles WHERE name = ?`).get(me) ?? null,
     beitraege: db.prepare(`SELECT * FROM posts WHERE author = ? ORDER BY created_at`).all(me),
     reaktionen: db.prepare(`SELECT * FROM reactions WHERE author = ? ORDER BY created_at`).all(me),
-    hotlinesGesendet: db.prepare(`SELECT * FROM hotlines WHERE from_name = ?`).all(me),
-    hotlinesErhalten: db.prepare(`SELECT * FROM hotlines WHERE to_name = ?`).all(me),
+    hotlineNachrichten: db.prepare(`SELECT * FROM hotline_messages WHERE from_name = ?`).all(me),
+    hotlineLeitungen: db
+      .prepare(`SELECT * FROM hotline_threads WHERE person_a = ? OR person_b = ?`)
+      .all(me, me),
     mixtapes: tapes,
   });
 });
@@ -818,7 +885,9 @@ app.delete('/api/me', (req, res) => {
     const posts = db.prepare(`DELETE FROM posts WHERE author = ?`).run(me).changes;
     const tapes = db.prepare(`DELETE FROM mixtapes WHERE from_name = ?`).run(me).changes;
     db.prepare(`DELETE FROM reactions WHERE author = ?`).run(me);
-    db.prepare(`DELETE FROM hotlines WHERE from_name = ? OR to_name = ?`).run(me, me);
+    // Eine Leitung gehoert zwei Personen — loescht eine ihr Konto, verschwindet
+    // die ganze Leitung mit, nicht nur die eigenen Nachrichten darin.
+    db.prepare(`DELETE FROM hotline_threads WHERE person_a = ? OR person_b = ?`).run(me, me);
     db.prepare(`DELETE FROM profiles WHERE name = ?`).run(me);
     db.prepare(`DELETE FROM cassette_members WHERE member = ?`).run(me);
 

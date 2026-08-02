@@ -107,12 +107,14 @@ einen einzigen Aufruf nach draußen. Funktioniert für Apple Music, YouTube und 
 
 ## 7. Hot Line
 
-Eine direkte, private Nachricht an **eine Person**, unabhängig von jeder Kassette. Gelber
-Walkman-Knopf unten neben REC. **Nur Text**, höchstens 240 Zeichen, **kein Verlauf**, nach
-24 Stunden weg. Eingehende landen auf dem **Anrufbeantworter** mit blinkender LED.
+Eine offene Leitung zwischen **zwei Personen**, unabhängig von jeder Kassette. Gelber
+Walkman-Knopf unten neben REC. Normalfall ist ein echter Verlauf — die erste Nachricht eröffnet
+die Leitung, danach ein echtes Hin und Her. **Nur Text**, höchstens 240 Zeichen pro Nachricht.
 
-Geplant: Ausbau zum Gespräch, aber mit **fester Frist ab der ersten Nachricht** — nicht ab der
-letzten. Sonst liefe ein aktives Gespräch nie ab, und es wäre ein gewöhnlicher Messenger.
+Die 24-Stunden-Frist läuft **ab der ersten Nachricht**, nicht ab der letzten — Antworten
+verlängern sie nicht. Sonst liefe ein aktives Gespräch nie ab, und es wäre ein gewöhnlicher
+Messenger. Eingehende landen auf dem **Anrufbeantworter** mit blinkender LED und öffnen direkt
+den Verlauf mit dieser Person.
 
 ## 8. Sicherheitsmodell — was der Server sieht
 
@@ -220,5 +222,4 @@ Markenanmeldung Verwechslungsgefahr in Klasse 9/38/42 bei DPMA und EUIPO prüfen
 
 1. **Wie groß darf eine Kassette werden?** Hartes Limit oder Empfehlung.
 2. **Verfall auf Seite B: 24 Stunden fest** oder pro Kassette einstellbar.
-3. **Hot Line zum Gespräch ausbauen** — Frist ab erster Nachricht, eine offene Leitung pro Person.
-4. **Bandsorten** als gestaltete Farbvarianten.
+3. **Bandsorten** frei wählbar statt nur gepaart mit der Gehäusefarbe.

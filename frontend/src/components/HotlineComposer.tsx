@@ -1,71 +1,48 @@
 import { useState } from 'react';
-import { sendHotline, HOTLINE_MAX } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { fetchHotlineThreads } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import Avatar, { useProfiles } from './Avatar';
+import HotlineThread, { HOTLINE_AMBER } from './HotlineThread';
 import Sheet from './Sheet';
 
-/** Sony-Sports-Walkman-Gelb. Warm, leuchtend, klar vom roten REC unterscheidbar. */
-const HOTLINE_AMBER = '#F5B324';
-
 /**
- * Hot Line — eine direkte, private Nachricht an genau eine Person.
+ * Der Hot-Line-Knopf — wie eine Kurzwahltaste an einem Walkman.
  *
- * Bewusst kein Chat: nur Text, hoechstens 240 Zeichen, kein Verlauf, und nach
- * 24 Stunden ist sie weg. Ein Anruf passiert und ist dann vorbei.
+ * Antippen zeigt erst, mit wem gerade eine Leitung offen ist (weiterschreiben)
+ * und mit wem man neu anfangen kann. Wählt man jemanden, öffnet sich direkt
+ * der Verlauf — laufender Chat ist jetzt der Normalfall, keine Einzelnachricht
+ * mehr.
  */
 export default function HotlineComposer() {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
 
   const [open, setOpen] = useState(false);
-  const [to, setTo] = useState('');
-  const [text, setText] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const [target, setTarget] = useState<{ name: string; threadId?: string } | null>(null);
 
+  const { data: threads = [] } = useQuery({
+    queryKey: ['hotline-threads', me],
+    queryFn: () => fetchHotlineThreads(me),
+    enabled: open,
+  });
   const { data: profiles = [] } = useProfiles();
-  const others = profiles.map((p) => p.name).filter((n) => n !== me);
 
-  function reset() {
-    setTo('');
-    setText('');
-    setError(null);
-    setDone(false);
-  }
-
-  async function call() {
-    if (!to.trim() || !text.trim()) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await sendHotline({ from: me, to: to.trim(), body: text.trim() });
-      setDone(true);
-      window.setTimeout(() => {
-        setOpen(false);
-        reset();
-      }, 1100);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verbindung fehlgeschlagen');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const left = HOTLINE_MAX - text.length;
+  const inThread = new Set(threads.map((t) => t.other));
+  const fresh = profiles.map((p) => p.name).filter((n) => n !== me && !inThread.has(n));
 
   return (
     <>
       {/* Beschriftung auf dem Gehaeuse ueber der Taste — wie an einem Walkman. */}
       <span className="flex shrink-0 flex-col items-center gap-1">
         <span className="font-mono text-[0.5rem] uppercase tracking-[0.18em]" style={{ color: HOTLINE_AMBER }}>
-          Hotline
+          Hot Line
         </span>
         <button
           type="button"
-          aria-label="Hotline — jemandem direkt und privat schreiben"
+          aria-label="Hot Line — jemandem direkt und privat schreiben"
           onClick={() => {
-            reset();
+            setTarget(null);
             setOpen(true);
           }}
           className="grid h-10 w-10 place-items-center rounded-[3px] transition-transform active:translate-y-px"
@@ -81,77 +58,88 @@ export default function HotlineComposer() {
         </button>
       </span>
 
-      <Sheet open={open} onClose={() => setOpen(false)} variant="full" title="Hot Line">
-        {done ? (
-          <p
-            className="font-hand rounded-lg px-3 py-10 text-center text-xl"
-            style={{ background: 'var(--card)', border: `1px solid ${HOTLINE_AMBER}`, color: HOTLINE_AMBER }}
-          >
-            Durchgestellt.
-          </p>
+      <Sheet open={open} onClose={() => setOpen(false)} variant="full" title={target ? undefined : 'Hot Line'}>
+        {target ? (
+          <div className="flex h-[calc(100vh-8rem)] flex-col">
+            <button
+              type="button"
+              onClick={() => setTarget(null)}
+              className="font-mono mb-2 self-start text-[0.62rem] uppercase tracking-[0.12em]"
+              style={{ color: 'var(--dim)' }}
+            >
+              ← Wählen
+            </button>
+            <HotlineThread
+              threadId={target.threadId}
+              startWith={target.threadId ? undefined : target.name}
+              onStarted={(id) => setTarget({ name: target.name, threadId: id })}
+            />
+          </div>
         ) : (
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2">
-              <label className="font-mono text-[0.62rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
-                An wen?
-              </label>
-              <input
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                maxLength={40}
-                placeholder="Name"
-                className="rounded-lg px-3 py-2.5 text-base outline-none"
-                style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-              />
-              {others.length > 0 && (
+          <div className="flex flex-col gap-6">
+            {threads.length > 0 && (
+              <section className="flex flex-col gap-2">
+                <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
+                  Weiterschreiben
+                </h3>
+                {threads.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTarget({ name: t.other, threadId: t.id })}
+                    className="flex items-center gap-3 rounded-xl p-2.5 text-left"
+                    style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+                  >
+                    <Avatar name={t.other} side={side} size={1.8} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{t.other}</span>
+                        {t.unread > 0 && (
+                          <span
+                            className="font-mono rounded-full px-1.5 py-0.5 text-[0.56rem]"
+                            style={{ background: HOTLINE_AMBER, color: '#20180A' }}
+                          >
+                            {t.unread}
+                          </span>
+                        )}
+                      </div>
+                      <p className="truncate text-[0.78rem]" style={{ color: 'var(--dim)' }}>{t.lastBody}</p>
+                    </div>
+                  </button>
+                ))}
+              </section>
+            )}
+
+            <section className="flex flex-col gap-2">
+              <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
+                Neue Leitung
+              </h3>
+              {fresh.length === 0 ? (
+                <p className="font-mono text-[0.64rem]" style={{ color: 'var(--dim)' }}>
+                  Mit allen anderen läuft schon eine Leitung.
+                </p>
+              ) : (
                 <div className="flex flex-wrap gap-1.5">
-                  {others.map((n) => (
+                  {fresh.map((n) => (
                     <button
                       key={n}
                       type="button"
-                      onClick={() => setTo(n)}
-                      className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[0.75rem]"
-                      style={{
-                        background: to === n ? HOTLINE_AMBER : 'var(--card)',
-                        border: '1px solid var(--line)',
-                        color: to === n ? '#20180A' : 'var(--ink)',
-                      }}
+                      onClick={() => setTarget({ name: n })}
+                      className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[0.8rem]"
+                      style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
                     >
-                      <Avatar name={n} side={side} size={1.2} />
+                      <Avatar name={n} side={side} size={1.3} />
                       {n}
                     </button>
                   ))}
                 </div>
               )}
-            </div>
+            </section>
 
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value.slice(0, HOTLINE_MAX))}
-              rows={4}
-              placeholder={to.trim() ? `Kurz an ${to.trim()} …` : 'Kurz und persönlich …'}
-              className="resize-none rounded-lg p-3 text-[0.95rem] outline-none"
-              style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-            />
-
-            <div className="font-mono flex items-center justify-between text-[0.62rem]" style={{ color: 'var(--dim)' }}>
-              <span>nur Text · verfällt nach 24 Stunden · kein Verlauf</span>
-              <span className="tabular-nums" style={{ color: left < 30 ? HOTLINE_AMBER : 'var(--dim)' }}>
-                {left}
-              </span>
-            </div>
-
-            {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
-
-            <button
-              type="button"
-              onClick={call}
-              disabled={busy || !to.trim() || !text.trim()}
-              className="font-disp rounded-lg px-4 py-3.5 text-sm font-bold uppercase tracking-[0.12em] disabled:opacity-40"
-              style={{ background: HOTLINE_AMBER, color: '#20180A' }}
-            >
-              {busy ? 'Verbinde …' : 'Durchstellen'}
-            </button>
+            <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+              Nur Text. Eine Leitung schließt 24 Stunden nach der ersten Nachricht — Antworten
+              verlängern sie nicht.
+            </p>
           </div>
         )}
       </Sheet>

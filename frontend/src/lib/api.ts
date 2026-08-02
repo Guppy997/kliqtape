@@ -158,44 +158,71 @@ export function deletePost(postId: string): Promise<void> {
 
 export const mediaUrl = (id: string) => `/api/media/${id}`;
 
-/* --- Hot Line ------------------------------------------------------------ */
+/* --- Hot Line --------------------------------------------------------------
+ * Eine offene Leitung zwischen zwei Personen. Die erste Nachricht eroeffnet
+ * sie, danach ein echter Verlauf — die 24-Stunden-Frist laeuft ab dieser
+ * ersten Nachricht und verlaengert sich durch Antworten nicht.
+ * ------------------------------------------------------------------------ */
 
 export const HOTLINE_MAX = 240;
 
-export interface Hotline {
+export interface HotlineThread {
+  id: string;
+  /** Die jeweils andere Person in der Leitung. */
+  other: string;
+  createdAt: number;
+  expiresAt: number;
+  lastBody: string | null;
+  lastFrom: string | null;
+  lastAt: number | null;
+  unread: number;
+}
+
+export interface HotlineMessage {
   id: string;
   from: string;
   body: string;
   createdAt: number;
-  expiresAt: number;
   heard: boolean;
-  /** Optionaler Bezug auf einen Beitrag — Hotlines gehen auch direkt an eine Person. */
-  post: { id: string; side: Side; kind: Kind; body: string } | null;
 }
 
-export function fetchHotlines(me: string): Promise<Hotline[]> {
-  return fetch(`/api/hotlines?me=${encodeURIComponent(me)}`).then(unwrap<Hotline[]>);
+export interface HotlineThreadDetail {
+  id: string;
+  other: string;
+  createdAt: number;
+  expiresAt: number;
+  messages: HotlineMessage[];
 }
 
-export function sendHotline(input: {
-  postId?: string | null;
+export function fetchHotlineThreads(me: string): Promise<HotlineThread[]> {
+  return fetch(`/api/hotlines/threads?me=${encodeURIComponent(me)}`).then(unwrap<HotlineThread[]>);
+}
+
+export function fetchHotlineThread(id: string, me: string): Promise<HotlineThreadDetail> {
+  return fetch(`/api/hotlines/threads/${id}/messages?me=${encodeURIComponent(me)}`).then(
+    unwrap<HotlineThreadDetail>,
+  );
+}
+
+/** Schickt eine Nachricht — findet die Leitung zu `to` oder eröffnet eine neue. */
+export function sendHotlineMessage(input: {
   from: string;
   to: string;
   body: string;
-}): Promise<{ id: string; expiresAt: number }> {
-  return fetch('/api/hotlines', {
+}): Promise<{ threadId: string; messageId: string; expiresAt: number }> {
+  return fetch('/api/hotlines/threads', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
-  }).then(unwrap<{ id: string; expiresAt: number }>);
+  }).then(unwrap<{ threadId: string; messageId: string; expiresAt: number }>);
 }
 
-export function markHeard(id: string): Promise<{ heard: boolean }> {
-  return fetch(`/api/hotlines/${id}/heard`, { method: 'POST' }).then(unwrap<{ heard: boolean }>);
-}
-
-export function deleteHotline(id: string): Promise<void> {
-  return fetch(`/api/hotlines/${id}`, { method: 'DELETE' }).then(unwrap<void>);
+export function markThreadHeard(id: string, me: string): Promise<{ ok: boolean }> {
+  return fetch(`/api/hotlines/threads/${id}/heard`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me }),
+  }).then(unwrap<{ ok: boolean }>);
 }
 
 /* --- Mixtapes ------------------------------------------------------------ */

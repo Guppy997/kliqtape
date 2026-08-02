@@ -24,6 +24,9 @@ const CHOICES: { kind: Kind; label: string; hint: string }[] = [
  * Ein einziger REC-Knopf statt vieler Schaltflaechen.
  *
  * Alles landet auf demselben Band — was genau, entscheidet man erst danach.
+ * Die Auswahl kommt als kleiner Kranz aus Feldern direkt um den Knopf herum,
+ * nicht als eigene Seite — antippen fuehlt sich dadurch nach einem Ausklappen
+ * an, nicht nach einem Wechsel.
  */
 export default function Composer({ onPosted }: Props) {
   const me = useApp((s) => s.me);
@@ -72,16 +75,25 @@ export default function Composer({ onPosted }: Props) {
     }
   }
 
+  const fanOpen = step === 'choose';
+
   return (
-    <>
+    <div className="relative">
+      {/* Sehr leichte Abdunkelung nur zum Wegtippen — bewusst kein Vollbild,
+          damit sich das Oeffnen nicht wie ein Seitenwechsel anfuehlt. */}
+      {fanOpen && (
+        <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,.28)' }} onClick={() => setStep(null)} />
+      )}
+
       <button
         type="button"
         aria-label="Aufnehmen"
+        aria-expanded={fanOpen}
         onClick={() => {
           setError(null);
-          setStep('choose');
+          setStep(fanOpen ? null : 'choose');
         }}
-        className="grid size-16 place-items-center rounded-full transition-transform active:scale-95"
+        className="relative z-50 grid size-16 place-items-center rounded-full transition-transform active:scale-95"
         style={{
           background: 'linear-gradient(180deg, #2E2925, #1A1714)',
           boxShadow: '0 0.4rem 1rem rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.12) inset',
@@ -94,26 +106,36 @@ export default function Composer({ onPosted }: Props) {
         />
       </button>
 
-      <Sheet open={step === 'choose'} onClose={() => setStep(null)} variant="full" title={`Aufs Band · ${SIDE_LABEL[side]}`}>
-        <div className="flex flex-col gap-2">
-          {CHOICES.map((c) => (
-            <button
-              key={c.kind}
-              type="button"
-              onClick={() => setStep(c.kind)}
-              className="flex items-baseline gap-3 rounded-xl px-4 py-3.5 text-left"
-              style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
-            >
-              <span className="font-disp text-base font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--ink)' }}>
-                {c.label}
-              </span>
-              <span className="font-mono text-[0.62rem]" style={{ color: 'var(--dim)' }}>
-                {c.hint}
-              </span>
-            </button>
-          ))}
-        </div>
-      </Sheet>
+      {/* Die Optionen kommen als kleine Felder um den Knopf herum. Immer im
+          DOM, damit rein und raus weich uebergeht — geschlossen sind sie nur
+          geschrumpft, durchsichtig und unklickbar. */}
+      <div
+        className="pointer-events-none absolute bottom-[calc(100%+0.9rem)] left-1/2 z-50 flex w-60 -translate-x-1/2 flex-wrap justify-center gap-2"
+        aria-hidden={!fanOpen}
+      >
+        {CHOICES.map((c, i) => (
+          <button
+            key={c.kind}
+            type="button"
+            tabIndex={fanOpen ? 0 : -1}
+            onClick={() => setStep(c.kind)}
+            className="rounded-xl px-2.5 py-2 text-center"
+            style={{
+              background: 'var(--card)',
+              border: '1px solid var(--line)',
+              minWidth: '4.6rem',
+              pointerEvents: fanOpen ? 'auto' : 'none',
+              opacity: fanOpen ? 1 : 0,
+              transform: fanOpen ? 'scale(1) translateY(0)' : 'scale(0.3) translateY(0.7rem)',
+              transition: `transform 240ms cubic-bezier(.2,1.4,.4,1) ${fanOpen ? i * 25 : 0}ms, opacity 160ms ease ${fanOpen ? i * 25 : 0}ms`,
+            }}
+          >
+            <span className="font-disp block text-[0.74rem] font-bold uppercase tracking-[0.05em]" style={{ color: 'var(--ink)' }}>
+              {c.label}
+            </span>
+          </button>
+        ))}
+      </div>
 
       {/* Mixtape aus dem Regal teilen */}
       <Sheet open={step === 'tape'} onClose={() => setStep(null)} variant="full" title={`Mixtape teilen · ${SIDE_LABEL[side]}`}>
@@ -218,6 +240,6 @@ export default function Composer({ onPosted }: Props) {
           />
         )}
       </Sheet>
-    </>
+    </div>
   );
 }

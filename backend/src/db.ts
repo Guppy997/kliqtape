@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -76,19 +77,32 @@ db.exec(`
     PRIMARY KEY (post_id, author)
   );
 
-  -- Hot Line: eine direkte, private Reaktion auf genau einen Beitrag.
-  -- Bewusst KEIN Chat — es gibt keinen Verlauf, und nach 24 Stunden ist sie
-  -- weg. Ein Anruf passiert und ist dann vorbei.
-  CREATE TABLE IF NOT EXISTS hotlines (
+  -- Hot Line: eine offene Leitung zwischen zwei Personen. Die 24-Stunden-Frist
+  -- startet mit der ERSTEN Nachricht und laeuft dann durch — Antworten
+  -- verlaengern sie nicht, sonst wuerde eine aktive Leitung nie schliessen.
+  -- person_a/person_b liegen alphabetisch sortiert, damit "wer schreibt wem"
+  -- keine zwei Leitungen fuer dasselbe Paar erzeugt.
+  CREATE TABLE IF NOT EXISTS hotline_threads (
     id         TEXT PRIMARY KEY,
-    post_id    TEXT REFERENCES posts(id) ON DELETE CASCADE,
-    from_name  TEXT NOT NULL,
-    to_name    TEXT NOT NULL,
-    body       TEXT NOT NULL,
+    person_a   TEXT NOT NULL,
+    person_b   TEXT NOT NULL,
     created_at INTEGER NOT NULL,
     expires_at INTEGER NOT NULL,
+    UNIQUE (person_a, person_b)
+  );
+
+  CREATE TABLE IF NOT EXISTS hotline_messages (
+    id         TEXT PRIMARY KEY,
+    thread_id  TEXT NOT NULL REFERENCES hotline_threads(id) ON DELETE CASCADE,
+    from_name  TEXT NOT NULL,
+    body       TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
     heard_at   INTEGER
   );
+
+  CREATE INDEX IF NOT EXISTS idx_hthreads_a ON hotline_threads(person_a);
+  CREATE INDEX IF NOT EXISTS idx_hthreads_b ON hotline_threads(person_b);
+  CREATE INDEX IF NOT EXISTS idx_hmessages_thread ON hotline_messages(thread_id, created_at);
 
   -- Das Mixtape: ein Geschenk an genau eine Person.
   -- sealed_at ist der Kern der Idee — solange es NULL ist, ist das Tape ein
@@ -116,7 +130,6 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_posts_side_time ON posts(side, created_at);
   CREATE INDEX IF NOT EXISTS idx_members_person ON cassette_members(member);
-  CREATE INDEX IF NOT EXISTS idx_hotlines_to ON hotlines(to_name, created_at);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_to ON mixtapes(to_name, sealed_at);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_from ON mixtapes(from_name, sealed_at);
   CREATE INDEX IF NOT EXISTS idx_tracks_tape ON mixtape_tracks(mixtape_id, position);
@@ -204,20 +217,53 @@ function repairReference(table: string, ddl: string, indexDdl = ''): void {
   db.pragma('foreign_keys = ON');
 }
 
-repairReference(
-  'hotlines',
-  `CREATE TABLE hotlines (
-     id         TEXT PRIMARY KEY,
-     post_id    TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-     from_name  TEXT NOT NULL,
-     to_name    TEXT NOT NULL,
-     body       TEXT NOT NULL,
-     created_at INTEGER NOT NULL,
-     expires_at INTEGER NOT NULL,
-     heard_at   INTEGER
-   );`,
-  `CREATE INDEX IF NOT EXISTS idx_hotlines_to ON hotlines(to_name, created_at);`,
-);
+/**
+ * Alte hotlines-Tabelle (Einzelnachricht, eigene Frist pro Nachricht) auf
+ * echte Leitungen migrieren: je Personenpaar EIN Thread, Frist ab der
+ * fruehesten Nachricht der beiden. Danach wird die alte Tabelle verworfen —
+ * ihr Nachfolger deckt denselben Zweck vollstaendig ab.
+ */
+if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='hotlines'`).get()) {
+  console.log('[kliqtape] Migriere hotlines zu hotline_threads/hotline_messages');
+  db.transaction(() => {
+    const rows = db.prepare(`SELECT * FROM hotlines ORDER BY created_at ASC`).all() as {
+      id: string;
+      from_name: string;
+      to_name: string;
+      body: string;
+      created_at: number;
+      heard_at: number | null;
+    }[];
+
+    const threadFor = new Map<string, string>();
+    const findThread = db.prepare(
+      `SELECT id FROM hotline_threads WHERE person_a = ? AND person_b = ?`,
+    );
+    const insertThread = db.prepare(
+      `INSERT INTO hotline_threads (id, person_a, person_b, created_at, expires_at) VALUES (?, ?, ?, ?, ?)`,
+    );
+    const insertMessage = db.prepare(
+      `INSERT INTO hotline_messages (id, thread_id, from_name, body, created_at, heard_at) VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+
+    for (const r of rows) {
+      const [a, b] = [r.from_name, r.to_name].sort();
+      const key = `${a} ${b}`;
+      let threadId = threadFor.get(key);
+      if (!threadId) {
+        const existing = findThread.get(a, b) as { id: string } | undefined;
+        threadId = existing?.id ?? randomUUID();
+        threadFor.set(key, threadId);
+        if (!existing) {
+          insertThread.run(threadId, a, b, r.created_at, r.created_at + 24 * 60 * 60 * 1000);
+        }
+      }
+      insertMessage.run(randomUUID(), threadId, r.from_name, r.body, r.created_at, r.heard_at);
+    }
+
+    db.exec(`DROP TABLE hotlines`);
+  })();
+}
 
 /** Fehlende Spalte ergaenzen. Reine Ergaenzungen brauchen keinen Tabellenumbau. */
 function addColumn(table: string, column: string, ddl: string, note: string): void {
@@ -268,45 +314,6 @@ if (orphans.n > 0) {
       `UPDATE posts SET expires_at = created_at + ? WHERE side = 'b' AND expires_at IS NULL`,
     ).run(24 * 60 * 60 * 1000);
   })();
-}
-
-/**
- * Hot Line haengt nicht mehr zwingend an einem Beitrag: der Knopf sitzt jetzt
- * in der unteren Leiste, man waehlt direkt eine Person. Ein Beitragsbezug
- * bleibt moeglich, ist aber optional.
- */
-const hotlineCols = db.prepare(`PRAGMA table_info(hotlines)`).all() as {
-  name: string;
-  notnull: number;
-}[];
-
-if (hotlineCols.some((c) => c.name === 'post_id' && c.notnull === 1)) {
-  console.log('[kliqtape] Migriere hotlines: post_id wird optional');
-  db.pragma('foreign_keys = OFF');
-  db.pragma('legacy_alter_table = ON');
-  db.transaction(() => {
-    db.exec(`
-      ALTER TABLE hotlines RENAME TO hotlines_old;
-
-      CREATE TABLE hotlines (
-        id         TEXT PRIMARY KEY,
-        post_id    TEXT REFERENCES posts(id) ON DELETE CASCADE,
-        from_name  TEXT NOT NULL,
-        to_name    TEXT NOT NULL,
-        body       TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        expires_at INTEGER NOT NULL,
-        heard_at   INTEGER
-      );
-
-      INSERT INTO hotlines SELECT * FROM hotlines_old;
-      DROP TABLE hotlines_old;
-
-      CREATE INDEX IF NOT EXISTS idx_hotlines_to ON hotlines(to_name, created_at);
-    `);
-  })();
-  db.pragma('legacy_alter_table = OFF');
-  db.pragma('foreign_keys = ON');
 }
 
 repairReference(

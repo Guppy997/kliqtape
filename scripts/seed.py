@@ -4,7 +4,7 @@ Testdaten fuer Kliqtape.
 
 Legt ein paar Leute mit Profilbildern an, erzeugt drei Kassetten mit
 unterschiedlichen Besetzungen und fuellt beide Seiten mit Zetteln,
-Schnappschuessen, O-Toenen, Mixtapes, Reaktionen und Hotlines — damit sich
+Schnappschuessen, O-Toenen, Mixtapes, Reaktionen und Hot-Line-Verlaeufen — damit sich
 jede Funktion ansehen und bedienen laesst.
 
 Seite A bleibt, Seite B verfaellt nach 24 Stunden von selbst.
@@ -420,13 +420,20 @@ def main() -> None:
     post("Alle Freunde", "a", me, "tape", tape=shared)
     print(" 3 Stück")
 
-    # --- Hotlines ---------------------------------------------------------
-    for sender, body in [
-        ("Mira", "Danke, dass du gestern drangegangen bist."),
-        ("Jonas", "Samstag klappt bei dir, oder? Sag kurz Bescheid."),
-    ]:
-        call("POST", "/api/hotlines", {"from": sender, "to": me, "body": body})
-    print("2 Hotlines auf dem Anrufbeantworter")
+    # --- Hot Line -----------------------------------------------------------
+    # Der Normalfall ist jetzt ein echter Verlauf, kein Einzelschuss: die
+    # erste Nachricht eroeffnet die Leitung, der Rest ist Hin und Her.
+    def hotline(sender, receiver, body):
+        call("POST", "/api/hotlines/threads", {"from": sender, "to": receiver, "body": body})
+
+    hotline("Jonas", me, "Samstag klappt bei dir, oder?")
+    hotline(me, "Jonas", "Ja, ab 18 Uhr.")
+    hotline("Jonas", me, "Perfekt, bring noch wen mit wenn du magst.")
+
+    hotline("Mira", me, "Danke, dass du gestern drangegangen bist.")
+    hotline(me, "Mira", "Immer.")
+
+    print("2 offene Leitungen mit Verlauf")
 
     print(f"\nFertig. Melde dich in der App als »{me}« an.")
     print("Zum Aufräumen:  python3 scripts/seed.py --reset")
