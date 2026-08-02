@@ -93,7 +93,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
   return (
     <div className="flex flex-col gap-5">
       <p className="font-mono text-[0.66rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
-        Mixtape · 90 Sekunden
+        O-Ton · 90 Sekunden
       </p>
 
       {/* Die Spulen zeigen, wie viel Band noch uebrig ist. */}

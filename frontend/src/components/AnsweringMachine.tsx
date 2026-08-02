@@ -1,16 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { deleteHotline, fetchHotlines, markHeard, type Hotline } from '@/lib/api';
+import { deleteHotline, fetchHotlines, markHeard, KIND_LABEL, type Hotline } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import Avatar from './Avatar';
 import Sheet from './Sheet';
-
-const KIND_LABEL: Record<string, string> = {
-  text: 'Notiz',
-  photo: 'Foto',
-  video: 'Video',
-  mixtape: 'Mixtape',
-};
 
 function restlaufzeit(expiresAt: number): string {
   const ms = expiresAt - Date.now();

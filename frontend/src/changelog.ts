@@ -10,6 +10,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.2.0',
+    date: '2026-08-02',
+    changes: [
+      'Mixtapes lassen sich jetzt auch mit der ganzen Seite teilen, nicht nur verschenken',
+      'Neue Namen: O-Ton, Schnappschuss, Clip, Zettel',
+      'Hotline ist eine leuchtende Walkman-Taste mit Beschriftung darüber',
+      'Profil öffnet als eigene Seite statt als halbes Blatt',
+      'Aufnahmen laufen bildschirmfüllend, der Hintergrund scheint nicht mehr durch',
+    ],
+  },
+  {
     version: '0.1.1',
     date: '2026-08-02',
     changes: [

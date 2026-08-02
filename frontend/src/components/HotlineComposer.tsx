@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { sendHotline, HOTLINE_MAX, type FeedItem } from '@/lib/api';
+import { sendHotline, HOTLINE_MAX, KIND_LABEL, type FeedItem } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import Avatar from './Avatar';
 import Sheet from './Sheet';
@@ -8,13 +8,6 @@ interface Props {
   item: FeedItem | null;
   onClose: () => void;
 }
-
-const KIND_LABEL: Record<string, string> = {
-  text: 'Notiz',
-  photo: 'Foto',
-  video: 'Video',
-  mixtape: 'Mixtape',
-};
 
 /**
  * Hot Line — eine direkte Antwort an genau eine Person, zu genau einem Beitrag.

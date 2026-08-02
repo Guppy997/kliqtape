@@ -1,29 +1,29 @@
 import { useState } from 'react';
-import { createPost, uploadMedia, type Kind } from '@/lib/api';
-import { useApp } from '@/store/appStore';
+import { useQuery } from '@tanstack/react-query';
+import { createPost, fetchMixtapes, mediaUrl, uploadMedia, type Kind } from '@/lib/api';
+import { useApp, SIDE_LABEL } from '@/store/appStore';
 import MixtapeRecorder from './MixtapeRecorder';
 import CameraCapture from './CameraCapture';
 import Sheet from './Sheet';
 
-type Step = null | 'choose' | 'text' | 'photo' | 'video' | 'mixtape';
+type Step = null | 'choose' | Kind;
 
 interface Props {
   onPosted: () => void;
 }
 
-const CHOICES: { kind: Exclude<Step, null | 'choose'>; label: string; hint: string }[] = [
-  { kind: 'mixtape', label: 'Mixtape', hint: '90 Sekunden Stimme' },
-  { kind: 'photo', label: 'Foto', hint: 'nur jetzt, kein Upload' },
-  { kind: 'video', label: 'Video', hint: 'max. 10 Sekunden' },
-  { kind: 'text', label: 'Notiz', hint: 'ein paar Zeilen' },
+const CHOICES: { kind: Kind; label: string; hint: string }[] = [
+  { kind: 'tape', label: 'Mixtape', hint: 'Musik aus deinem Regal teilen' },
+  { kind: 'voice', label: 'O-Ton', hint: '90 Sekunden Stimme' },
+  { kind: 'photo', label: 'Schnappschuss', hint: 'nur jetzt, kein Upload' },
+  { kind: 'video', label: 'Clip', hint: 'max. 10 Sekunden' },
+  { kind: 'text', label: 'Zettel', hint: 'ein paar Zeilen' },
 ];
 
 /**
- * Ein einziger REC-Knopf statt vier Schaltflaechen.
+ * Ein einziger REC-Knopf statt vieler Schaltflaechen.
  *
  * Alles landet auf demselben Band — was genau, entscheidet man erst danach.
- * Das haelt die Leiste ruhig und macht die Metapher konsequent: ein Mixtape
- * ist eine Zusammenstellung, keine Sammlung getrennter Formate.
  */
 export default function Composer({ onPosted }: Props) {
   const me = useApp((s) => s.me);
@@ -33,6 +33,14 @@ export default function Composer({ onPosted }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Nur eigene, versiegelte Tapes lassen sich teilen — ein Entwurf ist privat.
+  const { data: tapes = [] } = useQuery({
+    queryKey: ['mixtapes', me],
+    queryFn: () => fetchMixtapes(me),
+    enabled: step === 'tape',
+  });
+  const shareable = tapes.filter((t) => t.from === me && t.sealed);
+
   async function sendMedia(kind: Kind, blob: Blob, durationMs: number | undefined, caption: string) {
     const mediaId = await uploadMedia(blob, durationMs);
     await createPost({ side, author: me, kind, body: caption, mediaId });
@@ -40,12 +48,11 @@ export default function Composer({ onPosted }: Props) {
     onPosted();
   }
 
-  async function sendText() {
-    if (!text.trim()) return;
+  async function post(kind: Kind, extra: { body?: string; tapeId?: string }) {
     setBusy(true);
     setError(null);
     try {
-      await createPost({ side, author: me, kind: 'text', body: text.trim() });
+      await createPost({ side, author: me, kind, ...extra });
       setText('');
       setStep(null);
       onPosted();
@@ -78,7 +85,7 @@ export default function Composer({ onPosted }: Props) {
         />
       </button>
 
-      <Sheet open={step === 'choose'} onClose={() => setStep(null)} title={`Aufs Band · Seite ${side.toUpperCase()}`}>
+      <Sheet open={step === 'choose'} onClose={() => setStep(null)} title={`Aufs Band · ${SIDE_LABEL[side]}`}>
         <div className="flex flex-col gap-2">
           {CHOICES.map((c) => (
             <button
@@ -91,7 +98,7 @@ export default function Composer({ onPosted }: Props) {
               <span className="font-disp text-base font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--ink)' }}>
                 {c.label}
               </span>
-              <span className="font-mono text-[0.64rem]" style={{ color: 'var(--dim)' }}>
+              <span className="font-mono text-[0.62rem]" style={{ color: 'var(--dim)' }}>
                 {c.hint}
               </span>
             </button>
@@ -99,7 +106,50 @@ export default function Composer({ onPosted }: Props) {
         </div>
       </Sheet>
 
-      <Sheet open={step === 'text'} onClose={() => setStep(null)} title="Notiz">
+      {/* Mixtape aus dem Regal teilen */}
+      <Sheet open={step === 'tape'} onClose={() => setStep(null)} title={`Mixtape teilen · ${SIDE_LABEL[side]}`}>
+        <div className="flex flex-col gap-3">
+          {shareable.length === 0 ? (
+            <p className="font-hand py-8 text-center text-lg" style={{ color: 'var(--dim)' }}>
+              Noch kein versiegeltes Tape im Regal.
+            </p>
+          ) : (
+            shareable.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                disabled={busy}
+                onClick={() => post('tape', { tapeId: t.id })}
+                className="flex items-center gap-3 rounded-xl p-2.5 text-left disabled:opacity-50"
+                style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+              >
+                <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md" style={{ background: '#D8CFBB' }}>
+                  {t.coverId ? (
+                    <img src={mediaUrl(t.coverId)} alt="" className="size-full object-cover" />
+                  ) : (
+                    <span className="font-hand text-lg text-[#3B3226]">♪</span>
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="font-hand block truncate text-[1.02rem]" style={{ color: 'var(--ink)' }}>
+                    {t.title}
+                  </span>
+                  <span className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+                    ursprünglich für {t.to} · {t.trackCount}/12
+                  </span>
+                </span>
+              </button>
+            ))
+          )}
+          {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+          <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+            Geteilt sehen alle auf dieser Seite das Tape — auch wenn du es ursprünglich für eine
+            Person gebaut hast.
+          </p>
+        </div>
+      </Sheet>
+
+      <Sheet open={step === 'text'} onClose={() => setStep(null)} title="Zettel">
         <div className="flex flex-col gap-4">
           <textarea
             value={text}
@@ -123,7 +173,7 @@ export default function Composer({ onPosted }: Props) {
             </button>
             <button
               type="button"
-              onClick={sendText}
+              onClick={() => post('text', { body: text.trim() })}
               disabled={busy || !text.trim()}
               className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
               style={{ background: 'var(--accent)', color: '#17130E' }}
@@ -134,7 +184,13 @@ export default function Composer({ onPosted }: Props) {
         </div>
       </Sheet>
 
-      <Sheet open={step === 'photo' || step === 'video'} onClose={() => setStep(null)}>
+      {/* Aufnahmen laufen als volle Seite — beim Filmen soll nichts durchscheinen. */}
+      <Sheet
+        open={step === 'photo' || step === 'video'}
+        onClose={() => setStep(null)}
+        variant="full"
+        title={step === 'photo' ? 'Schnappschuss' : 'Clip'}
+      >
         {(step === 'photo' || step === 'video') && (
           <CameraCapture
             mode={step}
@@ -144,11 +200,11 @@ export default function Composer({ onPosted }: Props) {
         )}
       </Sheet>
 
-      <Sheet open={step === 'mixtape'} onClose={() => setStep(null)}>
-        {step === 'mixtape' && (
+      <Sheet open={step === 'voice'} onClose={() => setStep(null)} variant="full" title="O-Ton">
+        {step === 'voice' && (
           <MixtapeRecorder
             onCancel={() => setStep('choose')}
-            onSend={(blob, ms, caption) => sendMedia('mixtape', blob, ms, caption)}
+            onSend={(blob, ms, caption) => sendMedia('voice', blob, ms, caption)}
           />
         )}
       </Sheet>

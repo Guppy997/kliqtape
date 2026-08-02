@@ -34,7 +34,9 @@ const ALLOWED_MIME: Record<string, string> = {
 };
 
 const SIDES: Side[] = ['a', 'b'];
-const KINDS: Kind[] = ['text', 'photo', 'video', 'mixtape'];
+const KINDS: Kind[] = ['text', 'photo', 'video', 'voice', 'tape'];
+/** Diese Arten brauchen eine hochgeladene Datei. */
+const MEDIA_KINDS: Kind[] = ['photo', 'video', 'voice'];
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, at: new Date().toISOString() });
@@ -141,9 +143,11 @@ function dropMedia(id: string): void {
  * Posts
  * ---------------------------------------------------------------------- */
 
-interface FeedItem extends Omit<PostRow, 'media_id'> {
+interface FeedItem extends Omit<PostRow, 'media_id' | 'tape_id'> {
   mediaId: string | null;
   durationMs: number | null;
+  tapeId: string | null;
+  tape: { title: string; coverId: string | null; trackCount: number } | null;
   track: string;
   reactors: string[];
 }
@@ -155,13 +159,21 @@ app.get('/api/posts', (req, res) => {
   // Aeltestes zuerst: der Feed laeuft wie ein Band von vorn nach hinten ab.
   const rows = db
     .prepare(
-      `SELECT p.*, m.duration_ms AS duration_ms
+      `SELECT p.*, m.duration_ms AS duration_ms,
+              t.title AS tape_title, t.cover_id AS tape_cover,
+              (SELECT COUNT(*) FROM mixtape_tracks mt WHERE mt.mixtape_id = t.id) AS tape_tracks
          FROM posts p
          LEFT JOIN media m ON m.id = p.media_id
+         LEFT JOIN mixtapes t ON t.id = p.tape_id
         WHERE p.side = ?
         ORDER BY p.created_at ASC`,
     )
-    .all(side) as (PostRow & { duration_ms: number | null })[];
+    .all(side) as (PostRow & {
+    duration_ms: number | null;
+    tape_title: string | null;
+    tape_cover: string | null;
+    tape_tracks: number | null;
+  })[];
 
   const reactions = db
     .prepare(
@@ -189,6 +201,10 @@ app.get('/api/posts', (req, res) => {
     created_at: row.created_at,
     mediaId: row.media_id,
     durationMs: row.duration_ms,
+    tapeId: row.tape_id,
+    tape: row.tape_id
+      ? { title: row.tape_title ?? '', coverId: row.tape_cover, trackCount: row.tape_tracks ?? 0 }
+      : null,
     // Track-Nummer statt Zeitstempel: A1, A2, B1 ... Position auf dem Band.
     track: `${side.toUpperCase()}${i + 1}`,
     reactors: byPost.get(row.id) ?? [],
@@ -198,7 +214,7 @@ app.get('/api/posts', (req, res) => {
 });
 
 app.post('/api/posts', (req, res) => {
-  const { side, author, kind, body = '', mediaId = null } = req.body ?? {};
+  const { side, author, kind, body = '', mediaId = null, tapeId = null } = req.body ?? {};
 
   if (!SIDES.includes(side)) throw new HttpError(400, 'side muss a oder b sein');
   if (!KINDS.includes(kind)) throw new HttpError(400, 'Unbekannte Post-Art');
@@ -208,18 +224,39 @@ app.post('/api/posts', (req, res) => {
   if (kind === 'text' && String(body).trim().length === 0) {
     throw new HttpError(400, 'Leerer Text');
   }
-  if (kind !== 'text' && !mediaId) {
-    throw new HttpError(400, `Für ${kind} fehlt das Medium`);
+  if (MEDIA_KINDS.includes(kind) && !mediaId) {
+    throw new HttpError(400, `Für ${kind} fehlt die Aufnahme`);
   }
   if (mediaId && !db.prepare(`SELECT 1 FROM media WHERE id = ?`).get(mediaId)) {
     throw new HttpError(400, 'Medium unbekannt');
   }
 
+  if (kind === 'tape') {
+    if (!tapeId) throw new HttpError(400, 'Welches Mixtape?');
+    const tape = db.prepare(`SELECT from_name, sealed_at FROM mixtapes WHERE id = ?`).get(tapeId) as
+      | { from_name: string; sealed_at: number | null }
+      | undefined;
+    if (!tape) throw new HttpError(404, 'Mixtape nicht gefunden');
+    // Nur eigene und bereits versiegelte Tapes lassen sich teilen — ein
+    // Entwurf ist privat, und fremde Tapes gehoeren einem nicht.
+    if (tape.from_name !== author.trim()) throw new HttpError(403, 'Das ist nicht dein Mixtape');
+    if (!tape.sealed_at) throw new HttpError(400, 'Erst versiegeln, dann teilen');
+  }
+
   const id = randomUUID();
   db.prepare(
-    `INSERT INTO posts (id, side, author, kind, body, media_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).run(id, side, author.trim().slice(0, 40), kind, String(body).slice(0, 500), mediaId, Date.now());
+    `INSERT INTO posts (id, side, author, kind, body, media_id, tape_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    id,
+    side,
+    author.trim().slice(0, 40),
+    kind,
+    String(body).slice(0, 500),
+    mediaId,
+    kind === 'tape' ? tapeId : null,
+    Date.now(),
+  );
 
   res.status(201).json({ id });
 });

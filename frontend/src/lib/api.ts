@@ -1,6 +1,15 @@
 import type { Side } from '@/store/appStore';
 
-export type Kind = 'text' | 'photo' | 'video' | 'mixtape';
+export type Kind = 'text' | 'photo' | 'video' | 'voice' | 'tape';
+
+/** Anzeigenamen der Beitragsarten. Bewusst aus der Analogwelt. */
+export const KIND_LABEL: Record<Kind, string> = {
+  tape: 'Mixtape',
+  voice: 'O-Ton',
+  photo: 'Schnappschuss',
+  video: 'Clip',
+  text: 'Zettel',
+};
 
 export interface FeedItem {
   id: string;
@@ -11,6 +20,8 @@ export interface FeedItem {
   created_at: number;
   mediaId: string | null;
   durationMs: number | null;
+  tapeId: string | null;
+  tape: { title: string; coverId: string | null; trackCount: number } | null;
   track: string;
   reactors: string[];
 }
@@ -47,6 +58,7 @@ export function createPost(input: {
   kind: Kind;
   body?: string;
   mediaId?: string | null;
+  tapeId?: string | null;
 }): Promise<{ id: string }> {
   return fetch('/api/posts', {
     method: 'POST',

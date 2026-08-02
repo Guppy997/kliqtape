@@ -21,13 +21,17 @@ db.exec(`
     created_at  INTEGER NOT NULL
   );
 
+  -- Kein CHECK auf kind: die Pruefung sitzt im Server, wo die Fehlermeldung
+  -- lesbar ist. Ein CHECK haette bei jeder neuen Beitragsart einen kompletten
+  -- Tabellenumbau erzwungen.
   CREATE TABLE IF NOT EXISTS posts (
     id         TEXT PRIMARY KEY,
     side       TEXT NOT NULL CHECK (side IN ('a','b')),
     author     TEXT NOT NULL,
-    kind       TEXT NOT NULL CHECK (kind IN ('text','photo','video','mixtape')),
+    kind       TEXT NOT NULL,
     body       TEXT NOT NULL DEFAULT '',
     media_id   TEXT REFERENCES media(id),
+    tape_id    TEXT REFERENCES mixtapes(id),
     created_at INTEGER NOT NULL
   );
 
@@ -92,8 +96,52 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_tracks_tape ON mixtape_tracks(mixtape_id, position);
 `);
 
+/* ---------------------------------------------------------------------------
+ * Migration
+ *
+ * Aeltere Datenbanken haben posts noch ohne tape_id und mit einem CHECK auf
+ * kind. SQLite kann weder Spalten-CHECKs entfernen noch Fremdschluessel
+ * nachtraeglich hinzufuegen — also wird die Tabelle einmal neu gebaut und der
+ * Inhalt uebernommen. Fremdschluessel muessen dafuer kurz aus, sonst wuerde
+ * hotlines beim Umbenennen mitwandern.
+ * ------------------------------------------------------------------------ */
+const postCols = db.prepare(`PRAGMA table_info(posts)`).all() as { name: string }[];
+
+if (postCols.length > 0 && !postCols.some((c) => c.name === 'tape_id')) {
+  console.log('[kliqtape] Migriere posts: tape_id ergaenzen, CHECK auf kind entfernen');
+  db.pragma('foreign_keys = OFF');
+  db.transaction(() => {
+    db.exec(`
+      ALTER TABLE posts RENAME TO posts_old;
+
+      CREATE TABLE posts (
+        id         TEXT PRIMARY KEY,
+        side       TEXT NOT NULL CHECK (side IN ('a','b')),
+        author     TEXT NOT NULL,
+        kind       TEXT NOT NULL,
+        body       TEXT NOT NULL DEFAULT '',
+        media_id   TEXT REFERENCES media(id),
+        tape_id    TEXT REFERENCES mixtapes(id),
+        created_at INTEGER NOT NULL
+      );
+
+      INSERT INTO posts (id, side, author, kind, body, media_id, created_at)
+        SELECT id, side, author, kind, body, media_id, created_at FROM posts_old;
+
+      DROP TABLE posts_old;
+
+      CREATE INDEX IF NOT EXISTS idx_posts_side_time ON posts(side, created_at);
+    `);
+
+    // Sprachaufnahmen hiessen frueher 'mixtape'. Der Name wird jetzt fuer
+    // Musik-Tapes gebraucht, die Aufnahme heisst 'voice'.
+    db.prepare(`UPDATE posts SET kind = 'voice' WHERE kind = 'mixtape'`).run();
+  })();
+  db.pragma('foreign_keys = ON');
+}
+
 export type Side = 'a' | 'b';
-export type Kind = 'text' | 'photo' | 'video' | 'mixtape';
+export type Kind = 'text' | 'photo' | 'video' | 'voice' | 'tape';
 
 export interface PostRow {
   id: string;
@@ -102,5 +150,6 @@ export interface PostRow {
   kind: Kind;
   body: string;
   media_id: string | null;
+  tape_id: string | null;
   created_at: number;
 }

@@ -23,7 +23,8 @@ export default function BottomBar({ items, onPosted }: Props) {
   const [track, setTrack] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
 
-  const tapes = items.filter((i) => i.kind === 'mixtape' && i.mediaId);
+  // Der Walkman spielt O-Töne — die Sprachaufnahmen dieser Seite, am Stück.
+  const tapes = items.filter((i) => i.kind === 'voice' && i.mediaId);
   const current = track != null ? tapes[track] : undefined;
 
   // Beim Seitenwechsel oder wenn Aufnahmen verschwinden: Laufwerk anhalten.

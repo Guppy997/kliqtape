@@ -74,7 +74,9 @@ export default function Settings() {
         <span className="font-mono text-[0.6rem] uppercase tracking-[0.1em]">Profil</span>
       </button>
 
-      <Sheet open={open} onClose={() => setOpen(false)} title="Einstellungen">
+      {/* Volle Seite statt Blatt: das Profil hat genug Inhalt, dass ein halb
+          sichtbarer Feed dahinter nur ablenkt. */}
+      <Sheet open={open} onClose={() => setOpen(false)} title="Profil" variant="full">
         {shooting ? (
           <CameraCapture
             mode="photo"

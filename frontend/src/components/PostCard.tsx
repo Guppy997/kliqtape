@@ -1,7 +1,10 @@
-import { mediaUrl, type FeedItem } from '@/lib/api';
+import { useState } from 'react';
+import { mediaUrl, KIND_LABEL, type FeedItem } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import Avatar from './Avatar';
+import Sheet from './Sheet';
 import TapePlayer from './TapePlayer';
+import TapeView from './TapeView';
 
 interface Props {
   item: FeedItem;
@@ -12,19 +15,20 @@ interface Props {
 
 export default function PostCard({ item, onReact, onDelete, onHotline }: Props) {
   const me = useApp((s) => s.me);
+  const [openTape, setOpenTape] = useState(false);
   const side = item.side;
   const mine = item.author === me;
   const iReacted = item.reactors.includes(me);
 
   return (
-    <article
-      className="rise rounded-xl p-3"
-      style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
-    >
+    <article className="rise rounded-xl p-3" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
       <div className="flex items-center gap-2">
         <Avatar name={item.author} side={side} />
         <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
           {item.author}
+        </span>
+        <span className="font-mono text-[0.58rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+          {KIND_LABEL[item.kind]}
         </span>
         {/* Track-Nummer statt Zeitstempel: Position auf dem Band, kein Zeitdruck. */}
         <span className="font-mono ml-auto text-[0.66rem] tabular-nums" style={{ color: 'var(--dim)' }}>
@@ -52,27 +56,20 @@ export default function PostCard({ item, onReact, onDelete, onHotline }: Props) 
 
         {item.kind === 'photo' && item.mediaId && (
           <div className="print mx-auto w-full max-w-[17rem]">
-            <img src={mediaUrl(item.mediaId)} alt={item.body || 'Foto'} loading="lazy" />
-            {item.body && (
-              <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>
-            )}
+            <img src={mediaUrl(item.mediaId)} alt={item.body || 'Schnappschuss'} loading="lazy" />
+            {item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}
           </div>
         )}
 
         {item.kind === 'video' && item.mediaId && (
           <div className="print mx-auto w-full max-w-[17rem]">
             <video src={mediaUrl(item.mediaId)} controls playsInline preload="metadata" />
-            {item.body && (
-              <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>
-            )}
+            {item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}
           </div>
         )}
 
-        {item.kind === 'mixtape' && item.mediaId && (
-          <div
-            className="rounded-lg p-3"
-            style={{ background: 'rgba(0,0,0,.2)', border: '1px solid var(--line)' }}
-          >
+        {item.kind === 'voice' && item.mediaId && (
+          <div className="rounded-lg p-3" style={{ background: 'rgba(0,0,0,.2)', border: '1px solid var(--line)' }}>
             {item.body && (
               <p className="font-hand mb-2 text-[1rem]" style={{ color: 'var(--ink)' }}>
                 {item.body}
@@ -81,9 +78,37 @@ export default function PostCard({ item, onReact, onDelete, onHotline }: Props) 
             <TapePlayer src={mediaUrl(item.mediaId)} hintMs={item.durationMs} />
           </div>
         )}
+
+        {item.kind === 'tape' && item.tape && (
+          <button
+            type="button"
+            onClick={() => setOpenTape(true)}
+            className="flex items-center gap-3 rounded-lg p-2.5 text-left"
+            style={{ background: 'rgba(0,0,0,.2)', border: '1px solid var(--line)' }}
+          >
+            <span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-md" style={{ background: '#D8CFBB' }}>
+              {item.tape.coverId ? (
+                <img src={mediaUrl(item.tape.coverId)} alt="" className="size-full object-cover" />
+              ) : (
+                <span className="font-hand text-xl text-[#3B3226]">♪</span>
+              )}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
+                {item.tape.title}
+              </span>
+              <span className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+                {item.tape.trackCount} Titel · Tracklist ansehen
+              </span>
+            </span>
+            <span className="font-mono shrink-0 text-[0.6rem]" style={{ color: 'var(--accent)' }}>
+              ▸
+            </span>
+          </button>
+        )}
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5">
+      <div className="mt-3 flex items-end gap-2">
         <button
           type="button"
           onClick={() => onReact(item.id)}
@@ -97,33 +122,59 @@ export default function PostCard({ item, onReact, onDelete, onHotline }: Props) 
           {iReacted ? 'dabei' : 'da war ich'}
         </button>
 
-        {/* Hot Line: direkt und privat an den Autor. Bei eigenen Beitraegen
-            sinnlos, deshalb ausgeblendet. */}
-        {!mine && (
-          <button
-            type="button"
-            onClick={() => onHotline(item)}
-            className="font-mono flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.62rem] uppercase tracking-widest"
-            style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
-          >
-            <span className="size-1.5 rounded-full" style={{ background: '#E0402A' }} />
-            Hot Line
-          </button>
-        )}
-
         {/* Reaktionen sind Gesichter, keine Zahl. Bei dieser Gruppengroesse ist
             "wer" die interessantere Information als "wie viele". */}
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 flex-1 items-center gap-1">
           {item.reactors.map((r) => (
             <Avatar key={r} name={r} side={side} size={1.15} />
           ))}
+          {item.reactors.length > 0 && (
+            <span className="font-mono truncate text-[0.6rem]" style={{ color: 'var(--dim)' }}>
+              {item.reactors.join(', ')}
+            </span>
+          )}
         </div>
-        {item.reactors.length > 0 && (
-          <span className="font-mono truncate text-[0.6rem]" style={{ color: 'var(--dim)' }}>
-            {item.reactors.join(', ')}
-          </span>
-        )}
+
+        {!mine && <HotlineKey onClick={() => onHotline(item)} />}
       </div>
+
+      <Sheet open={openTape} onClose={() => setOpenTape(false)} title={`Mixtape von ${item.author}`}>
+        {openTape && item.tapeId && <TapeView id={item.tapeId} />}
+      </Sheet>
     </article>
+  );
+}
+
+/**
+ * Die Hotline-Taste.
+ *
+ * Wie an einem Walkman: die Beschriftung steht auf dem Gehaeuse ueber der
+ * Taste, nicht darauf. Die Taste selbst ist quadratisch und leuchtet.
+ */
+function HotlineKey({ onClick }: { onClick: () => void }) {
+  return (
+    <span className="flex shrink-0 flex-col items-center gap-1">
+      <span
+        className="font-mono text-[0.5rem] uppercase tracking-[0.18em]"
+        style={{ color: 'var(--dim)' }}
+      >
+        Hotline
+      </span>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label="Hotline — direkt und privat antworten"
+        className="grid size-8 place-items-center rounded-[3px] transition-transform active:translate-y-px"
+        style={{
+          background: 'linear-gradient(180deg, #3A342E, #211D19)',
+          boxShadow: '0 2px 0 rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.1) inset',
+        }}
+      >
+        <span
+          className="size-3 rounded-[1px]"
+          style={{ background: '#E0402A', boxShadow: '0 0 0.55rem rgba(224,64,42,.95)' }}
+        />
+      </button>
+    </span>
   );
 }
