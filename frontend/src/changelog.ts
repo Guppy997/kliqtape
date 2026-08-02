@@ -10,6 +10,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.9.3',
+    date: '2026-08-03',
+    changes: ['Zählwerk zieht mit der Lampe mit — beide stehen jetzt zusammen ganz rechts'],
+  },
+  {
     version: '0.9.2',
     date: '2026-08-03',
     changes: [
