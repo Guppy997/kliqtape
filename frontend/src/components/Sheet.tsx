@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useApp } from '@/store/appStore';
 
 interface Props {
   open: boolean;
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export default function Sheet({ open, onClose, title, variant = 'sheet', children }: Props) {
+  const side = useApp((s) => s.side);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -50,11 +53,15 @@ export default function Sheet({ open, onClose, title, variant = 'sheet', childre
   // Per Portal direkt an den body. Sonst haengt das Blatt im Stacking-Kontext
   // seines Elternteils und der Header mit z-30 legt sich darueber — dann ist
   // der Schliessen-Knopf nicht mehr erreichbar.
+  //
+  // WICHTIG: Die Seitenklasse muss mit. Am body gibt es .side-a/.side-b nicht,
+  // und damit waeren --screen, --card, --ink & Co. hier undefiniert — der
+  // Hintergrund faellt dann auf durchsichtig zurueck.
   return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex justify-center ${full ? '' : 'items-end'}`}
-      // Deutlich dichter als vorher: bei halbdurchsichtigem Hintergrund
-      // flimmert der Feed durch die Kamera-Vorschau und stoert beim Aufnehmen.
+      className={`${side === 'a' ? 'side-a' : 'side-b'} fixed inset-0 z-50 flex justify-center ${
+        full ? '' : 'items-end'
+      }`}
       style={{ background: full ? 'var(--screen)' : 'rgba(0,0,0,.88)', backdropFilter: full ? 'none' : 'blur(3px)' }}
       onClick={full ? undefined : onClose}
     >

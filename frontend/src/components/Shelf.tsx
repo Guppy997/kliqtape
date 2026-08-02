@@ -71,7 +71,7 @@ export default function Shelf() {
       </button>
 
       {/* Regal-Übersicht */}
-      <Sheet open={view === 'shelf'} onClose={() => setView(null)} title="Regal">
+      <Sheet open={view === 'shelf'} onClose={() => setView(null)} variant="full" title="Regal">
         <div className="flex flex-col gap-6">
           <button
             type="button"
@@ -92,7 +92,7 @@ export default function Shelf() {
       </Sheet>
 
       {/* Neues Tape anlegen */}
-      <Sheet open={view === 'new'} onClose={() => setView('shelf')} title="Neues Mixtape">
+      <Sheet open={view === 'new'} onClose={() => setView('shelf')} variant="full" title="Neues Mixtape">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <label className="font-mono text-[0.62rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
@@ -165,6 +165,7 @@ export default function Shelf() {
       <Sheet
         open={typeof view === 'object' && view !== null && 'edit' in view}
         onClose={() => setView('shelf')}
+        variant="full"
         title="Mixtape bauen"
       >
         {typeof view === 'object' && view !== null && 'edit' in view && (
@@ -176,6 +177,7 @@ export default function Shelf() {
       <Sheet
         open={typeof view === 'object' && view !== null && 'open' in view}
         onClose={() => setView('shelf')}
+        variant="full"
         title="Mixtape"
       >
         {typeof view === 'object' && view !== null && 'open' in view && <TapeView id={view.open} />}

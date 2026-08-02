@@ -23,8 +23,11 @@ interface AppState {
   /** Kein Login im Prototyp — nur ein Name, der lokal gespeichert wird. */
   me: string;
   side: Side;
+  /** Welche Seite beim Öffnen liegt. */
+  startSide: Side;
   setMe: (name: string) => void;
   setSide: (side: Side) => void;
+  setStartSide: (side: Side) => void;
 }
 
 export const useApp = create<AppState>()(
@@ -32,8 +35,10 @@ export const useApp = create<AppState>()(
     (set) => ({
       me: '',
       side: 'a',
+      startSide: 'a',
       setMe: (me) => set({ me: me.trim().slice(0, 40) }),
       setSide: (side) => set({ side }),
+      setStartSide: (startSide) => set({ startSide }),
     }),
     { name: 'kliqtape' },
   ),

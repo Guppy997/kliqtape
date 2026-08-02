@@ -110,6 +110,10 @@ const postCols = db.prepare(`PRAGMA table_info(posts)`).all() as { name: string 
 if (postCols.length > 0 && !postCols.some((c) => c.name === 'tape_id')) {
   console.log('[kliqtape] Migriere posts: tape_id ergaenzen, CHECK auf kind entfernen');
   db.pragma('foreign_keys = OFF');
+  // legacy_alter_table = ON ist hier zwingend: sonst zieht SQLite beim RENAME
+  // die Fremdschluessel ANDERER Tabellen mit um. hotlines zeigte danach auf
+  // posts_old — und die wird gleich geloescht.
+  db.pragma('legacy_alter_table = ON');
   db.transaction(() => {
     db.exec(`
       ALTER TABLE posts RENAME TO posts_old;
@@ -137,8 +141,67 @@ if (postCols.length > 0 && !postCols.some((c) => c.name === 'tape_id')) {
     // Musik-Tapes gebraucht, die Aufnahme heisst 'voice'.
     db.prepare(`UPDATE posts SET kind = 'voice' WHERE kind = 'mixtape'`).run();
   })();
+  db.pragma('legacy_alter_table = OFF');
   db.pragma('foreign_keys = ON');
 }
+
+/**
+ * Reparatur fuer Datenbanken, die die fehlerhafte Migration schon mitgemacht
+ * haben. Dort zeigen ALLE Tabellen, die posts referenzieren, auf die geloeschte
+ * posts_old — jeder Zugriff schlaegt mit "no such table" fehl.
+ * Betroffen sind hotlines und reactions.
+ */
+function repairReference(table: string, ddl: string, indexDdl = ''): void {
+  const sql = (
+    db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name = ?`).get(table) as
+      | { sql: string }
+      | undefined
+  )?.sql;
+  if (!sql?.includes('posts_old')) return;
+
+  console.log(`[kliqtape] Repariere ${table}: Fremdschluessel zeigt auf posts_old`);
+  db.pragma('foreign_keys = OFF');
+  db.pragma('legacy_alter_table = ON');
+  db.transaction(() => {
+    db.exec(`ALTER TABLE ${table} RENAME TO ${table}_broken;`);
+    db.exec(ddl);
+    // Nur Zeilen uebernehmen, deren Beitrag es noch gibt.
+    db.exec(`
+      INSERT INTO ${table}
+        SELECT b.* FROM ${table}_broken b
+         WHERE EXISTS (SELECT 1 FROM posts p WHERE p.id = b.post_id);
+    `);
+    db.exec(`DROP TABLE ${table}_broken;`);
+    if (indexDdl) db.exec(indexDdl);
+  })();
+  db.pragma('legacy_alter_table = OFF');
+  db.pragma('foreign_keys = ON');
+}
+
+repairReference(
+  'hotlines',
+  `CREATE TABLE hotlines (
+     id         TEXT PRIMARY KEY,
+     post_id    TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+     from_name  TEXT NOT NULL,
+     to_name    TEXT NOT NULL,
+     body       TEXT NOT NULL,
+     created_at INTEGER NOT NULL,
+     expires_at INTEGER NOT NULL,
+     heard_at   INTEGER
+   );`,
+  `CREATE INDEX IF NOT EXISTS idx_hotlines_to ON hotlines(to_name, created_at);`,
+);
+
+repairReference(
+  'reactions',
+  `CREATE TABLE reactions (
+     post_id    TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+     author     TEXT NOT NULL,
+     created_at INTEGER NOT NULL,
+     PRIMARY KEY (post_id, author)
+   );`,
+);
 
 export type Side = 'a' | 'b';
 export type Kind = 'text' | 'photo' | 'video' | 'voice' | 'tape';

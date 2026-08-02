@@ -214,6 +214,27 @@ export function platformOf(url: string): string {
   }
 }
 
+/* --- Eigene Daten -------------------------------------------------------- */
+
+/** Laedt den kompletten Datenexport als Datei herunter (DSGVO Art. 20). */
+export async function downloadExport(me: string): Promise<void> {
+  const res = await fetch(`/api/export?me=${encodeURIComponent(me)}`);
+  if (!res.ok) throw new Error('Export fehlgeschlagen');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kliqtape-${me}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function deleteEverything(me: string): Promise<{ geloescht: Record<string, number> }> {
+  return fetch(`/api/me?me=${encodeURIComponent(me)}`, { method: 'DELETE' }).then(
+    unwrap<{ geloescht: Record<string, number> }>,
+  );
+}
+
 /* --- Profile ------------------------------------------------------------- */
 
 export interface Profile {

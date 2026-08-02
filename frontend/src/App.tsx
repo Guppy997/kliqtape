@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { deletePost, fetchFeed, toggleReaction, type FeedItem } from '@/lib/api';
 import HotlineComposer from '@/components/HotlineComposer';
@@ -14,6 +14,13 @@ import UpdateNotification from '@/components/UpdateNotification';
 export default function App() {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
+
+  // Beim Start immer auf der eingestellten Seite landen, nicht dort, wo man
+  // beim letzten Mal aufgehoert hat.
+  useEffect(() => {
+    const { startSide, setSide } = useApp.getState();
+    setSide(startSide);
+  }, []);
 
   // Der Rahmen ist immer derselbe — nur die Seitentokens wechseln. Sonst
   // springt das Layout zwischen Anmeldung und App.

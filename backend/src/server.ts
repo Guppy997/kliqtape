@@ -576,6 +576,61 @@ app.delete('/api/mixtapes/:id', (req, res) => {
 });
 
 /* -------------------------------------------------------------------------
+ * Eigene Daten — Export und Loeschung
+ *
+ * Steht so im Konzept (DSGVO Art. 20 und Art. 17) und gehoert ab der ersten
+ * Version rein, nicht nachtraeglich.
+ * ---------------------------------------------------------------------- */
+
+app.get('/api/export', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+
+  const tapes = (db.prepare(`SELECT * FROM mixtapes WHERE from_name = ? OR to_name = ?`).all(me, me) as TapeRow[])
+    .map((t) => ({ ...shapeTape(t), tracks: tracksOf(t.id) }));
+
+  res.setHeader('Content-Disposition', `attachment; filename="kliqtape-${me}.json"`);
+  res.json({
+    exportiertAm: new Date().toISOString(),
+    hinweis:
+      'Medien (Fotos, Clips, O-Töne, Cover) sind hier nur als IDs aufgeführt. ' +
+      'Sie liegen unter /api/media/<id> und lassen sich einzeln herunterladen.',
+    name: me,
+    profil: db.prepare(`SELECT name, avatar_id AS avatarId FROM profiles WHERE name = ?`).get(me) ?? null,
+    beitraege: db.prepare(`SELECT * FROM posts WHERE author = ? ORDER BY created_at`).all(me),
+    reaktionen: db.prepare(`SELECT * FROM reactions WHERE author = ? ORDER BY created_at`).all(me),
+    hotlinesGesendet: db.prepare(`SELECT * FROM hotlines WHERE from_name = ?`).all(me),
+    hotlinesErhalten: db.prepare(`SELECT * FROM hotlines WHERE to_name = ?`).all(me),
+    mixtapes: tapes,
+  });
+});
+
+app.delete('/api/me', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+
+  const stats = db.transaction(() => {
+    // Medien zuerst einsammeln, danach loeschen — sonst sind die Referenzen weg.
+    const mediaIds = [
+      ...(db.prepare(`SELECT media_id AS id FROM posts WHERE author = ? AND media_id IS NOT NULL`).all(me) as { id: string }[]),
+      ...(db.prepare(`SELECT cover_id AS id FROM mixtapes WHERE from_name = ? AND cover_id IS NOT NULL`).all(me) as { id: string }[]),
+      ...(db.prepare(`SELECT avatar_id AS id FROM profiles WHERE name = ? AND avatar_id IS NOT NULL`).all(me) as { id: string }[]),
+    ].map((r) => r.id);
+
+    const posts = db.prepare(`DELETE FROM posts WHERE author = ?`).run(me).changes;
+    const tapes = db.prepare(`DELETE FROM mixtapes WHERE from_name = ?`).run(me).changes;
+    db.prepare(`DELETE FROM reactions WHERE author = ?`).run(me);
+    db.prepare(`DELETE FROM hotlines WHERE from_name = ? OR to_name = ?`).run(me, me);
+    db.prepare(`DELETE FROM profiles WHERE name = ?`).run(me);
+
+    for (const id of mediaIds) dropMedia(id);
+    return { posts, tapes, medien: mediaIds.length };
+  })();
+
+  res.json({ geloescht: stats });
+});
+
+/* -------------------------------------------------------------------------
  * Zentrale Fehlerbehandlung — gibt immer JSON zurueck, nie HTML.
  * Der vierte Parameter ist Pflicht, sonst erkennt Express die Middleware nicht.
  * ---------------------------------------------------------------------- */

@@ -85,7 +85,7 @@ export default function Composer({ onPosted }: Props) {
         />
       </button>
 
-      <Sheet open={step === 'choose'} onClose={() => setStep(null)} title={`Aufs Band · ${SIDE_LABEL[side]}`}>
+      <Sheet open={step === 'choose'} onClose={() => setStep(null)} variant="full" title={`Aufs Band · ${SIDE_LABEL[side]}`}>
         <div className="flex flex-col gap-2">
           {CHOICES.map((c) => (
             <button
@@ -107,7 +107,7 @@ export default function Composer({ onPosted }: Props) {
       </Sheet>
 
       {/* Mixtape aus dem Regal teilen */}
-      <Sheet open={step === 'tape'} onClose={() => setStep(null)} title={`Mixtape teilen · ${SIDE_LABEL[side]}`}>
+      <Sheet open={step === 'tape'} onClose={() => setStep(null)} variant="full" title={`Mixtape teilen · ${SIDE_LABEL[side]}`}>
         <div className="flex flex-col gap-3">
           {shareable.length === 0 ? (
             <p className="font-hand py-8 text-center text-lg" style={{ color: 'var(--dim)' }}>
@@ -149,7 +149,7 @@ export default function Composer({ onPosted }: Props) {
         </div>
       </Sheet>
 
-      <Sheet open={step === 'text'} onClose={() => setStep(null)} title="Zettel">
+      <Sheet open={step === 'text'} onClose={() => setStep(null)} variant="full" title="Zettel">
         <div className="flex flex-col gap-4">
           <textarea
             value={text}

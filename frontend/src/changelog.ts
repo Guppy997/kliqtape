@@ -10,6 +10,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.2.1',
+    date: '2026-08-02',
+    changes: [
+      'Blätter waren durchsichtig — durch das Portal fehlten ihnen die Seitenfarben',
+      'Profil, Aufnahme und Regal decken jetzt komplett ab, in der Farbe der aktuellen Seite',
+      'Profil: „Was der Server sieht" — eine ehrliche Tabelle statt eines Versprechens',
+      'Datenexport als JSON und vollständiges Löschen vom Server',
+      'Startseite wählbar: A oder B beim Öffnen',
+      'Datenbank repariert: Reaktionen und Hotlines zeigten nach der letzten Migration ins Leere',
+    ],
+  },
+  {
     version: '0.2.0',
     date: '2026-08-02',
     changes: [
