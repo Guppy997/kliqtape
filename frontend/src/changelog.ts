@@ -10,6 +10,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.5.3',
+    date: '2026-08-02',
+    changes: [
+      'Filter sitzt jetzt oben in der Zeile bei Eject, Regal und Profil',
+      'Filter klappt als kleines Fenster darunter auf, statt den Bildschirm zu wechseln',
+      'Die Kliqe ist jetzt lila (Atomic Purple), Alle Freunde tauscht dafür die Farbe',
+      'Jede Kassette hat einen optionalen Farb-Override statt der reinen ID',
+      'Seite A färbt den Hintergrund jetzt auch leicht in Richtung der Bandsorte',
+    ],
+  },
+  {
     version: '0.5.2',
     date: '2026-08-02',
     changes: [

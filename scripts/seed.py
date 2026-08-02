@@ -299,6 +299,21 @@ def main() -> None:
         for person in members:
             if person != me:
                 call("POST", f"/api/cassettes/{c['id']}/members", {"member": person, "by": me})
+
+    # Feste Bandsorten fuer die Demo-Kassetten: Aaron wollte "Die Kliqe" lila
+    # (Atomic Purple). Ohne Override haengt das Aussehen an der zufaelligen
+    # Kassetten-ID — bei jedem --reset also ein neues Los. Ein Tausch der IDs
+    # untereinander waere nur RELATIV korrekt und wuerde beim naechsten Reset
+    # wieder zufaellig woanders landen. Feste Textwerte machen das Ergebnis
+    # unabhaengig vom Zufall der UUIDs.
+    COLOR_SEEDS = {
+        "Die Kliqe": "kliqtape-look-die-kliqe",          # -> Type IV Metal / Atomic Purple
+        "Alle Freunde": "kliqtape-look-alle-freunde",    # -> Type II Chrome / Ice
+        "Freitagsrunde": "kliqtape-look-freitagsrunde",  # -> Oliv Extra / Kiwi
+    }
+    for name, seed in COLOR_SEEDS.items():
+        call("PATCH", f"/api/cassettes/{tapes_by_name[name]}", {"colorSeed": seed, "by": me})
+
     print(f" {len(RUNDEN)} Runden")
 
     posts: dict[str, str] = {}

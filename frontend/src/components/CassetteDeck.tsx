@@ -24,10 +24,23 @@ export function useCassettes() {
   });
 }
 
-/** Welches Band welche Sorte bekommt — im Regal nie zweimal dieselbe. */
+/**
+ * Welches Band welche Sorte bekommt — im Regal nie zweimal dieselbe.
+ * Wer einen colorSeed gesetzt hat (manueller Override, z. B. um zwei Baender
+ * zu tauschen), zaehlt der statt der ID — sonst bestimmt weiterhin die ID.
+ */
 export function useLookIndex(): Map<string, number> {
   const { data: cassettes = [] } = useCassettes();
-  return useMemo(() => assignPairs(cassettes.map((c) => c.id)), [cassettes]);
+  return useMemo(() => {
+    const keys = cassettes.map((c) => c.colorSeed || c.id);
+    const byKey = assignPairs(keys);
+    const out = new Map<string, number>();
+    cassettes.forEach((c) => {
+      const idx = byKey.get(c.colorSeed || c.id);
+      if (idx != null) out.set(c.id, idx);
+    });
+    return out;
+  }, [cassettes]);
 }
 
 /**

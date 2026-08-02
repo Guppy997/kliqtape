@@ -183,7 +183,7 @@ app.get('/api/cassettes', (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT c.id, c.name, c.created_by, c.created_at,
+      `SELECT c.id, c.name, c.created_by, c.created_at, c.color_seed,
               (SELECT COUNT(*) FROM cassette_members m2 WHERE m2.cassette_id = c.id) AS members,
               (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'a') AS side_a,
               (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'b') AS side_b,
@@ -197,6 +197,7 @@ app.get('/api/cassettes', (req, res) => {
     name: string;
     created_by: string;
     created_at: number;
+    color_seed: string | null;
     members: number;
     side_a: number;
     side_b: number;
@@ -209,6 +210,7 @@ app.get('/api/cassettes', (req, res) => {
       name: r.name,
       createdBy: r.created_by,
       createdAt: r.created_at,
+      colorSeed: r.color_seed,
       memberCount: r.members,
       sideA: r.side_a,
       sideB: r.side_b,
@@ -228,31 +230,49 @@ app.get('/api/cassettes/:id/members', (req, res) => {
 app.post('/api/cassettes', (req, res) => {
   const name = String(req.body?.name ?? '').trim().slice(0, 40);
   const by = String(req.body?.by ?? '').trim();
+  const colorSeed = req.body?.colorSeed ? String(req.body.colorSeed) : null;
   if (!name) throw new HttpError(400, 'Die Kassette braucht eine Beschriftung');
   if (!by) throw new HttpError(400, 'Name fehlt');
 
   const id = randomUUID();
   const now = Date.now();
   db.transaction(() => {
-    db.prepare(`INSERT INTO cassettes (id, name, created_by, created_at) VALUES (?, ?, ?, ?)`).run(
-      id, name, by, now,
-    );
+    db.prepare(
+      `INSERT INTO cassettes (id, name, created_by, created_at, color_seed) VALUES (?, ?, ?, ?, ?)`,
+    ).run(id, name, by, now, colorSeed);
     db.prepare(
       `INSERT INTO cassette_members (cassette_id, member, added_by, joined_at) VALUES (?, ?, ?, ?)`,
     ).run(id, by, by, now);
   })();
 
-  res.status(201).json({ id, name, createdBy: by, memberCount: 1, sideA: 0, sideB: 0 });
+  res.status(201).json({ id, name, createdBy: by, colorSeed, memberCount: 1, sideA: 0, sideB: 0 });
 });
 
 app.patch('/api/cassettes/:id', (req, res) => {
   const by = String(req.body?.by ?? '').trim();
-  const name = String(req.body?.name ?? '').trim().slice(0, 40);
-  if (!name) throw new HttpError(400, 'Beschriftung fehlt');
   requireMember(req.params.id, by);
 
-  db.prepare(`UPDATE cassettes SET name = ? WHERE id = ?`).run(name, req.params.id);
-  res.json({ id: req.params.id, name });
+  // Name und Farb-Override sind unabhaengig voneinander setzbar — Umbenennen
+  // soll das Aussehen nicht anfassen, und umgekehrt.
+  if (req.body?.name !== undefined) {
+    const name = String(req.body.name).trim().slice(0, 40);
+    if (!name) throw new HttpError(400, 'Beschriftung fehlt');
+    db.prepare(`UPDATE cassettes SET name = ? WHERE id = ?`).run(name, req.params.id);
+  }
+  if (req.body?.colorSeed !== undefined) {
+    const colorSeed = req.body.colorSeed ? String(req.body.colorSeed) : null;
+    db.prepare(`UPDATE cassettes SET color_seed = ? WHERE id = ?`).run(colorSeed, req.params.id);
+  }
+  if (req.body?.name === undefined && req.body?.colorSeed === undefined) {
+    throw new HttpError(400, 'Nichts zu ändern');
+  }
+
+  const row = db.prepare(`SELECT id, name, color_seed FROM cassettes WHERE id = ?`).get(req.params.id) as {
+    id: string;
+    name: string;
+    color_seed: string | null;
+  };
+  res.json({ id: row.id, name: row.name, colorSeed: row.color_seed });
 });
 
 // Jedes Mitglied darf jemanden holen — wie im echten Freundeskreis.

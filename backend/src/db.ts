@@ -230,6 +230,11 @@ function addColumn(table: string, column: string, ddl: string, note: string): vo
 addColumn('posts', 'source', 'source TEXT', 'Kamera oder Galerie');
 addColumn('posts', 'cassette_id', 'cassette_id TEXT REFERENCES cassettes(id)', 'Beitrag gehoert zu einer Runde');
 addColumn('posts', 'expires_at', 'expires_at INTEGER', 'Seite B wird ueberspielt');
+// Optionaler Override fuer die Bandsorte: normalerweise haengt das Aussehen
+// an der Kassetten-ID, damit es auf jedem Geraet gleich ist. Wer explizit ein
+// anderes Muster will (oder zwei Kassetten tauschen moechte), setzt hier einen
+// eigenen Schluessel statt der ID.
+addColumn('cassettes', 'color_seed', 'color_seed TEXT', 'manueller Override fuer die Bandsorte');
 
 /**
  * Bestehende Beitraege haben noch keine Kassette. Damit nichts verlorengeht,

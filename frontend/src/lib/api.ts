@@ -16,6 +16,8 @@ export interface Cassette {
   name: string;
   createdBy: string;
   createdAt: number;
+  /** Manueller Override fuer die Bandsorte — normalerweise null, dann zaehlt die ID. */
+  colorSeed: string | null;
   memberCount: number;
   sideA: number;
   sideB: number;
@@ -50,6 +52,18 @@ export function renameCassette(id: string, name: string, by: string): Promise<{ 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, by }),
   }).then(unwrap<{ id: string }>);
+}
+
+export function setCassetteColorSeed(
+  id: string,
+  colorSeed: string | null,
+  by: string,
+): Promise<{ id: string; colorSeed: string | null }> {
+  return fetch(`/api/cassettes/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ colorSeed, by }),
+  }).then(unwrap<{ id: string; colorSeed: string | null }>);
 }
 
 export function addMember(id: string, member: string, by: string): Promise<Member> {
