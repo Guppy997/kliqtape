@@ -139,16 +139,8 @@ export default function BottomBar({ items, onPosted }: Props) {
               </svg>
             )}
           </DeckKey>
-        </div>
-
-        {/* REC und Hot Line als die zwei Hauptaktionen nebeneinander, mit
-            Luft dazwischen — Hot Line stand vorher in der Ecke neben ▶▶. */}
-        <div className="flex items-end gap-3">
-          <Composer onPosted={onPosted} />
-          <HotlineComposer />
-        </div>
-
-        <div className="flex items-end gap-1.5 justify-self-end">
+          {/* Klassische Tapedeck-Reihe: Rueck-, Play-, Vorlauf nebeneinander,
+              statt ueber die Leiste verteilt. */}
           <DeckKey
             label="Ans Bandende"
             onClick={() => scrollTo(document.documentElement.scrollHeight)}
@@ -157,6 +149,12 @@ export default function BottomBar({ items, onPosted }: Props) {
               <path d="M8 0v12l7-6zM1 0v12l7-6z" />
             </svg>
           </DeckKey>
+        </div>
+
+        <Composer onPosted={onPosted} />
+
+        <div className="flex items-end justify-self-end">
+          <HotlineComposer />
         </div>
       </div>
     </div>

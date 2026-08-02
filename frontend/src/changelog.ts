@@ -10,6 +10,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.9.1',
+    date: '2026-08-03',
+    changes: [
+      'Hot-Line-Metallplatte wieder raus — zurück zu Gelb mit leichtem schwarzen Rahmen',
+      'Hot Line sitzt jetzt allein rechts, nicht mehr neben REC',
+      'Tapedeck-Reihe: Rücklauf, Play/Pause und Vorlauf jetzt nebeneinander',
+    ],
+  },
+  {
     version: '0.9.0',
     date: '2026-08-03',
     changes: [

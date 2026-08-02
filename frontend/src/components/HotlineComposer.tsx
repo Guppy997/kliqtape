@@ -37,25 +37,11 @@ export default function HotlineComposer() {
 
   return (
     <>
-      {/* Eigenes Modul statt zwischen die Laufwerkstasten gequetscht — Hot
-          Line ist unabhaengig von jeder Kassette, das zeigt jetzt auch das
-          Material: neutrales, angeschraubtes Metall statt eingefaerbtem
-          Plastik, das mit der Bandsorte mitwechselt. */}
-      <div
-        className="relative flex shrink-0 flex-col items-center gap-1 rounded-[5px] px-2.5 pb-2 pt-1.5"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(115deg, rgba(255,255,255,.07) 0 1px, rgba(0,0,0,0) 1px 4px), ' +
-            'linear-gradient(155deg, #9a9d9f 0%, #6b6e70 42%, #3d3e40 100%)',
-          boxShadow:
-            '0 2px 4px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.25) inset, 0 -1px 0 rgba(0,0,0,.35) inset',
-        }}
-      >
-        <PlateScrews />
-        <span
-          className="font-mono text-[0.44rem] uppercase tracking-[0.16em]"
-          style={{ color: '#242424', textShadow: '0 1px 0 rgba(255,255,255,.3)' }}
-        >
+      {/* Beschriftung ueber der Taste, wie an einem Walkman. Vollflaechig
+          gelb mit einem leichten schwarzen Rahmen — Definition ohne
+          Gehaeuse oder Platte drumherum. */}
+      <span className="flex shrink-0 flex-col items-center gap-1">
+        <span className="font-mono text-[0.5rem] uppercase tracking-[0.18em]" style={{ color: HOTLINE_AMBER }}>
           Hot Line
         </span>
         <button
@@ -65,13 +51,14 @@ export default function HotlineComposer() {
             setTarget(null);
             setOpen(true);
           }}
-          className={`grid h-8 w-8 place-items-center rounded-[3px] transition-transform active:translate-y-px active:scale-95 ${unread > 0 ? 'blink' : ''}`}
+          className={`grid h-9 w-9 place-items-center rounded-[3px] transition-transform active:translate-y-px active:scale-95 ${unread > 0 ? 'blink' : ''}`}
           style={{
             background: HOTLINE_AMBER,
-            boxShadow: `0 0 0.4rem ${HOTLINE_AMBER}99, 0 1px 2px rgba(0,0,0,.35)`,
+            border: '1px solid rgba(0,0,0,.4)',
+            boxShadow: `0 0 0.35rem ${HOTLINE_AMBER}80`,
           }}
         />
-      </div>
+      </span>
 
       <Sheet open={open} onClose={() => setOpen(false)} variant="full" title={target ? undefined : 'Hot Line'}>
         {target ? (
@@ -159,30 +146,5 @@ export default function HotlineComposer() {
         )}
       </Sheet>
     </>
-  );
-}
-
-/** Vier kleine Schrauben in den Ecken der Metallplatte. */
-function PlateScrews() {
-  return (
-    <span className="pointer-events-none absolute inset-0" aria-hidden="true">
-      {['left-[3px] top-[3px]', 'right-[3px] top-[3px]', 'left-[3px] bottom-[3px]', 'right-[3px] bottom-[3px]'].map(
-        (pos) => (
-          <i
-            key={pos}
-            className={`absolute ${pos} block size-[5px] rounded-full`}
-            style={{
-              background: 'radial-gradient(circle at 35% 35%, #cfd1d2, #4a4c4e 70%)',
-              boxShadow: '0 0.5px 0 rgba(255,255,255,.3)',
-            }}
-          >
-            <i
-              className="absolute left-1/2 top-1/2 block h-px w-[3px] -translate-x-1/2 -translate-y-1/2"
-              style={{ background: 'rgba(0,0,0,.5)' }}
-            />
-          </i>
-        ),
-      )}
-    </span>
   );
 }
