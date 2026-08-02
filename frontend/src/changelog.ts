@@ -10,6 +10,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.7.1',
+    date: '2026-08-03',
+    changes: ['Hot-Line-Knopf jetzt vollflächig gelb, ohne den dunklen Gehäuse-Rand'],
+  },
+  {
     version: '0.7.0',
     date: '2026-08-03',
     changes: [

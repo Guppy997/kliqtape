@@ -45,17 +45,14 @@ export default function HotlineComposer() {
             setTarget(null);
             setOpen(true);
           }}
-          className="grid h-10 w-10 place-items-center rounded-[3px] transition-transform active:translate-y-px"
+          className="grid h-10 w-10 place-items-center rounded-[3px] transition-transform active:translate-y-px active:scale-95"
           style={{
-            background: 'linear-gradient(180deg, #3A342E, #211D19)',
-            boxShadow: '0 2px 0 rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.1) inset',
+            background: HOTLINE_AMBER,
+            // Weicher Schein statt hartem Rand — die Taste selbst leuchtet,
+            // statt in einem Gehaeuse zu sitzen.
+            boxShadow: `0 0 0.65rem ${HOTLINE_AMBER}bb`,
           }}
-        >
-          <span
-            className="size-4 rounded-[1px]"
-            style={{ background: HOTLINE_AMBER, boxShadow: `0 0 0.6rem ${HOTLINE_AMBER}` }}
-          />
-        </button>
+        />
       </span>
 
       <Sheet open={open} onClose={() => setOpen(false)} variant="full" title={target ? undefined : 'Hot Line'}>
