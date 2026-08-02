@@ -10,6 +10,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.6.1',
+    date: '2026-08-03',
+    changes: [
+      'Filter gibt es jetzt auch auf Seite B, nicht nur im Archiv',
+      'Filter setzt sich beim Seiten- oder Kassettenwechsel automatisch zurück',
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-08-03',
     changes: [

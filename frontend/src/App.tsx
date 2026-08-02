@@ -66,7 +66,7 @@ export default function App() {
   );
 }
 
-/** Filterleiste auf Seite A — Seite A ist ein Archiv, da will man sortieren. */
+/** Filterleiste — auf beiden Seiten, gilt aber jeweils nur fuer die aktuelle. */
 const FILTERS: { key: Kind | 'all'; label: string }[] = [
   { key: 'all', label: 'Alles' },
   { key: 'photo', label: KIND_LABEL.photo },
@@ -110,9 +110,16 @@ function Deck() {
   const react = useMutation({ mutationFn: (id: string) => toggleReaction(id, me), onSuccess: invalidate });
   const remove = useMutation({ mutationFn: (id: string) => deletePost(id), onSuccess: invalidate });
 
+  // Filter gilt je Seite fuer sich — ein Filter aus Seite A soll nicht
+  // unsichtbar auf Seite B weiterlaufen, wo er zufaellig alles ausblendet.
+  useEffect(() => {
+    setFilter('all');
+    setFilterOpen(false);
+  }, [side, cassetteId]);
+
   const shown = useMemo(
-    () => (side === 'a' && filter !== 'all' ? data.filter((p) => p.kind === filter) : data),
-    [data, side, filter],
+    () => (filter !== 'all' ? data.filter((p) => p.kind === filter) : data),
+    [data, filter],
   );
 
   return (
@@ -131,22 +138,21 @@ function Deck() {
         >
           <span className="flex min-w-0 items-center gap-1.5">
             <CassetteDeck />
-            {/* Seite A ist ein Archiv und darf gefiltert werden — Seite B laeuft
-                ab, dafuer gibt es keinen Filter. */}
-            {side === 'a' && (
-              <button
-                type="button"
-                onClick={() => setFilterOpen((v) => !v)}
-                aria-expanded={filterOpen}
-                className="shrink-0 rounded-full px-2 py-1 text-[0.58rem]"
-                style={{
-                  border: '1px solid var(--line)',
-                  color: filter === 'all' ? 'var(--dim)' : 'var(--accent)',
-                }}
-              >
-                {filter === 'all' ? 'Filter' : FILTERS.find((f) => f.key === filter)?.label} {filterOpen ? '▴' : '▾'}
-              </button>
-            )}
+            {/* Auf beiden Seiten filterbar — auch Seite B sammelt sich mit der
+                Zeit, und "was ist grad an O-Toenen da" ist dort genauso eine
+                sinnvolle Frage wie im Archiv. */}
+            <button
+              type="button"
+              onClick={() => setFilterOpen((v) => !v)}
+              aria-expanded={filterOpen}
+              className="shrink-0 rounded-full px-2 py-1 text-[0.58rem]"
+              style={{
+                border: '1px solid var(--line)',
+                color: filter === 'all' ? 'var(--dim)' : 'var(--accent)',
+              }}
+            >
+              {filter === 'all' ? 'Filter' : FILTERS.find((f) => f.key === filter)?.label} {filterOpen ? '▴' : '▾'}
+            </button>
           </span>
           <span className="flex shrink-0 items-center gap-1.5">
             <Shelf />
@@ -156,7 +162,7 @@ function Deck() {
 
         {/* Kleines Fenster, das direkt unter der Zeile aufklappt — kein
             eigener Bildschirm fuer eine so kurze Auswahl. */}
-        {side === 'a' && filterOpen && (
+        {filterOpen && (
           <div
             className="flex flex-wrap gap-1.5 rounded-lg p-2"
             style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
