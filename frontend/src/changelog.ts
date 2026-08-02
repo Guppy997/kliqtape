@@ -10,6 +10,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.9.2',
+    date: '2026-08-03',
+    changes: [
+      'Neuigkeiten-Lampe zog nach ganz rechts um, direkt neben Hot Line',
+      'Zählwerk und Tapedeck-Reihe dadurch weiter links',
+    ],
+  },
+  {
     version: '0.9.1',
     date: '2026-08-03',
     changes: [

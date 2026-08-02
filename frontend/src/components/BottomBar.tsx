@@ -103,10 +103,8 @@ export default function BottomBar({ items, onPosted }: Props) {
 
       <div className="mx-auto grid max-w-xl grid-cols-[1fr_auto_1fr] items-end gap-2">
         <div className="flex items-end gap-1.5 justify-self-start">
-          <AnsweringMachine />
-          {/* Zaehlwerk sitzt jetzt hier bei der Lampe: beide sagen "was ist
-              gerade los", das eine als Zahl, das andere als Signal. Bleibt
-              beim Scrollen sichtbar, anders als die Laufzeile oben. */}
+          {/* Zaehlwerk: bleibt beim Scrollen sichtbar, anders als die
+              Laufzeile oben, die mit dem Feed mitscrollt. */}
           <span
             className="font-mono grid h-7 min-w-[2.1rem] place-items-center rounded-[3px] px-1 text-[0.66rem] tabular-nums"
             style={{
@@ -153,8 +151,9 @@ export default function BottomBar({ items, onPosted }: Props) {
 
         <Composer onPosted={onPosted} />
 
-        <div className="flex items-end justify-self-end">
+        <div className="flex items-end gap-1.5 justify-self-end">
           <HotlineComposer />
+          <AnsweringMachine />
         </div>
       </div>
     </div>
