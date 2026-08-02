@@ -77,17 +77,17 @@ db.exec(`
     PRIMARY KEY (post_id, author)
   );
 
-  -- Hot Line: eine offene Leitung zwischen zwei Personen. Die 24-Stunden-Frist
-  -- startet mit der ERSTEN Nachricht und laeuft dann durch — Antworten
-  -- verlaengern sie nicht, sonst wuerde eine aktive Leitung nie schliessen.
-  -- person_a/person_b liegen alphabetisch sortiert, damit "wer schreibt wem"
-  -- keine zwei Leitungen fuer dasselbe Paar erzeugt.
+  -- Hot Line: eine offene Leitung zwischen zwei Personen. Rollierendes
+  -- 24-Stunden-Fenster — kein expires_at auf der Leitung selbst, sie lebt
+  -- einfach, solange sie eine Nachricht hat, die juenger als 24h ist (siehe
+  -- sweepHotlineMessages in server.ts). person_a/person_b liegen alphabetisch
+  -- sortiert, damit "wer schreibt wem zuerst" keine zwei Leitungen fuer
+  -- dasselbe Paar erzeugt.
   CREATE TABLE IF NOT EXISTS hotline_threads (
     id         TEXT PRIMARY KEY,
     person_a   TEXT NOT NULL,
     person_b   TEXT NOT NULL,
     created_at INTEGER NOT NULL,
-    expires_at INTEGER NOT NULL,
     UNIQUE (person_a, person_b)
   );
 
@@ -240,7 +240,7 @@ if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='hotl
       `SELECT id FROM hotline_threads WHERE person_a = ? AND person_b = ?`,
     );
     const insertThread = db.prepare(
-      `INSERT INTO hotline_threads (id, person_a, person_b, created_at, expires_at) VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO hotline_threads (id, person_a, person_b, created_at) VALUES (?, ?, ?, ?)`,
     );
     const insertMessage = db.prepare(
       `INSERT INTO hotline_messages (id, thread_id, from_name, body, created_at, heard_at) VALUES (?, ?, ?, ?, ?, ?)`,
@@ -248,14 +248,14 @@ if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='hotl
 
     for (const r of rows) {
       const [a, b] = [r.from_name, r.to_name].sort();
-      const key = `${a} ${b}`;
+      const key = `${a} ${b}`;
       let threadId = threadFor.get(key);
       if (!threadId) {
         const existing = findThread.get(a, b) as { id: string } | undefined;
         threadId = existing?.id ?? randomUUID();
         threadFor.set(key, threadId);
         if (!existing) {
-          insertThread.run(threadId, a, b, r.created_at, r.created_at + 24 * 60 * 60 * 1000);
+          insertThread.run(threadId, a, b, r.created_at);
         }
       }
       insertMessage.run(randomUUID(), threadId, r.from_name, r.body, r.created_at, r.heard_at);
@@ -263,6 +263,44 @@ if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='hotl
 
     db.exec(`DROP TABLE hotlines`);
   })();
+}
+
+/**
+ * Installationen, die schon mit dem ersten Leitungs-Modell liefen, haben
+ * hotline_threads.expires_at — eine feste Frist ab der ersten Nachricht.
+ * Das rollierende Fenster braucht dieses Feld nicht mehr: die Leitung lebt,
+ * solange sie eine Nachricht unter 24h hat, berechnet aus den Nachrichten
+ * selbst statt aus einem gespeicherten Wert. Spalte raus, Rest bleibt.
+ */
+const threadCols = db.prepare(`PRAGMA table_info(hotline_threads)`).all() as { name: string }[];
+
+if (threadCols.some((c) => c.name === 'expires_at')) {
+  console.log('[kliqtape] Migriere hotline_threads: expires_at faellt weg (rollierendes Fenster)');
+  db.pragma('foreign_keys = OFF');
+  db.pragma('legacy_alter_table = ON');
+  db.transaction(() => {
+    db.exec(`
+      ALTER TABLE hotline_threads RENAME TO hotline_threads_old;
+
+      CREATE TABLE hotline_threads (
+        id         TEXT PRIMARY KEY,
+        person_a   TEXT NOT NULL,
+        person_b   TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        UNIQUE (person_a, person_b)
+      );
+
+      INSERT INTO hotline_threads (id, person_a, person_b, created_at)
+        SELECT id, person_a, person_b, created_at FROM hotline_threads_old;
+
+      DROP TABLE hotline_threads_old;
+
+      CREATE INDEX IF NOT EXISTS idx_hthreads_a ON hotline_threads(person_a);
+      CREATE INDEX IF NOT EXISTS idx_hthreads_b ON hotline_threads(person_b);
+    `);
+  })();
+  db.pragma('legacy_alter_table = OFF');
+  db.pragma('foreign_keys = ON');
 }
 
 /** Fehlende Spalte ergaenzen. Reine Ergaenzungen brauchen keinen Tabellenumbau. */

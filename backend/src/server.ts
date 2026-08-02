@@ -499,10 +499,13 @@ app.post('/api/posts/:id/react', (req, res) => {
 /* -------------------------------------------------------------------------
  * Hot Line — eine offene Leitung zwischen zwei Personen
  *
- * Normalfall ist jetzt ein echter Verlauf: die erste Nachricht eroeffnet die
- * Leitung, danach laesst sich hin und her schreiben. Die 24-Stunden-Frist
- * laeuft ab der ERSTEN Nachricht — Antworten verlaengern sie nicht, sonst
- * wuerde eine aktive Leitung nie schliessen.
+ * Rollierendes Fenster: jede Nachricht haelt die Leitung offen, aber nur die
+ * letzten 24 Stunden bleiben sichtbar. Es gibt bewusst keine feste Frist auf
+ * der Leitung selbst — sie "lebt" einfach, solange sie mindestens eine
+ * Nachricht hat, die juenger als 24 Stunden ist. Schreibt niemand mehr,
+ * fallen die letzten Nachrichten nach und nach raus, bis die Leitung leer
+ * ist und verschwindet. So bleibt aktives Schreiben ohne Wirkung auf einen
+ * waechst nie zu einem permanenten Archiv — beides zugleich.
  * ---------------------------------------------------------------------- */
 
 const HOTLINE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -514,27 +517,29 @@ function pairOf(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];
 }
 
-/** Abgelaufene Leitungen entfernen (samt Nachrichten, per CASCADE). Laeuft
- *  faul bei jedem Zugriff — bei dieser Datenmenge braucht es keinen
- *  Hintergrundjob. */
-function sweepHotlineThreads(): void {
-  const gone = db.prepare(`SELECT id FROM hotline_threads WHERE expires_at < ?`).all(Date.now()) as {
-    id: string;
-  }[];
-  if (gone.length === 0) return;
-  const del = db.prepare(`DELETE FROM hotline_threads WHERE id = ?`);
-  for (const t of gone) del.run(t.id);
+/**
+ * Nachrichten aelter als 24 Stunden entfernen — einzeln, nicht die ganze
+ * Leitung. Leitungen ohne verbliebene Nachricht sind danach Karteileichen
+ * und werden mit entfernt. Laeuft faul bei jedem Zugriff.
+ */
+function sweepHotlineMessages(): void {
+  const cutoff = Date.now() - HOTLINE_TTL_MS;
+  db.prepare(`DELETE FROM hotline_messages WHERE created_at < ?`).run(cutoff);
+  db.prepare(
+    `DELETE FROM hotline_threads
+      WHERE NOT EXISTS (SELECT 1 FROM hotline_messages m WHERE m.thread_id = hotline_threads.id)`,
+  ).run();
 }
 
 app.get('/api/hotlines/threads', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
 
-  sweepHotlineThreads();
+  sweepHotlineMessages();
 
   const rows = db
     .prepare(
-      `SELECT t.id, t.person_a, t.person_b, t.created_at, t.expires_at,
+      `SELECT t.id, t.person_a, t.person_b, t.created_at,
               (SELECT body FROM hotline_messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_body,
               (SELECT from_name FROM hotline_messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_from,
               (SELECT MAX(created_at) FROM hotline_messages m WHERE m.thread_id = t.id) AS last_at,
@@ -548,7 +553,6 @@ app.get('/api/hotlines/threads', (req, res) => {
     person_a: string;
     person_b: string;
     created_at: number;
-    expires_at: number;
     last_body: string | null;
     last_from: string | null;
     last_at: number | null;
@@ -556,16 +560,21 @@ app.get('/api/hotlines/threads', (req, res) => {
   }[];
 
   res.json(
-    rows.map((r) => ({
-      id: r.id,
-      other: r.person_a === me ? r.person_b : r.person_a,
-      createdAt: r.created_at,
-      expiresAt: r.expires_at,
-      lastBody: r.last_body,
-      lastFrom: r.last_from,
-      lastAt: r.last_at,
-      unread: r.unread,
-    })),
+    rows
+      // Nach dem Sweep hat jede verbliebene Leitung mindestens eine
+      // Nachricht — last_at waere sonst NULL. Defensiv trotzdem filtern.
+      .filter((r) => r.last_at != null)
+      .map((r) => ({
+        id: r.id,
+        other: r.person_a === me ? r.person_b : r.person_a,
+        createdAt: r.created_at,
+        // Wann die Leitung einschlaeft, wenn niemand mehr schreibt.
+        expiresAt: r.last_at! + HOTLINE_TTL_MS,
+        lastBody: r.last_body,
+        lastFrom: r.last_from,
+        lastAt: r.last_at,
+        unread: r.unread,
+      })),
   );
 });
 
@@ -573,10 +582,10 @@ app.get('/api/hotlines/threads/:id/messages', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
 
-  sweepHotlineThreads();
+  sweepHotlineMessages();
 
   const thread = db.prepare(`SELECT * FROM hotline_threads WHERE id = ?`).get(req.params.id) as
-    | { id: string; person_a: string; person_b: string; created_at: number; expires_at: number }
+    | { id: string; person_a: string; person_b: string; created_at: number }
     | undefined;
   if (!thread) throw new HttpError(404, 'Leitung nicht gefunden — vielleicht schon überspielt');
   if (thread.person_a !== me && thread.person_b !== me) {
@@ -590,11 +599,17 @@ app.get('/api/hotlines/threads/:id/messages', (req, res) => {
     )
     .all(thread.id) as { id: string; from_name: string; body: string; created_at: number; heard_at: number | null }[];
 
+  // Kann durch den Sweep gerade eben leer geworden sein — dann ist die
+  // Leitung faktisch geschlossen, auch wenn die Zeile noch kurz existiert.
+  if (messages.length === 0) throw new HttpError(404, 'Leitung nicht gefunden — vielleicht schon überspielt');
+
+  const lastAt = messages[messages.length - 1]!.created_at;
+
   res.json({
     id: thread.id,
     other: thread.person_a === me ? thread.person_b : thread.person_a,
     createdAt: thread.created_at,
-    expiresAt: thread.expires_at,
+    expiresAt: lastAt + HOTLINE_TTL_MS,
     messages: messages.map((m) => ({
       id: m.id,
       from: m.from_name,
@@ -616,30 +631,33 @@ app.post('/api/hotlines/threads', (req, res) => {
   if (!to) throw new HttpError(400, 'Empfänger fehlt');
   if (from === to) throw new HttpError(400, 'Man ruft sich nicht selbst an');
 
-  sweepHotlineThreads();
+  sweepHotlineMessages();
 
   const [a, b] = pairOf(from, to);
   const now = Date.now();
 
-  let thread = db
-    .prepare(`SELECT id, expires_at FROM hotline_threads WHERE person_a = ? AND person_b = ?`)
-    .get(a, b) as { id: string; expires_at: number } | undefined;
+  let threadId = (
+    db.prepare(`SELECT id FROM hotline_threads WHERE person_a = ? AND person_b = ?`).get(a, b) as
+      | { id: string }
+      | undefined
+  )?.id;
 
-  if (!thread) {
-    const id = randomUUID();
-    const expiresAt = now + HOTLINE_TTL_MS;
-    db.prepare(
-      `INSERT INTO hotline_threads (id, person_a, person_b, created_at, expires_at) VALUES (?, ?, ?, ?, ?)`,
-    ).run(id, a, b, now, expiresAt);
-    thread = { id, expires_at: expiresAt };
+  if (!threadId) {
+    threadId = randomUUID();
+    db.prepare(`INSERT INTO hotline_threads (id, person_a, person_b, created_at) VALUES (?, ?, ?, ?)`).run(
+      threadId,
+      a,
+      b,
+      now,
+    );
   }
 
   const messageId = randomUUID();
   db.prepare(
     `INSERT INTO hotline_messages (id, thread_id, from_name, body, created_at) VALUES (?, ?, ?, ?, ?)`,
-  ).run(messageId, thread.id, from, text, now);
+  ).run(messageId, threadId, from, text, now);
 
-  res.status(201).json({ threadId: thread.id, messageId, expiresAt: thread.expires_at });
+  res.status(201).json({ threadId, messageId, expiresAt: now + HOTLINE_TTL_MS });
 });
 
 app.post('/api/hotlines/threads/:id/heard', (req, res) => {

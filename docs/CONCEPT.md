@@ -111,10 +111,15 @@ Eine offene Leitung zwischen **zwei Personen**, unabhängig von jeder Kassette. 
 Walkman-Knopf unten neben REC. Normalfall ist ein echter Verlauf — die erste Nachricht eröffnet
 die Leitung, danach ein echtes Hin und Her. **Nur Text**, höchstens 240 Zeichen pro Nachricht.
 
-Die 24-Stunden-Frist läuft **ab der ersten Nachricht**, nicht ab der letzten — Antworten
-verlängern sie nicht. Sonst liefe ein aktives Gespräch nie ab, und es wäre ein gewöhnlicher
-Messenger. Eingehende landen auf dem **Anrufbeantworter** mit blinkender LED und öffnen direkt
-den Verlauf mit dieser Person.
+**Rollierendes 24-Stunden-Fenster:** jede Nachricht hält die Leitung offen, aber nur die letzten
+24 Stunden bleiben sichtbar. Es gibt keine feste Frist auf der Leitung selbst — sie „lebt",
+solange sie mindestens eine Nachricht hat, die jünger als 24 Stunden ist. Schreibt niemand mehr,
+fallen die letzten Nachrichten einzeln raus, bis die Leitung leer ist und verschwindet.
+
+Das löst zwei Probleme auf einmal: aktives Schreiben hält die Leitung offen (kein Gespräch
+bricht mitten drin ab), aber es sammelt sich nie ein permanenter Verlauf an — auch bei Freunden,
+die täglich schreiben, bleiben immer nur die letzten 24 Stunden sichtbar. Eingehende landen auf
+dem **Anrufbeantworter** mit blinkender LED und öffnen direkt den Verlauf mit dieser Person.
 
 ## 8. Sicherheitsmodell — was der Server sieht
 

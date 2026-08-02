@@ -10,6 +10,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.7.0',
+    date: '2026-08-03',
+    changes: [
+      'Hot Line: rollierendes 24-Stunden-Fenster statt fester Frist ab der ersten Nachricht',
+      'Jede Nachricht hält die Leitung offen, alte Nachrichten fallen trotzdem einzeln raus',
+      'Keine Leitung sammelt mehr einen permanenten Verlauf an, egal wie oft man schreibt',
+      'Geht die letzte Nachricht über 24h hinaus, schließt die Leitung endgültig',
+    ],
+  },
+  {
     version: '0.6.1',
     date: '2026-08-03',
     changes: [
