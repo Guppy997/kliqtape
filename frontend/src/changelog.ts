@@ -10,6 +10,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.9.0',
+    date: '2026-08-03',
+    changes: [
+      'Hot Line sitzt jetzt auf einer angeschraubten Metallplatte statt in der Ecke',
+      'Hot Line neben REC gerückt — die zwei Hauptaktionen jetzt nebeneinander, mit Luft dazwischen',
+      'Zählwerk umgezogen: sitzt jetzt bei der Neuigkeiten-Lampe statt bei REC',
+    ],
+  },
+  {
     version: '0.8.1',
     date: '2026-08-03',
     changes: [

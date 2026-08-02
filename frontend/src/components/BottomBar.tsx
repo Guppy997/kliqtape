@@ -102,8 +102,21 @@ export default function BottomBar({ items, onPosted }: Props) {
       )}
 
       <div className="mx-auto grid max-w-xl grid-cols-[1fr_auto_1fr] items-end gap-2">
-        <div className="flex items-center gap-1 justify-self-start">
+        <div className="flex items-end gap-1.5 justify-self-start">
           <AnsweringMachine />
+          {/* Zaehlwerk sitzt jetzt hier bei der Lampe: beide sagen "was ist
+              gerade los", das eine als Zahl, das andere als Signal. Bleibt
+              beim Scrollen sichtbar, anders als die Laufzeile oben. */}
+          <span
+            className="font-mono grid h-7 min-w-[2.1rem] place-items-center rounded-[3px] px-1 text-[0.66rem] tabular-nums"
+            style={{
+              background: 'linear-gradient(180deg, #211E1A, #141210)',
+              color: 'var(--accent)',
+              boxShadow: '0 1px 2px rgba(0,0,0,.5) inset',
+            }}
+          >
+            {String(items.length).padStart(3, '0')}
+          </span>
           <DeckKey label="An den Bandanfang" onClick={() => scrollTo(0)}>
             <svg width="15" height="12" viewBox="0 0 15 12" fill="currentColor" aria-hidden="true">
               <path d="M7 0v12L0 6zM14 0v12L7 6z" />
@@ -128,24 +141,14 @@ export default function BottomBar({ items, onPosted }: Props) {
           </DeckKey>
         </div>
 
-        <div className="flex items-end gap-1.5">
+        {/* REC und Hot Line als die zwei Hauptaktionen nebeneinander, mit
+            Luft dazwischen — Hot Line stand vorher in der Ecke neben ▶▶. */}
+        <div className="flex items-end gap-3">
           <Composer onPosted={onPosted} />
-          {/* Zaehlwerk: die Laufzeile oben scrollt mit dem Feed weg, das hier
-              nicht — bleibt sichtbar, egal wie tief man im Band steckt. */}
-          <span
-            className="font-mono grid h-7 min-w-[2.1rem] place-items-center rounded-[3px] px-1 text-[0.66rem] tabular-nums"
-            style={{
-              background: 'linear-gradient(180deg, #211E1A, #141210)',
-              color: 'var(--accent)',
-              boxShadow: '0 1px 2px rgba(0,0,0,.5) inset',
-            }}
-          >
-            {String(items.length).padStart(3, '0')}
-          </span>
+          <HotlineComposer />
         </div>
 
         <div className="flex items-end gap-1.5 justify-self-end">
-          <HotlineComposer />
           <DeckKey
             label="Ans Bandende"
             onClick={() => scrollTo(document.documentElement.scrollHeight)}
