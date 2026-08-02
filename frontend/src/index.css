@@ -1,0 +1,189 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Farbwelt. Gestaltungsregel des Projekts:
+   Retro sind die MATERIALIEN, modern ist alles andere.
+   Also Bandkorn, Filzstift und Fotoabzug — aber saubere Typografie,
+   grosszuegige Abstaende und fluessige Bewegung. Kein Sepia ueber allem.
+   --------------------------------------------------------------------------- */
+@theme {
+  /* Seite A — Type I, klassische Kassette */
+  --color-a-shell: #23201c;
+  --color-a-shell-hi: #3e3830;
+  --color-a-label: #e4dac4;
+  --color-a-label-2: #d3c6aa;
+  --color-a-tape: #5c3a21;
+  --color-a-stripe: #b8462c;
+  --color-a-screen: #171512;
+  --color-a-card: #201d19;
+  --color-a-line: #322c25;
+  --color-a-dim: #9a8f7c;
+
+  /* Seite B — Atomic Purple, transluzentes Plastik */
+  --color-b-shell: #6b4a9e;
+  --color-b-hi: #c9afef;
+  --color-b-inner: #2b1a42;
+  --color-b-glow: #a97ce8;
+  --color-b-pcb: #4e7a5e;
+  --color-b-ink: #f2e9ff;
+  --color-b-screen: #1a1028;
+  --color-b-dim: #a48ec4;
+
+  --font-disp: 'Arial Narrow', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-hand: 'Bradley Hand', 'Marker Felt', 'Segoe Script', cursive;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #0e0d0b;
+  color: var(--color-a-label);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+button {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Seitenabhaengige Tokens. Alle Komponenten lesen nur diese Variablen,
+   nie direkt die Seiten-Farben — dadurch ist der A/B-Wechsel eine Zeile. */
+.side-a {
+  --screen: var(--color-a-screen);
+  --ink: var(--color-a-label);
+  --dim: var(--color-a-dim);
+  --accent: var(--color-a-stripe);
+  --card: var(--color-a-card);
+  --line: var(--color-a-line);
+}
+
+.side-b {
+  --screen: var(--color-b-screen);
+  --ink: var(--color-b-ink);
+  --dim: var(--color-b-dim);
+  --accent: var(--color-b-glow);
+  --card: rgba(107, 74, 158, 0.2);
+  --line: rgba(201, 175, 239, 0.28);
+}
+
+/* --- Kassettengehaeuse ---------------------------------------------------- */
+
+.cass-a {
+  background: linear-gradient(178deg, var(--color-a-shell-hi) 0%, var(--color-a-shell) 22%, #191612 100%);
+  box-shadow:
+    0 0.5rem 1.2rem rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.13) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.6) inset;
+}
+
+/* Transluzentes Plastik entsteht aus drei Lagen: Glanzlicht oben links,
+   Platinenschimmer unten rechts, Farbverlauf darunter. */
+.cass-b {
+  background:
+    radial-gradient(120% 80% at 18% 8%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 46%),
+    radial-gradient(90% 70% at 82% 96%, rgba(78, 122, 94, 0.32), rgba(78, 122, 94, 0) 55%),
+    linear-gradient(172deg, #8b68c2 0%, var(--color-b-shell) 38%, #3f2a64 100%);
+  box-shadow:
+    0 0.5rem 1.4rem rgba(80, 40, 140, 0.55),
+    0 0 0 1px rgba(233, 220, 255, 0.45) inset,
+    0 0.8rem 1.4rem rgba(43, 26, 66, 0.6) inset;
+}
+
+.label-a {
+  background: linear-gradient(180deg, var(--color-a-label), var(--color-a-label-2));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45) inset;
+}
+
+.label-b {
+  background: linear-gradient(180deg, rgba(43, 26, 66, 0.72), rgba(43, 26, 66, 0.92));
+  box-shadow: 0 0 0 1px rgba(201, 175, 239, 0.3) inset;
+}
+
+.font-hand {
+  font-family: var(--font-hand);
+}
+.font-disp {
+  font-family: var(--font-disp);
+}
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* --- Fotoabzug ------------------------------------------------------------
+   Der klassische Charakter kommt aus Rahmen und Beschraenkung, nicht aus
+   einem Filter, der das Bild kaputtmacht. */
+.print {
+  background: #ece5d6;
+  padding: 0.55rem 0.55rem 2.4rem;
+  box-shadow:
+    0 0.5rem 1.2rem rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(0, 0, 0, 0.25);
+  transform: rotate(-0.5deg);
+}
+
+.print img,
+.print video {
+  display: block;
+  width: 100%;
+  border-radius: 1px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 3s linear infinite;
+}
+
+/* Die LED des Anrufbeantworters. Langsam genug, dass es nicht nervt. */
+@keyframes blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0.18;
+  }
+}
+
+.blink {
+  animation: blink 1.6s steps(1, end) infinite;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+  }
+}
+
+.rise {
+  animation: rise 0.4s ease backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin,
+  .rise,
+  .blink {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,86 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      # Zeitzone explizit setzen — sonst laufen Container auf UTC und die
+      # Zeitstempel im Feed stimmen nicht mit der Wanduhr ueberein.
+      TZ: ${TZ:-Europe/Berlin}
+      PORT: 3000
+      DATA_DIR: /data
+      MEDIA_DIR: /media
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-25}
+    volumes:
+      - kliqtape-data:/data
+      - kliqtape-media:/media
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+        reservations:
+          memory: 128M
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+    ports:
+      # Nur auf dieser Adresse veroeffentlichen. Default 127.0.0.1 heisst:
+      # von aussen nicht erreichbar, Zugriff laeuft ueber Tailscale.
+      - "${BIND_ADDR:-127.0.0.1}:${HTTP_PORT:-8099}:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+
+  # Eigener Tailscale-Sidecar pro PWA: sonst kollidieren mehrere PWAs auf
+  # demselben Host bei Android-WebAPKs (Identitaet haengt an Hostname/Port).
+  # Zusaetzlicher Grund hier: Tailscale Serve liefert ein gueltiges HTTPS-Zertifikat,
+  # und ohne HTTPS geben Browser weder Kamera noch Mikrofon frei.
+  tailscale:
+    image: tailscale/tailscale:v1.78.1
+    # Optional: startet nur mit "docker compose --profile tailscale up".
+    # Sonst braeuchte jeder, der nur auf localhost testen will, einen Auth-Key.
+    profiles: ["tailscale"]
+    restart: unless-stopped
+    hostname: ${TS_HOSTNAME:-kliqtape}
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      # Leerer Default noetig: Compose loest Variablen auch in inaktiven
+      # Profilen auf. Ohne Key startet der Container spaeter mit Fehler.
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "true"
+      TS_SERVE_CONFIG: /config/ts-serve.json
+      TS_EXTRA_ARGS: --reset
+    volumes:
+      - kliqtape-ts:/var/lib/tailscale
+      - ./tailscale/ts-serve.json:/config/ts-serve.json:ro
+    depends_on:
+      - frontend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+volumes:
+  kliqtape-data:
+  kliqtape-media:
+  kliqtape-ts:
