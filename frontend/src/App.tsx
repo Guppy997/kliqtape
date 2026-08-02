@@ -7,6 +7,7 @@ import CassetteHeader from '@/components/CassetteHeader';
 import PostCard from '@/components/PostCard';
 import BottomBar from '@/components/BottomBar';
 import Lockup from '@/components/Lockup';
+import Settings from '@/components/Settings';
 import Shelf from '@/components/Shelf';
 import UpdateNotification from '@/components/UpdateNotification';
 
@@ -53,7 +54,10 @@ function Deck() {
           <span className="truncate">
             Seite {side.toUpperCase()} · {SIDE_HINT[side]} · {data.length}
           </span>
-          <Shelf />
+          <span className="flex shrink-0 items-center gap-1.5">
+            <Shelf />
+            <Settings />
+          </span>
         </div>
 
         {isLoading && (

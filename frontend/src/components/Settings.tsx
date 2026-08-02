@@ -67,10 +67,11 @@ export default function Settings() {
           setError(null);
           setOpen(true);
         }}
-        className="flex items-center gap-2 rounded-full px-2 py-1.5"
-        style={{ color: 'var(--dim)' }}
+        className="flex shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5"
+        style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
       >
-        <Avatar name={me} side={side} size={1.6} />
+        <Avatar name={me} side={side} size={1.2} />
+        <span className="font-mono text-[0.6rem] uppercase tracking-[0.1em]">Profil</span>
       </button>
 
       <Sheet open={open} onClose={() => setOpen(false)} title="Einstellungen">

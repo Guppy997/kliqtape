@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { mediaUrl, type FeedItem } from '@/lib/api';
 import AnsweringMachine from './AnsweringMachine';
 import Composer from './Composer';
-import Settings from './Settings';
 
 interface Props {
   items: FeedItem[];
@@ -138,7 +137,6 @@ export default function BottomBar({ items, onPosted }: Props) {
               <path d="M8 0v12l7-6zM1 0v12l7-6z" />
             </svg>
           </DeckKey>
-          <Settings />
         </div>
       </div>
     </div>

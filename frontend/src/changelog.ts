@@ -10,6 +10,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.1.1',
+    date: '2026-08-02',
+    changes: [
+      'Blätter ließen sich nicht mehr schließen — der Header lag über dem Knopf',
+      'Seitenwechsel jetzt durch Tippen auf die Kassette, sie dreht sich dabei um',
+      'Die Schaltflächen Seite A / Seite B sind weggefallen',
+      'Regal und Profil sitzen nebeneinander über dem Feed',
+    ],
+  },
+  {
     version: '0.1.0',
     date: '2026-08-02',
     changes: [

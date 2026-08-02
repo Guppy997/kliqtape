@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Props {
   open: boolean;
@@ -26,7 +27,10 @@ export default function Sheet({ open, onClose, title, children }: Props) {
 
   if (!open) return null;
 
-  return (
+  // Per Portal direkt an den body. Sonst haengt das Blatt im Stacking-Kontext
+  // seines Elternteils (z. B. der BottomBar mit z-20) und der Header mit z-30
+  // legt sich darueber — dann ist der Schliessen-Knopf nicht mehr erreichbar.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: 'rgba(0,0,0,.62)' }}
@@ -61,6 +65,7 @@ export default function Sheet({ open, onClose, title, children }: Props) {
 
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
