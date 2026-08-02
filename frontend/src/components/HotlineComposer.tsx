@@ -37,9 +37,11 @@ export default function HotlineComposer() {
 
   return (
     <>
-      {/* Beschriftung auf dem Gehaeuse ueber der Taste — wie an einem Walkman. */}
-      <span className="flex shrink-0 flex-col items-center gap-1">
-        <span className="font-mono text-[0.5rem] uppercase tracking-[0.18em]" style={{ color: HOTLINE_AMBER }}>
+      {/* Beschriftung auf dem Gehaeuse ueber der Taste — wie an einem Walkman.
+          Taste bewusst kleiner als die Laufwerkstasten: sattes Gelb liest sich
+          bei gleicher Groesse lauter als die dunklen Tasten daneben. */}
+      <span className="flex shrink-0 flex-col items-center gap-0.5">
+        <span className="font-mono text-[0.44rem] uppercase tracking-[0.16em]" style={{ color: HOTLINE_AMBER }}>
           Hot Line
         </span>
         <button
@@ -49,13 +51,10 @@ export default function HotlineComposer() {
             setTarget(null);
             setOpen(true);
           }}
-          className={`grid h-10 w-10 place-items-center rounded-[3px] transition-transform active:translate-y-px active:scale-95 ${unread > 0 ? 'blink' : ''}`}
+          className={`grid h-7 w-7 place-items-center rounded-[3px] transition-transform active:translate-y-px active:scale-95 ${unread > 0 ? 'blink' : ''}`}
           style={{
             background: HOTLINE_AMBER,
-            // Weicher Schein statt hartem Rand — die Taste selbst leuchtet,
-            // statt in einem Gehaeuse zu sitzen. Ist etwas Neues da, blinkt
-            // sie genau wie die Anzeigelampe links.
-            boxShadow: `0 0 0.65rem ${HOTLINE_AMBER}bb`,
+            boxShadow: `0 0 0.4rem ${HOTLINE_AMBER}99`,
           }}
         />
       </span>

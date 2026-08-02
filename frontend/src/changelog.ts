@@ -10,6 +10,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.1',
+    date: '2026-08-03',
+    changes: [
+      'Hot-Line-Knopf kleiner — sattes Gelb wirkte bei gleicher Größe lauter als die Laufwerkstasten',
+      'Zählwerk neben REC zurück: zeigt die Anzahl der Beiträge, bleibt beim Scrollen sichtbar',
+    ],
+  },
+  {
     version: '0.8.0',
     date: '2026-08-03',
     changes: [
