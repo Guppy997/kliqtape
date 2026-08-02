@@ -10,6 +10,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.5.2',
+    date: '2026-08-02',
+    changes: [
+      'Seite A und Seite B gehören farblich zusammen — sechs feste Paare',
+      'Echtes Kassetten-Etikett: Farbband oben, Beschriftungsfeld mit Linien',
+      'Der Name der Runde steht handgeschrieben auf der Linie',
+      'Geripptes Gehäuse mit Schrauben und Sichtfenster für die Spulen',
+      'Im Regal sehen nie zwei Bänder gleich aus',
+    ],
+  },
+  {
     version: '0.5.1',
     date: '2026-08-02',
     changes: [

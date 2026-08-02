@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addMember,
@@ -10,7 +10,7 @@ import {
   type Cassette,
 } from '@/lib/api';
 import { useApp } from '@/store/appStore';
-import { lookFor } from '@/lib/cassetteLook';
+import { assignPairs, lookFor } from '@/lib/cassetteLook';
 import Avatar, { useProfiles } from './Avatar';
 import Sheet from './Sheet';
 
@@ -22,6 +22,12 @@ export function useCassettes() {
     queryFn: () => fetchCassettes(me),
     enabled: Boolean(me),
   });
+}
+
+/** Welches Band welche Sorte bekommt — im Regal nie zweimal dieselbe. */
+export function useLookIndex(): Map<string, number> {
+  const { data: cassettes = [] } = useCassettes();
+  return useMemo(() => assignPairs(cassettes.map((c) => c.id)), [cassettes]);
 }
 
 /**
@@ -45,6 +51,7 @@ export default function CassetteDeck() {
   const [error, setError] = useState<string | null>(null);
 
   const { data: cassettes = [] } = useCassettes();
+  const looks = useLookIndex();
   const current = cassettes.find((c) => c.id === cassetteId);
 
   const refresh = () => {
@@ -120,7 +127,7 @@ export default function CassetteDeck() {
                     }}
                     className="flex min-w-0 flex-1 items-center gap-3 text-left"
                   >
-                    <MiniCassette id={c.id} active={c.id === cassetteId} side={side} />
+                    <MiniCassette id={c.id} pairIndex={looks.get(c.id)} active={c.id === cassetteId} side={side} />
                     <span className="min-w-0 flex-1">
                       <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
                         {c.name}
@@ -343,8 +350,9 @@ export default function CassetteDeck() {
 }
 
 /** Miniaturband fuers Regal — zeigt echte Bandsorte, Spuren und Streifen. */
-function MiniCassette({ id, active, side }: { id: string; active: boolean; side: 'a' | 'b' }) {
-  const { type, case: plastic, wear } = lookFor(id);
+function MiniCassette({ id, pairIndex, active, side }:
+  { id: string; pairIndex?: number; active: boolean; side: 'a' | 'b' }) {
+  const { type, case: plastic, wear } = lookFor(id, pairIndex);
   const onB = active && side === 'b';
 
   const shell = onB ? plastic.shell : type.shell;

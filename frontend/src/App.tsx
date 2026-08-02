@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { deletePost, fetchFeed, toggleReaction, KIND_LABEL, type Kind } from '@/lib/api';
 import { useApp, SIDE_HINT, SIDE_LABEL } from '@/store/appStore';
 import CassetteHeader from '@/components/CassetteHeader';
-import CassetteDeck, { useCassettes } from '@/components/CassetteDeck';
+import CassetteDeck, { useCassettes, useLookIndex } from '@/components/CassetteDeck';
 import Sheet from '@/components/Sheet';
 import { lookFor } from '@/lib/cassetteLook';
 import PostCard from '@/components/PostCard';
@@ -78,6 +78,7 @@ function Deck() {
   const [filterOpen, setFilterOpen] = useState(false);
 
   const { data: cassettes = [], isLoading: loadingTapes } = useCassettes();
+  const looks = useLookIndex();
   const current = cassettes.find((c) => c.id === cassetteId);
 
   // Nie vor dem Nichts stehen: fehlt eine Auswahl oder ist sie ungueltig
@@ -108,7 +109,12 @@ function Deck() {
 
   return (
     <>
-      <CassetteHeader cassetteId={cassetteId} label={current?.name ?? 'Kein Band'} count={data.length} />
+      <CassetteHeader
+        cassetteId={cassetteId}
+        pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
+        label={current?.name ?? 'Kein Band'}
+        count={data.length}
+      />
 
       <main className="mx-auto flex max-w-xl flex-col gap-2.5 px-3 pb-32 pt-2">
         <div
