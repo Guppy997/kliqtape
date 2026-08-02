@@ -10,8 +10,8 @@ export type Side = 'a' | 'b';
  * (Alternative Schreibweise "Die Krew" passt zur q-Logik von Kliq.)
  */
 export const SIDE_LABEL: Record<Side, string> = {
-  a: 'The Crew',
-  b: 'The Kliqe',
+  a: 'Die Crew',
+  b: 'Die Kliqe',
 };
 
 export const SIDE_HINT: Record<Side, string> = {

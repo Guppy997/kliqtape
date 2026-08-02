@@ -20,6 +20,8 @@ export interface FeedItem {
   created_at: number;
   mediaId: string | null;
   durationMs: number | null;
+  /** Live aufgenommen oder aus der Galerie — wird unterschiedlich dargestellt. */
+  source: 'camera' | 'upload';
   tapeId: string | null;
   tape: { title: string; coverId: string | null; trackCount: number } | null;
   track: string;
@@ -59,6 +61,7 @@ export function createPost(input: {
   body?: string;
   mediaId?: string | null;
   tapeId?: string | null;
+  source?: 'camera' | 'upload';
 }): Promise<{ id: string }> {
   return fetch('/api/posts', {
     method: 'POST',

@@ -32,6 +32,9 @@ db.exec(`
     body       TEXT NOT NULL DEFAULT '',
     media_id   TEXT REFERENCES media(id),
     tape_id    TEXT REFERENCES mixtapes(id),
+    -- 'camera' oder 'upload'. Live aufgenommene Bilder werden anders dargestellt
+    -- als hochgeladene — kein Verbot, aber ein sichtbarer Unterschied.
+    source     TEXT,
     created_at INTEGER NOT NULL
   );
 
@@ -193,6 +196,16 @@ repairReference(
   `CREATE INDEX IF NOT EXISTS idx_hotlines_to ON hotlines(to_name, created_at);`,
 );
 
+// Reine Spaltenergaenzung — kein Tabellenumbau noetig, weil kein Fremdschluessel
+// betroffen ist. Bestehende Beitraege haben NULL und gelten als Kamera-Aufnahme.
+if (
+  db.prepare(`PRAGMA table_info(posts)`).all().length > 0 &&
+  !(db.prepare(`PRAGMA table_info(posts)`).all() as { name: string }[]).some((c) => c.name === 'source')
+) {
+  console.log('[kliqtape] Ergaenze posts.source (Kamera oder Galerie)');
+  db.exec(`ALTER TABLE posts ADD COLUMN source TEXT`);
+}
+
 /**
  * Hot Line haengt nicht mehr zwingend an einem Beitrag: der Knopf sitzt jetzt
  * in der unteren Leiste, man waehlt direkt eine Person. Ein Beitragsbezug
@@ -253,5 +266,6 @@ export interface PostRow {
   body: string;
   media_id: string | null;
   tape_id: string | null;
+  source: 'camera' | 'upload' | null;
   created_at: number;
 }

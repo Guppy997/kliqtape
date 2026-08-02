@@ -94,6 +94,39 @@ function curve(v: number): number {
 
 const clamp = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : v);
 
+/**
+ * Bild aus der Galerie aufbereiten.
+ *
+ * Bewusst OHNE den klassischen Look: der Fotoabzug mit Korn und Filzstiftzeile
+ * bleibt der Live-Aufnahme vorbehalten. Hier geht es nur um Groesse und darum,
+ * die Metadaten loszuwerden — das Neu-Kodieren ueber Canvas entfernt EXIF
+ * vollstaendig, inklusive GPS-Koordinaten.
+ */
+export async function processUpload(file: File): Promise<CapturedPhoto> {
+  if (!file.type.startsWith('image/')) throw new Error('Das ist kein Bild');
+
+  const bitmap = await createImageBitmap(file).catch(() => {
+    throw new Error('Bild lässt sich nicht lesen');
+  });
+
+  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas nicht verfügbar');
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  bitmap.close();
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+  if (!blob) throw new Error('Bild konnte nicht verarbeitet werden');
+
+  return { blob, previewUrl: URL.createObjectURL(blob) };
+}
+
 /** Kamera-Stream anfordern. Wirft mit lesbarem Text, wenn es nicht geht. */
 export async function openCamera(facing: 'user' | 'environment', withAudio: boolean) {
   if (!navigator.mediaDevices?.getUserMedia) {

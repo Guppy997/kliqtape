@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { capturePhoto, openCamera } from '@/lib/photo';
+import { capturePhoto, openCamera, processUpload } from '@/lib/photo';
 import { pickVideoMime, baseMime } from '@/lib/tapeAudio';
 
 const MAX_VIDEO_MS = 10_000;
@@ -7,7 +7,14 @@ const MAX_VIDEO_MS = 10_000;
 interface Props {
   mode: 'photo' | 'video';
   onCancel: () => void;
-  onSend: (blob: Blob, durationMs: number | undefined, caption: string) => Promise<void>;
+  onSend: (
+    blob: Blob,
+    durationMs: number | undefined,
+    caption: string,
+    source: 'camera' | 'upload',
+  ) => Promise<void>;
+  /** Bild aus der Galerie zulassen. Im Feed ein zweiter Weg, beim Cover der normale. */
+  allowUpload?: boolean;
   /** Beschriftungszeile ausblenden — z. B. beim Profilbild. */
   withCaption?: boolean;
   /** Runde Vorschau statt Fotoabzug — ebenfalls fuer das Profilbild. */
@@ -17,11 +24,13 @@ interface Props {
 }
 
 /**
- * Kamera — bewusst OHNE Upload aus der Galerie.
+ * Kamera — die Live-Aufnahme ist der Standardweg.
  *
- * Es gibt hier absichtlich kein <input type="file">. Wer etwas zeigen will,
- * muss es jetzt aufnehmen. Das nimmt dem perfekten Bild die Wichtigkeit und
- * verschiebt den Fokus auf den Moment. Das ist der Punkt, nicht eine Huerde.
+ * Der Feind ist nicht "das Bild ist aelter als jetzt", sondern Auswahl und
+ * Politur: 40 Aufnahmen machen, die beste raussuchen, als Hoehepunkt posten.
+ * Deshalb ist die Galerie erlaubt, sieht aber sichtbar anders aus — die
+ * Live-Aufnahme bekommt Korn, Vignette und den Fotoabzug, das hochgeladene
+ * Bild nicht. Eine Norm wirkt in einer kleinen Gruppe besser als eine Sperre.
  */
 export default function CameraCapture({
   mode,
@@ -31,7 +40,9 @@ export default function CameraCapture({
   round = false,
   sendLabel = 'Aufs Band',
   title,
+  allowUpload = false,
 }: Props) {
+  const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
@@ -39,7 +50,7 @@ export default function CameraCapture({
   const startedAt = useRef(0);
 
   const [facing, setFacing] = useState<'user' | 'environment'>('environment');
-  const [shot, setShot] = useState<{ blob: Blob; url: string; ms?: number } | null>(null);
+  const [shot, setShot] = useState<{ blob: Blob; url: string; ms?: number; source: 'camera' | 'upload' } | null>(null);
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [caption, setCaption] = useState('');
@@ -89,7 +100,7 @@ export default function CameraCapture({
     if (!videoRef.current) return;
     try {
       const { blob, previewUrl } = await capturePhoto(videoRef.current);
-      setShot({ blob, url: previewUrl });
+      setShot({ blob, url: previewUrl, source: 'camera' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Bild fehlgeschlagen');
     }
@@ -105,7 +116,7 @@ export default function CameraCapture({
     rec.onstop = () => {
       const type = baseMime(rec.mimeType || mime || 'video/webm');
       const blob = new Blob(chunks.current, { type });
-      setShot({ blob, url: URL.createObjectURL(blob), ms: Math.min(MAX_VIDEO_MS, Date.now() - startedAt.current) });
+      setShot({ blob, url: URL.createObjectURL(blob), ms: Math.min(MAX_VIDEO_MS, Date.now() - startedAt.current), source: 'camera' });
       setRecording(false);
     };
     rec.start(200);
@@ -121,8 +132,29 @@ export default function CameraCapture({
     recRef.current = null;
   }
 
+  async function pickFile(file: File | undefined) {
+    if (!file) return;
+    try {
+      const { blob, previewUrl } = await processUpload(file);
+      setShot({ blob, url: previewUrl, source: 'upload' });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Bild fehlgeschlagen');
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          void pickFile(e.target.files?.[0]);
+          e.target.value = '';
+        }}
+      />
       <p className="font-mono text-[0.66rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
         {title ?? (mode === 'photo' ? 'Foto · nur jetzt' : `Video · max ${MAX_VIDEO_MS / 1000} Sekunden`)}
       </p>
@@ -193,6 +225,17 @@ export default function CameraCapture({
           Abbrechen
         </button>
 
+        {!shot && error && allowUpload && mode === 'photo' && (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
+            style={{ background: 'var(--accent)', color: '#17130E' }}
+          >
+            Bild aus der Galerie
+          </button>
+        )}
+
         {!shot && !error && (
           <>
             <button
@@ -203,6 +246,16 @@ export default function CameraCapture({
             >
               Drehen
             </button>
+            {allowUpload && mode === 'photo' && (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="rounded-lg px-4 py-2.5 text-sm"
+                style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+              >
+                Galerie
+              </button>
+            )}
             <button
               type="button"
               onClick={mode === 'photo' ? takePhoto : recording ? stopVideo : startVideo}
@@ -233,7 +286,7 @@ export default function CameraCapture({
               onClick={async () => {
                 setSending(true);
                 try {
-                  await onSend(shot.blob, shot.ms, caption.trim());
+                  await onSend(shot.blob, shot.ms, caption.trim(), shot.source);
                 } catch (err) {
                   setError(err instanceof Error ? err.message : 'Senden fehlgeschlagen');
                   setSending(false);

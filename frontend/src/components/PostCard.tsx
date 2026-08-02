@@ -53,11 +53,36 @@ export default function PostCard({ item, onReact, onDelete }: Props) {
           </p>
         )}
 
-        {item.kind === 'photo' && item.mediaId && (
+        {/* Live aufgenommen: Fotoabzug mit weissem Rand und Filzstiftzeile.
+            Aus der Galerie: schlichter Rahmen, gedruckte Bildunterschrift.
+            Kein Verbot — aber man sieht, was gerade passiert ist und was nicht. */}
+        {item.kind === 'photo' && item.mediaId && item.source !== 'upload' && (
           <div className="print mx-auto w-full max-w-[17rem]">
             <img src={mediaUrl(item.mediaId)} alt={item.body || 'Schnappschuss'} loading="lazy" />
             {item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}
           </div>
+        )}
+
+        {item.kind === 'photo' && item.mediaId && item.source === 'upload' && (
+          <figure className="mx-auto w-full max-w-[17rem]">
+            <img
+              src={mediaUrl(item.mediaId)}
+              alt={item.body || 'Bild'}
+              loading="lazy"
+              className="w-full rounded-md"
+              style={{ border: '1px solid var(--line)' }}
+            />
+            <figcaption className="mt-1.5 flex items-baseline gap-2">
+              <span className="font-mono shrink-0 text-[0.54rem] uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+                Galerie
+              </span>
+              {item.body && (
+                <span className="min-w-0 flex-1 text-[0.82rem]" style={{ color: 'var(--dim)' }}>
+                  {item.body}
+                </span>
+              )}
+            </figcaption>
+          </figure>
         )}
 
         {item.kind === 'video' && item.mediaId && (

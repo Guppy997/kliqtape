@@ -10,6 +10,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.0',
+    date: '2026-08-02',
+    changes: [
+      'Mixtape-Cover darf aus der Galerie kommen — ein Tape ist gemacht, nicht spontan',
+      'Bilder im Feed auch aus der Galerie, aber sichtbar anders als Live-Aufnahmen',
+      'Live bleibt der Fotoabzug mit Filzstift, Galerie bekommt einen schlichten Rahmen',
+      'Galerie funktioniert auch, wenn die Kamera nicht freigegeben ist',
+      'Zurück zu Die Crew und Die Kliqe',
+    ],
+  },
+  {
     version: '0.3.0',
     date: '2026-08-02',
     changes: [

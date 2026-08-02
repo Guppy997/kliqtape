@@ -78,7 +78,8 @@ export default function TapeEditor({ id, onClose }: Props) {
       <CameraCapture
         mode="photo"
         withCaption={false}
-        title="Cover · nur jetzt"
+        allowUpload
+        title="Cover · aufnehmen oder aus der Galerie"
         sendLabel="Als Cover"
         onCancel={() => setShooting(false)}
         onSend={async (blob) => {
@@ -110,7 +111,7 @@ export default function TapeEditor({ id, onClose }: Props) {
             <img src={mediaUrl(tape.coverId)} alt="Cover" className="size-full object-cover" />
           ) : (
             <span className="font-mono px-2 text-center text-[0.58rem] uppercase leading-tight" style={{ color: 'var(--dim)' }}>
-              Cover<br />aufnehmen
+              Cover<br />wählen
             </span>
           )}
         </button>

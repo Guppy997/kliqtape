@@ -41,9 +41,15 @@ export default function Composer({ onPosted }: Props) {
   });
   const shareable = tapes.filter((t) => t.from === me && t.sealed);
 
-  async function sendMedia(kind: Kind, blob: Blob, durationMs: number | undefined, caption: string) {
+  async function sendMedia(
+    kind: Kind,
+    blob: Blob,
+    durationMs: number | undefined,
+    caption: string,
+    source: 'camera' | 'upload' = 'camera',
+  ) {
     const mediaId = await uploadMedia(blob, durationMs);
-    await createPost({ side, author: me, kind, body: caption, mediaId });
+    await createPost({ side, author: me, kind, body: caption, mediaId, source });
     setStep(null);
     onPosted();
   }
@@ -194,8 +200,9 @@ export default function Composer({ onPosted }: Props) {
         {(step === 'photo' || step === 'video') && (
           <CameraCapture
             mode={step}
+            allowUpload={step === 'photo'}
             onCancel={() => setStep('choose')}
-            onSend={(blob, ms, caption) => sendMedia(step, blob, ms, caption)}
+            onSend={(blob, ms, caption, source) => sendMedia(step, blob, ms, caption, source)}
           />
         )}
       </Sheet>

@@ -204,6 +204,7 @@ app.get('/api/posts', (req, res) => {
     created_at: row.created_at,
     mediaId: row.media_id,
     durationMs: row.duration_ms,
+    source: row.source ?? 'camera',
     tapeId: row.tape_id,
     tape: row.tape_id
       ? { title: row.tape_title ?? '', coverId: row.tape_cover, trackCount: row.tape_tracks ?? 0 }
@@ -217,7 +218,7 @@ app.get('/api/posts', (req, res) => {
 });
 
 app.post('/api/posts', (req, res) => {
-  const { side, author, kind, body = '', mediaId = null, tapeId = null } = req.body ?? {};
+  const { side, author, kind, body = '', mediaId = null, tapeId = null, source = null } = req.body ?? {};
 
   if (!SIDES.includes(side)) throw new HttpError(400, 'side muss a oder b sein');
   if (!KINDS.includes(kind)) throw new HttpError(400, 'Unbekannte Post-Art');
@@ -248,8 +249,8 @@ app.post('/api/posts', (req, res) => {
 
   const id = randomUUID();
   db.prepare(
-    `INSERT INTO posts (id, side, author, kind, body, media_id, tape_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO posts (id, side, author, kind, body, media_id, tape_id, source, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     side,
@@ -258,6 +259,7 @@ app.post('/api/posts', (req, res) => {
     String(body).slice(0, 500),
     mediaId,
     kind === 'tape' ? tapeId : null,
+    source === 'upload' ? 'upload' : 'camera',
     Date.now(),
   );
 
