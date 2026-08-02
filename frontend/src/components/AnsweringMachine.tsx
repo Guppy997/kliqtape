@@ -95,7 +95,7 @@ function Entry({ line, onDelete }: { line: Hotline; onDelete: () => void }) {
       style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
     >
       <div className="flex items-center gap-2">
-        <Avatar name={line.from} side={line.post.side} size={1.6} />
+        <Avatar name={line.from} side={line.post?.side ?? 'a'} size={1.6} />
         <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
           {line.from}
         </span>
@@ -111,10 +111,12 @@ function Entry({ line, onDelete }: { line: Hotline; onDelete: () => void }) {
         {line.body}
       </p>
 
-      <p className="font-mono truncate text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
-        wegen Seite {line.post.side.toUpperCase()} · {KIND_LABEL[line.post.kind] ?? line.post.kind}
-        {line.post.body ? ` · ${line.post.body}` : ''}
-      </p>
+      {line.post && (
+        <p className="font-mono truncate text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+          wegen Seite {line.post.side.toUpperCase()} · {KIND_LABEL[line.post.kind] ?? line.post.kind}
+          {line.post.body ? ` · ${line.post.body}` : ''}
+        </p>
+      )}
     </li>
   );
 }

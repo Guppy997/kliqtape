@@ -29,6 +29,9 @@ const ALLOWED_MIME: Record<string, string> = {
   'audio/webm': 'weba',
   'audio/ogg': 'ogg',
   'audio/mp4': 'm4a',
+  // WAV kommt nicht vom MediaRecorder, laesst sich aber ohne Zusatzwerkzeug
+  // erzeugen — dadurch kann das Seed-Skript echte, abspielbare O-Toene anlegen.
+  'audio/wav': 'wav',
   'video/webm': 'webm',
   'video/mp4': 'mp4',
 };
@@ -323,10 +326,10 @@ app.post('/api/hotlines', (req, res) => {
   if (typeof to !== 'string' || !to.trim()) throw new HttpError(400, 'Empfänger fehlt');
   if (from.trim() === to.trim()) throw new HttpError(400, 'Man ruft sich nicht selbst an');
 
-  const post = db.prepare(`SELECT author FROM posts WHERE id = ?`).get(postId) as
-    | { author: string }
-    | undefined;
-  if (!post) throw new HttpError(404, 'Beitrag nicht gefunden');
+  // Beitragsbezug ist optional — die Hotline wird direkt an eine Person gewaehlt.
+  if (postId && !db.prepare(`SELECT 1 FROM posts WHERE id = ?`).get(postId)) {
+    throw new HttpError(404, 'Beitrag nicht gefunden');
+  }
 
   sweepHotlines();
 
@@ -335,7 +338,7 @@ app.post('/api/hotlines', (req, res) => {
   db.prepare(
     `INSERT INTO hotlines (id, post_id, from_name, to_name, body, created_at, expires_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).run(id, postId, from.trim(), to.trim(), text, now, now + HOTLINE_TTL_MS);
+  ).run(id, postId ?? null, from.trim(), to.trim(), text, now, now + HOTLINE_TTL_MS);
 
   res.status(201).json({ id, expiresAt: now + HOTLINE_TTL_MS });
 });
@@ -351,7 +354,7 @@ app.get('/api/hotlines', (req, res) => {
       `SELECT h.id, h.from_name, h.body, h.created_at, h.expires_at, h.heard_at,
               p.id AS post_id, p.side, p.kind, p.body AS post_body
          FROM hotlines h
-         JOIN posts p ON p.id = h.post_id
+         LEFT JOIN posts p ON p.id = h.post_id
         WHERE h.to_name = ?
         ORDER BY h.created_at DESC`,
     )
@@ -362,10 +365,10 @@ app.get('/api/hotlines', (req, res) => {
     created_at: number;
     expires_at: number;
     heard_at: number | null;
-    post_id: string;
-    side: string;
-    kind: string;
-    post_body: string;
+    post_id: string | null;
+    side: string | null;
+    kind: string | null;
+    post_body: string | null;
   }[];
 
   res.json(
@@ -376,7 +379,9 @@ app.get('/api/hotlines', (req, res) => {
       createdAt: r.created_at,
       expiresAt: r.expires_at,
       heard: r.heard_at != null,
-      post: { id: r.post_id, side: r.side, kind: r.kind, body: r.post_body },
+      post: r.post_id
+        ? { id: r.post_id, side: r.side, kind: r.kind, body: r.post_body }
+        : null,
     })),
   );
 });

@@ -92,7 +92,8 @@ export interface Hotline {
   createdAt: number;
   expiresAt: number;
   heard: boolean;
-  post: { id: string; side: Side; kind: Kind; body: string };
+  /** Optionaler Bezug auf einen Beitrag — Hotlines gehen auch direkt an eine Person. */
+  post: { id: string; side: Side; kind: Kind; body: string } | null;
 }
 
 export function fetchHotlines(me: string): Promise<Hotline[]> {
@@ -100,7 +101,7 @@ export function fetchHotlines(me: string): Promise<Hotline[]> {
 }
 
 export function sendHotline(input: {
-  postId: string;
+  postId?: string | null;
   from: string;
   to: string;
   body: string;

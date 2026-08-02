@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { mediaUrl, type FeedItem } from '@/lib/api';
 import AnsweringMachine from './AnsweringMachine';
 import Composer from './Composer';
+import HotlineComposer from './HotlineComposer';
 
 interface Props {
   items: FeedItem[];
@@ -100,7 +101,7 @@ export default function BottomBar({ items, onPosted }: Props) {
         </div>
       )}
 
-      <div className="mx-auto grid max-w-xl grid-cols-[1fr_auto_1fr] items-center gap-2">
+      <div className="mx-auto grid max-w-xl grid-cols-[1fr_auto_1fr] items-end gap-2">
         <div className="flex items-center gap-1 justify-self-start">
           <AnsweringMachine />
           <DeckKey label="An den Bandanfang" onClick={() => scrollTo(0)}>
@@ -129,7 +130,8 @@ export default function BottomBar({ items, onPosted }: Props) {
 
         <Composer onPosted={onPosted} />
 
-        <div className="flex items-center gap-1 justify-self-end">
+        <div className="flex items-end gap-1.5 justify-self-end">
+          <HotlineComposer />
           <DeckKey
             label="Ans Bandende"
             onClick={() => scrollTo(document.documentElement.scrollHeight)}

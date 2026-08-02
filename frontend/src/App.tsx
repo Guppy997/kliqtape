@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { deletePost, fetchFeed, toggleReaction, type FeedItem } from '@/lib/api';
-import HotlineComposer from '@/components/HotlineComposer';
+import { deletePost, fetchFeed, toggleReaction } from '@/lib/api';
 import { useApp, SIDE_LABEL, SIDE_HINT } from '@/store/appStore';
 import CassetteHeader from '@/components/CassetteHeader';
 import PostCard from '@/components/PostCard';
@@ -36,7 +35,6 @@ function Deck() {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
   const qc = useQueryClient();
-  const [hotlineTo, setHotlineTo] = useState<FeedItem | null>(null);
 
   const { data = [], isLoading, isError, error } = useQuery({
     queryKey: ['feed', side],
@@ -97,7 +95,6 @@ function Deck() {
             item={item}
             onReact={(id) => react.mutate(id)}
             onDelete={(id) => remove.mutate(id)}
-            onHotline={setHotlineTo}
           />
         ))}
 
@@ -119,7 +116,6 @@ function Deck() {
       </main>
 
       <BottomBar items={data} onPosted={invalidate} />
-      <HotlineComposer item={hotlineTo} onClose={() => setHotlineTo(null)} />
     </>
   );
 }

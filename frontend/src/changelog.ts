@@ -10,6 +10,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.3.0',
+    date: '2026-08-02',
+    changes: [
+      'Hotline sitzt jetzt unten neben dem REC-Knopf, in Walkman-Gelb',
+      'Hotline geht direkt an eine Person, ein Beitragsbezug ist nicht mehr nötig',
+      'Testdaten-Skript: fünf Leute, Bilder, O-Töne, Mixtapes, Reaktionen, Hotlines',
+    ],
+  },
+  {
     version: '0.2.1',
     date: '2026-08-02',
     changes: [

@@ -10,10 +10,9 @@ interface Props {
   item: FeedItem;
   onReact: (id: string) => void;
   onDelete: (id: string) => void;
-  onHotline: (item: FeedItem) => void;
 }
 
-export default function PostCard({ item, onReact, onDelete, onHotline }: Props) {
+export default function PostCard({ item, onReact, onDelete }: Props) {
   const me = useApp((s) => s.me);
   const [openTape, setOpenTape] = useState(false);
   const side = item.side;
@@ -135,7 +134,6 @@ export default function PostCard({ item, onReact, onDelete, onHotline }: Props) 
           )}
         </div>
 
-        {!mine && <HotlineKey onClick={() => onHotline(item)} />}
       </div>
 
       <Sheet open={openTape} onClose={() => setOpenTape(false)} title={`Mixtape von ${item.author}`}>
@@ -145,36 +143,3 @@ export default function PostCard({ item, onReact, onDelete, onHotline }: Props) 
   );
 }
 
-/**
- * Die Hotline-Taste.
- *
- * Wie an einem Walkman: die Beschriftung steht auf dem Gehaeuse ueber der
- * Taste, nicht darauf. Die Taste selbst ist quadratisch und leuchtet.
- */
-function HotlineKey({ onClick }: { onClick: () => void }) {
-  return (
-    <span className="flex shrink-0 flex-col items-center gap-1">
-      <span
-        className="font-mono text-[0.5rem] uppercase tracking-[0.18em]"
-        style={{ color: 'var(--dim)' }}
-      >
-        Hotline
-      </span>
-      <button
-        type="button"
-        onClick={onClick}
-        aria-label="Hotline — direkt und privat antworten"
-        className="grid size-8 place-items-center rounded-[3px] transition-transform active:translate-y-px"
-        style={{
-          background: 'linear-gradient(180deg, #3A342E, #211D19)',
-          boxShadow: '0 2px 0 rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.1) inset',
-        }}
-      >
-        <span
-          className="size-3 rounded-[1px]"
-          style={{ background: '#E0402A', boxShadow: '0 0 0.55rem rgba(224,64,42,.95)' }}
-        />
-      </button>
-    </span>
-  );
-}

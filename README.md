@@ -53,6 +53,27 @@ Ohne Tailscale testest du am besten direkt auf dem Rechner, auf dem Docker läuf
 
 ---
 
+## Testdaten
+
+Damit sich jede Funktion ansehen lässt, ohne alles von Hand anzulegen:
+
+```bash
+python3 scripts/seed.py --reset          # anlegen (vorher aufräumen)
+python3 scripts/seed.py --reset --me Max # anderer Hauptnutzer
+```
+
+Legt fünf Leute mit Profilbildern an, füllt beide Seiten mit Zetteln,
+Schnappschüssen und O-Tönen, baut drei Mixtapes (eines geschenkt, eines geteilt,
+eines als Entwurf), setzt Reaktionen und legt zwei Hotlines auf den
+Anrufbeantworter. Danach in der App als **Aaron** anmelden.
+
+Bilder werden mit Pillow erzeugt, Ton als echtes WAV — beides muss abspielbar
+sein, weil der O-Ton-Spieler das Audio tatsächlich dekodiert.
+Voraussetzung: `python3 -m pip install --user Pillow`.
+
+**Clips fehlen in den Testdaten** — dafür bräuchte es ffmpeg. Videos lassen sich
+in der App direkt mit der Kamera aufnehmen.
+
 ## Aufbau
 
 ```

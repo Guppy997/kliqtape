@@ -56,7 +56,7 @@ db.exec(`
   -- weg. Ein Anruf passiert und ist dann vorbei.
   CREATE TABLE IF NOT EXISTS hotlines (
     id         TEXT PRIMARY KEY,
-    post_id    TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    post_id    TEXT REFERENCES posts(id) ON DELETE CASCADE,
     from_name  TEXT NOT NULL,
     to_name    TEXT NOT NULL,
     body       TEXT NOT NULL,
@@ -192,6 +192,45 @@ repairReference(
    );`,
   `CREATE INDEX IF NOT EXISTS idx_hotlines_to ON hotlines(to_name, created_at);`,
 );
+
+/**
+ * Hot Line haengt nicht mehr zwingend an einem Beitrag: der Knopf sitzt jetzt
+ * in der unteren Leiste, man waehlt direkt eine Person. Ein Beitragsbezug
+ * bleibt moeglich, ist aber optional.
+ */
+const hotlineCols = db.prepare(`PRAGMA table_info(hotlines)`).all() as {
+  name: string;
+  notnull: number;
+}[];
+
+if (hotlineCols.some((c) => c.name === 'post_id' && c.notnull === 1)) {
+  console.log('[kliqtape] Migriere hotlines: post_id wird optional');
+  db.pragma('foreign_keys = OFF');
+  db.pragma('legacy_alter_table = ON');
+  db.transaction(() => {
+    db.exec(`
+      ALTER TABLE hotlines RENAME TO hotlines_old;
+
+      CREATE TABLE hotlines (
+        id         TEXT PRIMARY KEY,
+        post_id    TEXT REFERENCES posts(id) ON DELETE CASCADE,
+        from_name  TEXT NOT NULL,
+        to_name    TEXT NOT NULL,
+        body       TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        heard_at   INTEGER
+      );
+
+      INSERT INTO hotlines SELECT * FROM hotlines_old;
+      DROP TABLE hotlines_old;
+
+      CREATE INDEX IF NOT EXISTS idx_hotlines_to ON hotlines(to_name, created_at);
+    `);
+  })();
+  db.pragma('legacy_alter_table = OFF');
+  db.pragma('foreign_keys = ON');
+}
 
 repairReference(
   'reactions',
