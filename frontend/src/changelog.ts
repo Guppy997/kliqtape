@@ -10,6 +10,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.5.1',
+    date: '2026-08-02',
+    changes: [
+      'Jedes Band sieht anders aus: Bandsorte, Gehäusefarbe, Kratzer und Staub',
+      'Der Name steht auf einem schief aufgeklebten Etikett',
+      'Die Farbe der eingelegten Kassette färbt die ganze App ein',
+      'Filter ist ein kleiner Knopf mit Auswahl statt einer Reihe Schalter',
+      'Auch die Miniaturbänder im Fach zeigen ihre echte Sorte',
+    ],
+  },
+  {
     version: '0.5.0',
     date: '2026-08-02',
     changes: [

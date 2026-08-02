@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp, SIDE_LABEL, type Side } from '@/store/appStore';
+import { lookFor } from '@/lib/cassetteLook';
 import Lockup from './Lockup';
 
 interface Props {
-  /** Beschriftung der eingelegten Kassette — der Name der Runde. */
+  /** ID der eingelegten Kassette — bestimmt Bandsorte, Gehäusefarbe und Spuren. */
+  cassetteId: string | null;
+  /** Beschriftung des Klebebands — der Name der Runde. */
   label: string;
   count: number;
 }
@@ -17,14 +20,14 @@ const FLIP_MS = 180;
 /**
  * Der Kassetten-Header — gleichzeitig der Umschalter.
  *
- * Es gibt keine Schaltflaechen mehr: man tippt auf die Kassette, und sie dreht
- * sich um. Auf halbem Weg steht sie hochkant, dort wird die Seite gewechselt —
- * dadurch sieht man den Inhalt nie umklappen, sondern immer nur die neue Seite.
+ * Tippen dreht die Kassette um. Auf halbem Weg steht sie hochkant, dort wird
+ * die Seite gewechselt — dadurch sieht man den Inhalt nie umklappen. Die Runde
+ * bleibt dabei dieselbe: A und B gehoeren zur selben Kassette.
  *
- * Beim Scrollen faehrt das Etikett zusammen und die Spulen laufen mit: links
- * wird duenner, rechts dicker. Der endliche Feed ist so die ganze Zeit sichtbar.
+ * Jedes Band hat ein eigenes, festes Aussehen (siehe lib/cassetteLook.ts):
+ * Bandsorte, Gehaeusefarbe, Kratzer und ein schief aufgeklebtes Etikett.
  */
-export default function CassetteHeader({ label, count }: Props) {
+export default function CassetteHeader({ cassetteId, label, count }: Props) {
   const side = useApp((s) => s.side);
   const setSide = useApp((s) => s.setSide);
 
@@ -53,16 +56,15 @@ export default function CassetteHeader({ label, count }: Props) {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
-  }, [side, count]);
+  }, [side, count, cassetteId]);
 
   useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
 
   function flip() {
-    if (flipping) return;
+    if (flipping || !cassetteId) return;
     const next: Side = side === 'a' ? 'b' : 'a';
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setSide(next);
       window.scrollTo({ top: 0 });
       return;
@@ -76,10 +78,32 @@ export default function CassetteHeader({ label, count }: Props) {
     }, FLIP_MS);
   }
 
+  const look = lookFor(cassetteId ?? '');
+  const { type, case: shell, wear } = look;
+  const isA = side === 'a';
+
   const rLeft = R_MAX - (R_MAX - R_MIN) * progress;
   const rRight = R_MIN + (R_MAX - R_MIN) * progress;
   const labelH = LABEL_MAX - (LABEL_MAX - LABEL_MIN) * collapse;
-  const isA = side === 'a';
+
+  const shellStyle = isA
+    ? {
+        background: `linear-gradient(178deg, ${type.shellHi} 0%, ${type.shell} 22%, ${type.shellDark} 100%)`,
+        boxShadow:
+          '0 0.5rem 1.2rem rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.13) inset, 0 -1px 0 rgba(0,0,0,.6) inset',
+      }
+    : {
+        background:
+          `radial-gradient(120% 80% at 18% 8%, rgba(255,255,255,.42), rgba(255,255,255,0) 46%),` +
+          `radial-gradient(90% 70% at 82% 96%, ${shell.pcb}55, ${shell.pcb}00 55%),` +
+          `linear-gradient(172deg, ${shell.shellHi}88 0%, ${shell.shell} 38%, ${shell.inner} 100%)`,
+        boxShadow: `0 0.5rem 1.4rem ${shell.inner}99, 0 0 0 1px ${shell.shellHi}88 inset, 0 0.8rem 1.4rem ${shell.inner}99 inset`,
+      };
+
+  const paper = isA ? type.label : shell.inner;
+  const paperDeep = isA ? type.labelDeep : shell.inner;
+  const paperInk = isA ? type.ink : shell.ink;
+  const accent = isA ? type.stripe : shell.glow;
 
   return (
     <header
@@ -90,32 +114,36 @@ export default function CassetteHeader({ label, count }: Props) {
         <button
           type="button"
           onClick={flip}
-          aria-label={`Seite ${side.toUpperCase()} — tippen für Seite ${isA ? 'B' : 'A'}`}
-          className={`block w-full rounded-xl p-3 text-left ${isA ? 'cass-a' : 'cass-b'}`}
+          disabled={!cassetteId}
+          aria-label={`Seite ${side.toUpperCase()} von ${label} — tippen für Seite ${isA ? 'B' : 'A'}`}
+          className="relative block w-full overflow-hidden rounded-xl p-3 text-left disabled:opacity-60"
           style={{
+            ...shellStyle,
             transition: `transform ${FLIP_MS}ms ease-in-out, background 450ms ease`,
             transform: flipping ? 'rotateY(90deg)' : 'rotateY(0deg)',
           }}
         >
+          <Wear wear={wear} light={isA ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.3)'} />
+
           {/* Kopfzeile des Gehaeuses */}
           <div
-            className="flex items-center justify-between gap-2"
-            style={{ color: isA ? '#B9AC93' : 'var(--color-b-ink)' }}
+            className="relative flex items-center justify-between gap-2"
+            style={{ color: isA ? '#B9AC93' : shell.ink }}
           >
             <span className="flex min-w-0 items-baseline gap-2">
               <span style={{ '--ink': isA ? '#D9CDB4' : '#FFFFFF' } as React.CSSProperties}>
                 <Lockup size="1.15rem" />
               </span>
               <span className="font-disp truncate text-[0.6rem] uppercase tracking-[0.16em] opacity-80">
-                {isA ? 'Type I Normal' : 'Ende-zu-Ende'}
+                {isA ? type.name : shell.name}
               </span>
             </span>
             <span
               className="font-disp shrink-0 font-bold leading-none"
               style={{
                 fontSize: '1.7rem',
-                color: isA ? 'var(--color-a-stripe)' : '#fff',
-                textShadow: isA ? 'none' : '0 0 0.8rem var(--color-b-glow)',
+                color: isA ? type.stripe : '#fff',
+                textShadow: isA ? 'none' : `0 0 0.8rem ${shell.glow}`,
               }}
             >
               {side.toUpperCase()}
@@ -124,38 +152,52 @@ export default function CassetteHeader({ label, count }: Props) {
 
           {/* Etikett mit den beiden Spulen */}
           <div
-            className={`mt-2.5 flex items-center justify-around overflow-hidden rounded-sm px-4 ${isA ? 'label-a' : 'label-b'}`}
-            style={{ height: labelH, transition: 'height 200ms ease' }}
+            className="relative mt-2.5 flex items-center justify-around overflow-hidden rounded-sm px-4"
+            style={{
+              height: labelH,
+              transition: 'height 200ms ease',
+              background: `linear-gradient(180deg, ${paper}, ${paperDeep})`,
+              boxShadow: isA
+                ? '0 1px 3px rgba(0,0,0,.45) inset'
+                : `0 0 0 1px ${shell.shellHi}55 inset`,
+            }}
           >
-            <Reel r={rLeft} side={side} />
-            <div
-              className="font-hand min-w-0 px-2 text-center leading-tight"
+            <Reel r={rLeft} tape={isA ? type.tape : shell.shell} hub={isA ? type.hub : shell.shellHi} ink={paperInk} />
+
+            {/* Aufgeklebtes Etikett — sitzt nie ganz gerade */}
+            <span
+              className="relative mx-2 min-w-0 px-3 py-1.5 text-center"
               style={{
                 opacity: 1 - collapse * 1.4,
-                fontSize: '1.05rem',
-                color: isA ? '#3B3226' : '#E9DCFF',
-                textShadow: isA ? 'none' : '0 0 0.5rem rgba(169,124,232,.8)',
+                transform: `rotate(${wear.tilt}deg)`,
+                background: isA ? 'rgba(255,255,255,.55)' : 'rgba(255,255,255,.12)',
+                boxShadow: `0 1px 2px rgba(0,0,0,.25), 0 0 0 1px ${isA ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.16)'} inset`,
               }}
             >
-              {label}
-              <br />
-              <span className="text-[0.85rem] opacity-70">
+              {/* Klebestreifen-Kanten */}
+              <i className="absolute inset-y-0 left-0 w-1.5" style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.12), transparent)' }} />
+              <i className="absolute inset-y-0 right-0 w-1.5" style={{ background: 'linear-gradient(270deg, rgba(0,0,0,.12), transparent)' }} />
+              <span className="font-hand block truncate text-[1.05rem] leading-tight" style={{ color: paperInk }}>
+                {label}
+              </span>
+              <span className="font-mono block text-[0.56rem] uppercase tracking-[0.1em] opacity-60" style={{ color: paperInk }}>
                 Seite {side.toUpperCase()} · {SIDE_LABEL[side]} · {count}
               </span>
-            </div>
-            <Reel r={rRight} side={side} />
+            </span>
+
+            <Reel r={rRight} tape={isA ? type.tape : shell.shell} hub={isA ? type.hub : shell.shellHi} ink={paperInk} />
           </div>
 
           {/* Kerben am unteren Rand, dazu der Hinweis zum Umdrehen */}
-          <div className="mt-2.5 flex items-center gap-2">
+          <div className="relative mt-2.5 flex items-center gap-2">
             <span className="flex flex-1 gap-1.5">
-              <i className="h-1 flex-1 rounded-[1px]" style={{ background: 'var(--accent)', opacity: 0.85 }} />
-              <i className="h-1 flex-1 rounded-[1px]" style={{ background: isA ? '#6E6455' : 'rgba(233,220,255,.35)', opacity: 0.5 }} />
-              <i className="h-1 flex-1 rounded-[1px]" style={{ background: isA ? '#6E6455' : 'rgba(233,220,255,.35)', opacity: 0.5 }} />
+              <i className="h-1 flex-1 rounded-[1px]" style={{ background: accent, opacity: 0.85 }} />
+              <i className="h-1 flex-1 rounded-[1px]" style={{ background: isA ? '#6E6455' : shell.shellHi, opacity: 0.4 }} />
+              <i className="h-1 flex-1 rounded-[1px]" style={{ background: isA ? '#6E6455' : shell.shellHi, opacity: 0.4 }} />
             </span>
             <span
               className="font-mono shrink-0 text-[0.52rem] uppercase tracking-[0.14em]"
-              style={{ color: isA ? '#8C8272' : 'rgba(233,220,255,.6)' }}
+              style={{ color: isA ? '#8C8272' : `${shell.ink}99` }}
             >
               ↻ umdrehen
             </span>
@@ -166,21 +208,52 @@ export default function CassetteHeader({ label, count }: Props) {
   );
 }
 
-function Reel({ r, side }: { r: number; side: Side }) {
-  const tape = side === 'a' ? '#5C3A21' : 'rgba(107,74,158,.9)';
-  const hub = side === 'a' ? '#F0E9D8' : 'rgba(233,220,255,.92)';
-  const rim = side === 'a' ? 'rgba(0,0,0,.32)' : 'rgba(201,175,239,.45)';
-  const spoke = side === 'a' ? '#8E8471' : '#6A4E96';
+/** Gebrauchsspuren: feine Kratzer und Staub, pro Kassette immer dieselben. */
+function Wear({ wear, light }: { wear: ReturnType<typeof lookFor>['wear']; light: string }) {
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 size-full"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      {wear.scratches.map(([x, y, len], i) => (
+        <line
+          key={`s${i}`}
+          x1={x}
+          y1={y}
+          x2={x + len}
+          y2={y - len * 0.12}
+          stroke={light}
+          strokeWidth="0.35"
+          opacity={0.5}
+        />
+      ))}
+      {wear.specks.map(([x, y, r], i) => (
+        <circle key={`p${i}`} cx={x} cy={y} r={r * 0.35} fill={light} opacity={0.35} />
+      ))}
+      {/* abgegriffene Ecken */}
+      <rect x="0" y="0" width="100" height="100" fill="url(#scuff)" />
+      <defs>
+        <radialGradient id="scuff" cx="50%" cy="50%" r="72%">
+          <stop offset="70%" stopColor="rgba(0,0,0,0)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,.22)" />
+        </radialGradient>
+      </defs>
+    </svg>
+  );
+}
 
+function Reel({ r, tape, hub, ink }: { r: number; tape: string; hub: string; ink: string }) {
   return (
     <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true" className="shrink-0">
-      <circle cx="38" cy="38" r="34" fill="none" stroke={rim} strokeWidth="1" />
+      <circle cx="38" cy="38" r="34" fill="none" stroke={ink} strokeWidth="1" opacity="0.3" />
       {/* Bandwickel — der Radius ist der Fuellstand */}
       <circle cx="38" cy="38" r={r} fill={tape} />
       <circle cx="38" cy="38" r="11" fill={hub} />
       <g className="spin" style={{ transformOrigin: '38px 38px' }}>
         {[0, 60, 120, 180, 240, 300].map((deg) => (
-          <rect key={deg} x="37" y="28" width="2.2" height="6.5" fill={spoke} transform={`rotate(${deg} 38 38)`} />
+          <rect key={deg} x="37" y="28" width="2.2" height="6.5" fill={ink} opacity="0.5" transform={`rotate(${deg} 38 38)`} />
         ))}
       </g>
     </svg>

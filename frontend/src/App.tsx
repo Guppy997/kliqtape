@@ -4,6 +4,8 @@ import { deletePost, fetchFeed, toggleReaction, KIND_LABEL, type Kind } from '@/
 import { useApp, SIDE_HINT, SIDE_LABEL } from '@/store/appStore';
 import CassetteHeader from '@/components/CassetteHeader';
 import CassetteDeck, { useCassettes } from '@/components/CassetteDeck';
+import Sheet from '@/components/Sheet';
+import { lookFor } from '@/lib/cassetteLook';
 import PostCard from '@/components/PostCard';
 import BottomBar from '@/components/BottomBar';
 import Lockup from '@/components/Lockup';
@@ -14,6 +16,30 @@ import UpdateNotification from '@/components/UpdateNotification';
 export default function App() {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
+  const cassetteId = useApp((s) => s.cassetteId);
+
+  // Die Farbwelt der eingelegten Kassette landet auf dem Wurzelknoten, nicht
+  // auf einem Container — sonst bekaemen die per Portal ausgelagerten Blaetter
+  // sie nicht ab.
+  useEffect(() => {
+    const { type, case: shell } = lookFor(cassetteId ?? '');
+    const root = document.documentElement.style;
+    const vars: Record<string, string> =
+      side === 'a'
+        ? { '--accent': type.stripe }
+        : {
+            '--screen': shell.screen,
+            '--accent': shell.glow,
+            '--ink': shell.ink,
+            '--dim': shell.dim,
+            '--card': `${shell.shell}33`,
+            '--line': `${shell.shellHi}44`,
+          };
+    for (const [k, v] of Object.entries(vars)) root.setProperty(k, v);
+    return () => {
+      for (const k of Object.keys(vars)) root.removeProperty(k);
+    };
+  }, [cassetteId, side]);
 
   // Beim Start immer auf der eingestellten Seite landen, nicht dort, wo man
   // beim letzten Mal aufgehoert hat.
@@ -49,6 +75,7 @@ function Deck() {
   const setCassette = useApp((s) => s.setCassette);
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Kind | 'all'>('all');
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const { data: cassettes = [], isLoading: loadingTapes } = useCassettes();
   const current = cassettes.find((c) => c.id === cassetteId);
@@ -81,7 +108,7 @@ function Deck() {
 
   return (
     <>
-      <CassetteHeader label={current?.name ?? 'Kein Band'} count={data.length} />
+      <CassetteHeader cassetteId={cassetteId} label={current?.name ?? 'Kein Band'} count={data.length} />
 
       <main className="mx-auto flex max-w-xl flex-col gap-2.5 px-3 pb-32 pt-2">
         <div
@@ -114,27 +141,17 @@ function Deck() {
                 der Nutzer selbst setzt, war nie das Problem. Seite B laeuft ab,
                 da zaehlt nur die Restzeit. */}
             {side === 'a' ? (
-              <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1">
-                {FILTERS.map((f) => {
-                  const n = f.key === 'all' ? data.length : data.filter((p) => p.kind === f.key).length;
-                  if (n === 0 && f.key !== 'all') return null;
-                  return (
-                    <button
-                      key={f.key}
-                      type="button"
-                      onClick={() => setFilter(f.key)}
-                      className="font-mono shrink-0 rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.1em]"
-                      style={{
-                        border: '1px solid var(--line)',
-                        background: filter === f.key ? 'var(--accent)' : 'transparent',
-                        color: filter === f.key ? '#17130E' : 'var(--dim)',
-                      }}
-                    >
-                      {f.label} {n}
-                    </button>
-                  );
-                })}
-              </div>
+              <button
+                type="button"
+                onClick={() => setFilterOpen(true)}
+                className="font-mono self-start rounded-full px-2.5 py-1 text-[0.58rem] uppercase tracking-[0.1em]"
+                style={{
+                  border: '1px solid var(--line)',
+                  color: filter === 'all' ? 'var(--dim)' : 'var(--accent)',
+                }}
+              >
+                Filter{filter === 'all' ? '' : `: ${FILTERS.find((f) => f.key === filter)?.label}`} ▾
+              </button>
             ) : (
               <p className="font-mono pb-1 text-[0.6rem] uppercase tracking-[0.11em]" style={{ color: 'var(--accent)' }}>
                 {SIDE_HINT.b} · diese Seite wird überspielt
@@ -192,6 +209,34 @@ function Deck() {
           </>
         )}
       </main>
+
+      <Sheet open={filterOpen} onClose={() => setFilterOpen(false)} title="Filter · Seite A">
+        <div className="flex flex-col gap-1.5">
+          {FILTERS.map((f) => {
+            const n = f.key === 'all' ? data.length : data.filter((p) => p.kind === f.key).length;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                disabled={n === 0 && f.key !== 'all'}
+                onClick={() => {
+                  setFilter(f.key);
+                  setFilterOpen(false);
+                }}
+                className="flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm disabled:opacity-35"
+                style={{
+                  background: filter === f.key ? 'var(--accent)' : 'var(--card)',
+                  border: '1px solid var(--line)',
+                  color: filter === f.key ? '#17130E' : 'var(--ink)',
+                }}
+              >
+                <span>{f.label}</span>
+                <span className="font-mono text-[0.66rem] tabular-nums opacity-70">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Sheet>
 
       <BottomBar items={data} onPosted={invalidate} />
     </>

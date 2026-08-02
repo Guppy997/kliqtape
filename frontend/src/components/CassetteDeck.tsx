@@ -10,6 +10,7 @@ import {
   type Cassette,
 } from '@/lib/api';
 import { useApp } from '@/store/appStore';
+import { lookFor } from '@/lib/cassetteLook';
 import Avatar, { useProfiles } from './Avatar';
 import Sheet from './Sheet';
 
@@ -119,7 +120,7 @@ export default function CassetteDeck() {
                     }}
                     className="flex min-w-0 flex-1 items-center gap-3 text-left"
                   >
-                    <MiniCassette active={c.id === cassetteId} side={side} />
+                    <MiniCassette id={c.id} active={c.id === cassetteId} side={side} />
                     <span className="min-w-0 flex-1">
                       <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
                         {c.name}
@@ -341,16 +342,31 @@ export default function CassetteDeck() {
   }
 }
 
-function MiniCassette({ active, side }: { active: boolean; side: 'a' | 'b' }) {
-  const shell = active ? (side === 'a' ? '#23201C' : '#6B4A9E') : '#2A2621';
-  const label = active ? (side === 'a' ? '#E4DAC4' : '#C9AFEF') : '#4A443C';
+/** Miniaturband fuers Regal — zeigt echte Bandsorte, Spuren und Streifen. */
+function MiniCassette({ id, active, side }: { id: string; active: boolean; side: 'a' | 'b' }) {
+  const { type, case: plastic, wear } = lookFor(id);
+  const onB = active && side === 'b';
+
+  const shell = onB ? plastic.shell : type.shell;
+  const paper = onB ? plastic.inner : type.label;
+  const tape = onB ? plastic.shellHi : type.tape;
+  const stripe = onB ? plastic.glow : type.stripe;
+
   return (
-    <svg width="44" height="30" viewBox="0 0 44 30" aria-hidden="true" className="shrink-0">
-      <rect width="44" height="30" rx="3" fill={shell} />
-      <rect x="4" y="6" width="36" height="15" rx="1.5" fill={label} />
-      <circle cx="15" cy="13.5" r="4" fill={shell} />
-      <circle cx="29" cy="13.5" r="4" fill={shell} />
-      <rect x="4" y="24" width="36" height="2" rx="1" fill={active ? '#B8462C' : '#3A342E'} />
+    <svg width="46" height="32" viewBox="0 0 46 32" aria-hidden="true" className="shrink-0"
+         style={{ opacity: active ? 1 : 0.72 }}>
+      <rect width="46" height="32" rx="3" fill={shell} />
+      <rect x="4" y="6" width="38" height="16" rx="1.5" fill={paper} />
+      <circle cx="16" cy="14" r="4.5" fill={tape} />
+      <circle cx="30" cy="14" r="4.5" fill={tape} />
+      <circle cx="16" cy="14" r="1.6" fill={paper} />
+      <circle cx="30" cy="14" r="1.6" fill={paper} />
+      {/* dieselben Gebrauchsspuren wie am grossen Band */}
+      {wear.scratches.slice(0, 2).map(([x, y, len], i) => (
+        <line key={i} x1={x * 0.46} y1={y * 0.32} x2={(x + len) * 0.46} y2={y * 0.32 - 1}
+              stroke="rgba(255,255,255,.25)" strokeWidth="0.4" />
+      ))}
+      <rect x="4" y="25" width="38" height="2" rx="1" fill={stripe} opacity={active ? 0.9 : 0.5} />
     </svg>
   );
 }
