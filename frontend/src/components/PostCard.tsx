@@ -6,6 +6,14 @@ import Sheet from './Sheet';
 import TapePlayer from './TapePlayer';
 import TapeView from './TapeView';
 
+/** Wie lange ein Seite-B-Beitrag noch da ist, bevor er überspielt wird. */
+function restzeit(expiresAt: number): string {
+  const ms = expiresAt - Date.now();
+  if (ms <= 0) return 'gleich weg';
+  const h = Math.floor(ms / 3_600_000);
+  return h >= 1 ? `noch ${h} h` : `noch ${Math.max(1, Math.floor(ms / 60_000))} min`;
+}
+
 interface Props {
   item: FeedItem;
   onReact: (id: string) => void;
@@ -29,9 +37,10 @@ export default function PostCard({ item, onReact, onDelete }: Props) {
         <span className="font-mono text-[0.58rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
           {KIND_LABEL[item.kind]}
         </span>
-        {/* Track-Nummer statt Zeitstempel: Position auf dem Band, kein Zeitdruck. */}
-        <span className="font-mono ml-auto text-[0.66rem] tabular-nums" style={{ color: 'var(--dim)' }}>
-          {item.track}
+        {/* Auf Seite A die Track-Nummer — Position auf dem Band, kein Zeitdruck.
+            Auf Seite B stattdessen die Restzeit, denn die ist hier die Information. */}
+        <span className="font-mono ml-auto shrink-0 text-[0.66rem] tabular-nums" style={{ color: item.expiresAt ? 'var(--accent)' : 'var(--dim)' }}>
+          {item.expiresAt ? restzeit(item.expiresAt) : item.track}
         </span>
         {mine && (
           <button

@@ -28,6 +28,7 @@ const CHOICES: { kind: Kind; label: string; hint: string }[] = [
 export default function Composer({ onPosted }: Props) {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
+  const cassetteId = useApp((s) => s.cassetteId);
   const [step, setStep] = useState<Step>(null);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -49,7 +50,8 @@ export default function Composer({ onPosted }: Props) {
     source: 'camera' | 'upload' = 'camera',
   ) {
     const mediaId = await uploadMedia(blob, durationMs);
-    await createPost({ side, author: me, kind, body: caption, mediaId, source });
+    if (!cassetteId) return;
+    await createPost({ cassetteId, side, author: me, kind, body: caption, mediaId, source });
     setStep(null);
     onPosted();
   }
@@ -58,7 +60,8 @@ export default function Composer({ onPosted }: Props) {
     setBusy(true);
     setError(null);
     try {
-      await createPost({ side, author: me, kind, ...extra });
+      if (!cassetteId) throw new Error('Keine Kassette eingelegt');
+      await createPost({ cassetteId, side, author: me, kind, ...extra });
       setText('');
       setStep(null);
       onPosted();

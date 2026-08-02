@@ -2,9 +2,12 @@
 """
 Testdaten fuer Kliqtape.
 
-Legt ein paar Leute mit Profilbildern an und fuellt beide Seiten mit
-Zetteln, Schnappschuessen, O-Toenen, Mixtapes, Reaktionen und Hotlines —
-damit sich jede Funktion ansehen und bedienen laesst.
+Legt ein paar Leute mit Profilbildern an, erzeugt drei Kassetten mit
+unterschiedlichen Besetzungen und fuellt beide Seiten mit Zetteln,
+Schnappschuessen, O-Toenen, Mixtapes, Reaktionen und Hotlines — damit sich
+jede Funktion ansehen und bedienen laesst.
+
+Seite A bleibt, Seite B verfaellt nach 24 Stunden von selbst.
 
 Alle Medien werden hier wirklich erzeugt: Bilder mit PIL, Ton als WAV.
 Kein Platzhalter-Muell, denn der O-Ton-Spieler dekodiert das Audio
@@ -268,6 +271,8 @@ def main() -> None:
     if args.reset:
         for person in everyone:
             call("DELETE", "/api/me?me=" + urllib.parse.quote(person))
+        # Verwaiste Kassetten mitnehmen: wer keine Mitglieder mehr hat, wird
+        # serverseitig beim Austritt entfernt — hier bleibt nichts uebrig.
         print("Alte Testdaten entfernt")
 
     # --- Profile ----------------------------------------------------------
@@ -278,10 +283,29 @@ def main() -> None:
         print(".", end="", flush=True)
     print(f" {len(everyone)} Leute")
 
+    # --- Kassetten -------------------------------------------------------
+    # Eine Kassette ist eine Runde. Bewusst mit unterschiedlichen Besetzungen,
+    # damit man sieht, dass sich die Kreise nicht vermischen.
+    print("Kassetten …", end="", flush=True)
+    RUNDEN = [
+        ("Alle Freunde", [me] + PEOPLE),
+        ("Freitagsrunde", [me, "Jonas", "Tarek"]),
+        ("Die Kliqe", [me, "Mira", "Lena"]),
+    ]
+    tapes_by_name: dict[str, str] = {}
+    for name, members in RUNDEN:
+        c = call("POST", "/api/cassettes", {"name": name, "by": me})
+        tapes_by_name[name] = c["id"]
+        for person in members:
+            if person != me:
+                call("POST", f"/api/cassettes/{c['id']}/members", {"member": person, "by": me})
+    print(f" {len(RUNDEN)} Runden")
+
     posts: dict[str, str] = {}
 
-    def post(side, author, kind, body="", media=None, tape=None, key=None):
-        payload = {"side": side, "author": author, "kind": kind, "body": body}
+    def post(cassette, side, author, kind, body="", media=None, tape=None, key=None):
+        payload = {"cassetteId": tapes_by_name[cassette], "side": side,
+                   "author": author, "kind": kind, "body": body}
         if media:
             payload["mediaId"] = media
         if tape:
@@ -291,44 +315,59 @@ def main() -> None:
             posts[key] = res["id"]
         return res["id"]
 
-    # --- Seite A: The Crew ------------------------------------------------
-    print("Seite A …", end="", flush=True)
-    post("a", "Jonas", "text", "Endlich Feierabend. Samstag Grillen bei mir — wer ist dabei?", key="grill")
-    post("a", "Mira", "text", "Ich hab die Wohnung. Dritter Stock, Altbau, viel zu teuer. Egal.", key="wohnung")
+    # --- Alle Freunde: Seite A bleibt, Seite B verfällt --------------------
+    print("Alle Freunde …", end="", flush=True)
+    post("Alle Freunde", "a", "Mira", "text",
+         "Ich hab die Wohnung. Dritter Stock, Altbau, viel zu teuer. Egal.", key="wohnung")
 
     pid = upload(as_jpeg(scene_sunset()), "image/jpeg")
-    post("a", "Tarek", "photo", "letztes Licht am See", media=pid, key="see")
+    post("Alle Freunde", "a", "Tarek", "photo", "letztes Licht am See", media=pid, key="see")
+
+    pid = upload(as_jpeg(scene_kitchen()), "image/jpeg")
+    post("Alle Freunde", "a", "Mira", "photo", "erster Kaffee in der neuen Küche", media=pid)
 
     take, ms = wav_take(7.0, 196.0)
     aid = upload(take, "audio/wav", ms)
-    post("a", "Lena", "voice", "kurz was zum Samstag", media=aid, key="oton_a")
+    post("Alle Freunde", "a", "Lena", "voice", "kurz was zum Samstag", media=aid, key="oton_a")
 
-    pid = upload(as_jpeg(scene_kitchen()), "image/jpeg")
-    post("a", "Mira", "photo", "erster Kaffee in der neuen Küche", media=pid)
+    post("Alle Freunde", "b", "Jonas", "text", "Jemand heute Abend spontan Zeit?", key="spontan")
+    post("Alle Freunde", "b", "Tarek", "text", "Bin ab 8 da")
     print(" fertig")
 
-    # --- Seite B: The Kliqe ----------------------------------------------
-    print("Seite B …", end="", flush=True)
-    post("b", "Mira", "text", "Ich glaub ich kündige wirklich. Können wir morgen telefonieren?", key="kuendigen")
-    post("b", "Jonas", "text", "Papa ist wieder im Krankenhaus. Nichts Dramatisches, aber ich bin durch.", key="papa")
-    post("b", "Lena", "text", "Danke für gestern. Ernsthaft.")
+    # --- Freitagsrunde: kleiner Kreis ------------------------------------
+    print("Freitagsrunde …", end="", flush=True)
+    post("Freitagsrunde", "a", "Jonas", "text",
+         "Samstag Grillen bei mir, 18 Uhr. Adresse steht im Band.", key="grill")
+    post("Freitagsrunde", "b", "Tarek", "text", "Ich bring Kohle mit")
+
+    take, ms = wav_take(5.0, 220.0)
+    aid = upload(take, "audio/wav", ms)
+    post("Freitagsrunde", "b", "Jonas", "voice", "kurz zum Samstag", media=aid)
+    print(" fertig")
+
+    # --- Die Kliqe: das Vertrauliche -------------------------------------
+    print("Die Kliqe …", end="", flush=True)
+    post("Die Kliqe", "a", "Lena", "text", "Danke für gestern. Ernsthaft.")
 
     pid = upload(as_jpeg(scene_night()), "image/jpeg")
-    post("b", "Tarek", "photo", "3 Uhr, konnte nicht schlafen", media=pid)
+    post("Die Kliqe", "a", "Mira", "photo", "3 Uhr, konnte nicht schlafen", media=pid)
+
+    post("Die Kliqe", "b", "Mira", "text",
+         "Ich glaub ich kündige wirklich. Können wir morgen telefonieren?", key="kuendigen")
 
     take, ms = wav_take(6.0, 165.0)
     aid = upload(take, "audio/wav", ms)
-    post("b", "Mira", "voice", "zu lang für einen Zettel", media=aid, key="oton_b")
+    post("Die Kliqe", "b", "Mira", "voice", "zu lang für einen Zettel", media=aid, key="oton_b")
     print(" fertig")
 
     # --- Reaktionen -------------------------------------------------------
     for key, who in [
-        ("grill", ["Mira", "Tarek", "Lena"]),
+        ("grill", ["Tarek", me]),
         ("wohnung", ["Jonas", "Tarek", me]),
         ("see", ["Mira", me]),
         ("oton_a", ["Jonas"]),
-        ("kuendigen", [me, "Jonas"]),
-        ("papa", ["Mira", me, "Lena"]),
+        ("kuendigen", [me, "Lena"]),
+        ("spontan", ["Tarek", me]),
     ]:
         for person in who:
             call("POST", f"/api/posts/{posts[key]}/react", {"author": person})
@@ -363,7 +402,7 @@ def main() -> None:
     build_tape(me, "Jonas", "Noch ohne Namen",
                "", TRACKS[5:8], seal=False)
 
-    post("a", me, "tape", tape=shared)
+    post("Alle Freunde", "a", me, "tape", tape=shared)
     print(" 3 Stück")
 
     # --- Hotlines ---------------------------------------------------------

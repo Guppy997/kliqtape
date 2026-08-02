@@ -3,6 +3,8 @@ import { useApp, SIDE_LABEL, type Side } from '@/store/appStore';
 import Lockup from './Lockup';
 
 interface Props {
+  /** Beschriftung der eingelegten Kassette — der Name der Runde. */
+  label: string;
   count: number;
 }
 
@@ -22,7 +24,7 @@ const FLIP_MS = 180;
  * Beim Scrollen faehrt das Etikett zusammen und die Spulen laufen mit: links
  * wird duenner, rechts dicker. Der endliche Feed ist so die ganze Zeit sichtbar.
  */
-export default function CassetteHeader({ count }: Props) {
+export default function CassetteHeader({ label, count }: Props) {
   const side = useApp((s) => s.side);
   const setSide = useApp((s) => s.setSide);
 
@@ -135,9 +137,11 @@ export default function CassetteHeader({ count }: Props) {
                 textShadow: isA ? 'none' : '0 0 0.5rem rgba(169,124,232,.8)',
               }}
             >
-              {SIDE_LABEL[side]}
+              {label}
               <br />
-              <span className="text-[0.85rem] opacity-70">— {count} —</span>
+              <span className="text-[0.85rem] opacity-70">
+                Seite {side.toUpperCase()} · {SIDE_LABEL[side]} · {count}
+              </span>
             </div>
             <Reel r={rRight} side={side} />
           </div>

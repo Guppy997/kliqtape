@@ -4,19 +4,17 @@ import { persist } from 'zustand/middleware';
 export type Side = 'a' | 'b';
 
 /**
- * Anzeigenamen der Seiten. Zentral, weil sie an vielen Stellen auftauchen.
- * Crew und Kliqe sind bewusst dasselbe Sprachregister — beides geborgter
- * 90er-Slang, der Unterschied ist nur die Groesse: die vielen, die wenigen.
- * (Alternative Schreibweise "Die Krew" passt zur q-Logik von Kliq.)
+ * Die Seiten unterscheiden sich nach HALTBARKEIT, nicht nach Publikum —
+ * wer mitliest, entscheidet die eingelegte Kassette.
  */
 export const SIDE_LABEL: Record<Side, string> = {
-  a: 'Die Crew',
-  b: 'Die Kliqe',
+  a: 'Bleibt',
+  b: 'Überspielt',
 };
 
 export const SIDE_HINT: Record<Side, string> = {
-  a: 'alle Freunde',
-  b: 'nur die Wenigen',
+  a: 'was bleiben soll',
+  b: 'weg nach 24 Stunden',
 };
 
 interface AppState {
@@ -25,9 +23,12 @@ interface AppState {
   side: Side;
   /** Welche Seite beim Öffnen liegt. */
   startSide: Side;
+  /** Welche Kassette gerade eingelegt ist. */
+  cassetteId: string | null;
   setMe: (name: string) => void;
   setSide: (side: Side) => void;
   setStartSide: (side: Side) => void;
+  setCassette: (id: string | null) => void;
 }
 
 export const useApp = create<AppState>()(
@@ -36,9 +37,11 @@ export const useApp = create<AppState>()(
       me: '',
       side: 'a',
       startSide: 'a',
+      cassetteId: null,
       setMe: (me) => set({ me: me.trim().slice(0, 40) }),
       setSide: (side) => set({ side }),
       setStartSide: (startSide) => set({ startSide }),
+      setCassette: (cassetteId) => set({ cassetteId, side: 'a' }),
     }),
     { name: 'kliqtape' },
   ),

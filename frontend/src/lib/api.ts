@@ -11,8 +11,67 @@ export const KIND_LABEL: Record<Kind, string> = {
   text: 'Zettel',
 };
 
+export interface Cassette {
+  id: string;
+  name: string;
+  createdBy: string;
+  createdAt: number;
+  memberCount: number;
+  sideA: number;
+  sideB: number;
+  lastAt: number | null;
+}
+
+export interface Member {
+  name: string;
+  addedBy: string;
+  joinedAt: number;
+}
+
+export function fetchCassettes(me: string): Promise<Cassette[]> {
+  return fetch(`/api/cassettes?me=${encodeURIComponent(me)}`).then(unwrap<Cassette[]>);
+}
+
+export function fetchMembers(id: string): Promise<Member[]> {
+  return fetch(`/api/cassettes/${id}/members`).then(unwrap<Member[]>);
+}
+
+export function createCassette(name: string, by: string): Promise<Cassette> {
+  return fetch('/api/cassettes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, by }),
+  }).then(unwrap<Cassette>);
+}
+
+export function renameCassette(id: string, name: string, by: string): Promise<{ id: string }> {
+  return fetch(`/api/cassettes/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, by }),
+  }).then(unwrap<{ id: string }>);
+}
+
+export function addMember(id: string, member: string, by: string): Promise<Member> {
+  return fetch(`/api/cassettes/${id}/members`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ member, by }),
+  }).then(unwrap<Member>);
+}
+
+export function removeMember(id: string, member: string, by: string): Promise<void> {
+  return fetch(
+    `/api/cassettes/${id}/members/${encodeURIComponent(member)}?by=${encodeURIComponent(by)}`,
+    { method: 'DELETE' },
+  ).then(unwrap<void>);
+}
+
 export interface FeedItem {
   id: string;
+  cassetteId: string;
+  /** Nur auf Seite B gesetzt: Zeitpunkt, an dem der Beitrag überspielt wird. */
+  expiresAt: number | null;
   side: Side;
   author: string;
   kind: Kind;
@@ -39,8 +98,8 @@ async function unwrap<T>(res: Response): Promise<T> {
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
 
-export function fetchFeed(side: Side): Promise<FeedItem[]> {
-  return fetch(`/api/posts?side=${side}`).then(unwrap<FeedItem[]>);
+export function fetchFeed(cassetteId: string, side: Side): Promise<FeedItem[]> {
+  return fetch(`/api/posts?cassette=${cassetteId}&side=${side}`).then(unwrap<FeedItem[]>);
 }
 
 /** Laedt einen Blob hoch und gibt die Medien-ID zurueck. */
@@ -55,6 +114,7 @@ export async function uploadMedia(blob: Blob, durationMs?: number): Promise<stri
 }
 
 export function createPost(input: {
+  cassetteId: string;
   side: Side;
   author: string;
   kind: Kind;

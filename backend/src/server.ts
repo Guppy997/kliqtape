@@ -143,10 +143,166 @@ function dropMedia(id: string): void {
 }
 
 /* -------------------------------------------------------------------------
+ * Kassetten — jede steht für eine Runde von Leuten
+ * ---------------------------------------------------------------------- */
+
+const SIDE_B_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Abgelaufene Seite-B-Beitraege entfernen, samt ihrer Medien.
+ * Laeuft faul bei jedem Zugriff — bei dieser Datenmenge braucht es keinen
+ * Hintergrundjob, und so ist garantiert nichts Abgelaufenes mehr sichtbar.
+ */
+function sweepPosts(): void {
+  const gone = db
+    .prepare(`SELECT id, media_id FROM posts WHERE expires_at IS NOT NULL AND expires_at < ?`)
+    .all(Date.now()) as { id: string; media_id: string | null }[];
+  if (gone.length === 0) return;
+
+  db.transaction(() => {
+    const del = db.prepare(`DELETE FROM posts WHERE id = ?`);
+    for (const p of gone) {
+      del.run(p.id);
+      if (p.media_id) dropMedia(p.media_id);
+    }
+  })();
+  console.log(`[kliqtape] ${gone.length} abgelaufene Beiträge überspielt`);
+}
+
+function requireMember(cassetteId: string, person: string): void {
+  const ok = db
+    .prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`)
+    .get(cassetteId, person);
+  if (!ok) throw new HttpError(403, 'Du bist nicht in dieser Runde');
+}
+
+app.get('/api/cassettes', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  sweepPosts();
+
+  const rows = db
+    .prepare(
+      `SELECT c.id, c.name, c.created_by, c.created_at,
+              (SELECT COUNT(*) FROM cassette_members m2 WHERE m2.cassette_id = c.id) AS members,
+              (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'a') AS side_a,
+              (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'b') AS side_b,
+              (SELECT MAX(p.created_at) FROM posts p WHERE p.cassette_id = c.id) AS last_at
+         FROM cassettes c
+         JOIN cassette_members m ON m.cassette_id = c.id AND m.member = ?
+        ORDER BY COALESCE(last_at, c.created_at) DESC`,
+    )
+    .all(me) as {
+    id: string;
+    name: string;
+    created_by: string;
+    created_at: number;
+    members: number;
+    side_a: number;
+    side_b: number;
+    last_at: number | null;
+  }[];
+
+  res.json(
+    rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      createdBy: r.created_by,
+      createdAt: r.created_at,
+      memberCount: r.members,
+      sideA: r.side_a,
+      sideB: r.side_b,
+      lastAt: r.last_at,
+    })),
+  );
+});
+
+app.get('/api/cassettes/:id/members', (req, res) => {
+  const rows = db
+    .prepare(`SELECT member, added_by, joined_at FROM cassette_members WHERE cassette_id = ? ORDER BY joined_at`)
+    .all(req.params.id) as { member: string; added_by: string; joined_at: number }[];
+  if (rows.length === 0) throw new HttpError(404, 'Kassette nicht gefunden');
+  res.json(rows.map((r) => ({ name: r.member, addedBy: r.added_by, joinedAt: r.joined_at })));
+});
+
+app.post('/api/cassettes', (req, res) => {
+  const name = String(req.body?.name ?? '').trim().slice(0, 40);
+  const by = String(req.body?.by ?? '').trim();
+  if (!name) throw new HttpError(400, 'Die Kassette braucht eine Beschriftung');
+  if (!by) throw new HttpError(400, 'Name fehlt');
+
+  const id = randomUUID();
+  const now = Date.now();
+  db.transaction(() => {
+    db.prepare(`INSERT INTO cassettes (id, name, created_by, created_at) VALUES (?, ?, ?, ?)`).run(
+      id, name, by, now,
+    );
+    db.prepare(
+      `INSERT INTO cassette_members (cassette_id, member, added_by, joined_at) VALUES (?, ?, ?, ?)`,
+    ).run(id, by, by, now);
+  })();
+
+  res.status(201).json({ id, name, createdBy: by, memberCount: 1, sideA: 0, sideB: 0 });
+});
+
+app.patch('/api/cassettes/:id', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  const name = String(req.body?.name ?? '').trim().slice(0, 40);
+  if (!name) throw new HttpError(400, 'Beschriftung fehlt');
+  requireMember(req.params.id, by);
+
+  db.prepare(`UPDATE cassettes SET name = ? WHERE id = ?`).run(name, req.params.id);
+  res.json({ id: req.params.id, name });
+});
+
+// Jedes Mitglied darf jemanden holen — wie im echten Freundeskreis.
+app.post('/api/cassettes/:id/members', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  const member = String(req.body?.member ?? '').trim().slice(0, 40);
+  if (!member) throw new HttpError(400, 'Wen denn?');
+  requireMember(req.params.id, by);
+
+  db.prepare(
+    `INSERT OR IGNORE INTO cassette_members (cassette_id, member, added_by, joined_at)
+     VALUES (?, ?, ?, ?)`,
+  ).run(req.params.id, member, by, Date.now());
+
+  res.status(201).json({ member, addedBy: by });
+});
+
+app.delete('/api/cassettes/:id/members/:member', (req, res) => {
+  const by = String(req.query.by ?? '').trim();
+  const target = decodeURIComponent(req.params.member);
+  requireMember(req.params.id, by);
+
+  db.prepare(`DELETE FROM cassette_members WHERE cassette_id = ? AND member = ?`).run(
+    req.params.id, target,
+  );
+
+  // Leere Kassetten verschwinden mitsamt ihren Beiträgen — sonst blieben
+  // verwaiste Runden liegen, die niemand mehr sehen kann.
+  const rest = db
+    .prepare(`SELECT COUNT(*) AS n FROM cassette_members WHERE cassette_id = ?`)
+    .get(req.params.id) as { n: number };
+  if (rest.n === 0) {
+    for (const p of db
+      .prepare(`SELECT media_id FROM posts WHERE cassette_id = ? AND media_id IS NOT NULL`)
+      .all(req.params.id) as { media_id: string }[]) {
+      dropMedia(p.media_id);
+    }
+    db.prepare(`DELETE FROM cassettes WHERE id = ?`).run(req.params.id);
+  }
+
+  res.status(204).end();
+});
+
+/* -------------------------------------------------------------------------
  * Posts
  * ---------------------------------------------------------------------- */
 
-interface FeedItem extends Omit<PostRow, 'media_id' | 'tape_id'> {
+interface FeedItem extends Omit<PostRow, 'media_id' | 'tape_id' | 'cassette_id' | 'expires_at'> {
+  cassetteId: string;
+  expiresAt: number | null;
   mediaId: string | null;
   durationMs: number | null;
   tapeId: string | null;
@@ -157,7 +313,12 @@ interface FeedItem extends Omit<PostRow, 'media_id' | 'tape_id'> {
 
 app.get('/api/posts', (req, res) => {
   const side = String(req.query.side ?? 'a') as Side;
+  const cassetteId = String(req.query.cassette ?? '').trim();
   if (!SIDES.includes(side)) throw new HttpError(400, 'side muss a oder b sein');
+  if (!cassetteId) throw new HttpError(400, 'Welche Kassette?');
+
+  // Erst überspielen, dann ausliefern — so ist nie etwas Abgelaufenes sichtbar.
+  sweepPosts();
 
   // Aeltestes zuerst: der Feed laeuft wie ein Band von vorn nach hinten ab.
   const rows = db
@@ -168,10 +329,10 @@ app.get('/api/posts', (req, res) => {
          FROM posts p
          LEFT JOIN media m ON m.id = p.media_id
          LEFT JOIN mixtapes t ON t.id = p.tape_id
-        WHERE p.side = ?
+        WHERE p.side = ? AND p.cassette_id = ?
         ORDER BY p.created_at ASC`,
     )
-    .all(side) as (PostRow & {
+    .all(side, cassetteId) as (PostRow & {
     duration_ms: number | null;
     tape_title: string | null;
     tape_cover: string | null;
@@ -183,10 +344,10 @@ app.get('/api/posts', (req, res) => {
       `SELECT r.post_id, r.author
          FROM reactions r
          JOIN posts p ON p.id = r.post_id
-        WHERE p.side = ?
+        WHERE p.side = ? AND p.cassette_id = ?
         ORDER BY r.created_at ASC`,
     )
-    .all(side) as { post_id: string; author: string }[];
+    .all(side, cassetteId) as { post_id: string; author: string }[];
 
   const byPost = new Map<string, string[]>();
   for (const r of reactions) {
@@ -202,6 +363,8 @@ app.get('/api/posts', (req, res) => {
     kind: row.kind,
     body: row.body,
     created_at: row.created_at,
+    cassetteId: row.cassette_id,
+    expiresAt: row.expires_at,
     mediaId: row.media_id,
     durationMs: row.duration_ms,
     source: row.source ?? 'camera',
@@ -218,13 +381,16 @@ app.get('/api/posts', (req, res) => {
 });
 
 app.post('/api/posts', (req, res) => {
-  const { side, author, kind, body = '', mediaId = null, tapeId = null, source = null } = req.body ?? {};
+  const { cassetteId, side, author, kind, body = '', mediaId = null, tapeId = null, source = null } =
+    req.body ?? {};
 
   if (!SIDES.includes(side)) throw new HttpError(400, 'side muss a oder b sein');
   if (!KINDS.includes(kind)) throw new HttpError(400, 'Unbekannte Post-Art');
   if (typeof author !== 'string' || author.trim().length === 0) {
     throw new HttpError(400, 'Name fehlt');
   }
+  if (!cassetteId) throw new HttpError(400, 'Welche Kassette?');
+  requireMember(cassetteId, author.trim());
   if (kind === 'text' && String(body).trim().length === 0) {
     throw new HttpError(400, 'Leerer Text');
   }
@@ -248,11 +414,14 @@ app.post('/api/posts', (req, res) => {
   }
 
   const id = randomUUID();
+  const now = Date.now();
   db.prepare(
-    `INSERT INTO posts (id, side, author, kind, body, media_id, tape_id, source, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO posts (id, cassette_id, side, author, kind, body, media_id, tape_id, source,
+                        expires_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
+    cassetteId,
     side,
     author.trim().slice(0, 40),
     kind,
@@ -260,7 +429,9 @@ app.post('/api/posts', (req, res) => {
     mediaId,
     kind === 'tape' ? tapeId : null,
     source === 'upload' ? 'upload' : 'camera',
-    Date.now(),
+    // Seite B wird nach 24 Stunden überspielt, Seite A bleibt.
+    side === 'b' ? now + SIDE_B_TTL_MS : null,
+    now,
   );
 
   res.status(201).json({ id });
@@ -629,6 +800,7 @@ app.delete('/api/me', (req, res) => {
     db.prepare(`DELETE FROM reactions WHERE author = ?`).run(me);
     db.prepare(`DELETE FROM hotlines WHERE from_name = ? OR to_name = ?`).run(me, me);
     db.prepare(`DELETE FROM profiles WHERE name = ?`).run(me);
+    db.prepare(`DELETE FROM cassette_members WHERE member = ?`).run(me);
 
     for (const id of mediaIds) dropMedia(id);
     return { posts, tapes, medien: mediaIds.length };

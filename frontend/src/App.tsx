@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { deletePost, fetchFeed, toggleReaction } from '@/lib/api';
-import { useApp, SIDE_LABEL, SIDE_HINT } from '@/store/appStore';
+import { deletePost, fetchFeed, toggleReaction, KIND_LABEL, type Kind } from '@/lib/api';
+import { useApp, SIDE_HINT, SIDE_LABEL } from '@/store/appStore';
 import CassetteHeader from '@/components/CassetteHeader';
+import CassetteDeck, { useCassettes } from '@/components/CassetteDeck';
 import PostCard from '@/components/PostCard';
 import BottomBar from '@/components/BottomBar';
 import Lockup from '@/components/Lockup';
@@ -31,87 +32,164 @@ export default function App() {
   );
 }
 
+/** Filterleiste auf Seite A — Seite A ist ein Archiv, da will man sortieren. */
+const FILTERS: { key: Kind | 'all'; label: string }[] = [
+  { key: 'all', label: 'Alles' },
+  { key: 'photo', label: KIND_LABEL.photo },
+  { key: 'voice', label: KIND_LABEL.voice },
+  { key: 'tape', label: KIND_LABEL.tape },
+  { key: 'video', label: KIND_LABEL.video },
+  { key: 'text', label: KIND_LABEL.text },
+];
+
 function Deck() {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
+  const cassetteId = useApp((s) => s.cassetteId);
+  const setCassette = useApp((s) => s.setCassette);
   const qc = useQueryClient();
+  const [filter, setFilter] = useState<Kind | 'all'>('all');
+
+  const { data: cassettes = [], isLoading: loadingTapes } = useCassettes();
+  const current = cassettes.find((c) => c.id === cassetteId);
+
+  // Nie vor dem Nichts stehen: fehlt eine Auswahl oder ist sie ungueltig
+  // geworden, wird die zuletzt aktive Kassette eingelegt.
+  useEffect(() => {
+    if (loadingTapes) return;
+    if (!current && cassettes.length > 0) setCassette(cassettes[0]!.id);
+    if (current == null && cassettes.length === 0 && cassetteId) setCassette(null);
+  }, [loadingTapes, cassettes, current, cassetteId, setCassette]);
 
   const { data = [], isLoading, isError, error } = useQuery({
-    queryKey: ['feed', side],
-    queryFn: () => fetchFeed(side),
+    queryKey: ['feed', cassetteId, side],
+    queryFn: () => fetchFeed(cassetteId!, side),
+    enabled: Boolean(cassetteId),
+    // Seite B laeuft ab — regelmaessig nachsehen, was noch da ist.
+    refetchInterval: side === 'b' ? 60_000 : false,
   });
 
-  const invalidate = () => void qc.invalidateQueries({ queryKey: ['feed', side] });
+  const invalidate = () => void qc.invalidateQueries({ queryKey: ['feed', cassetteId, side] });
 
   const react = useMutation({ mutationFn: (id: string) => toggleReaction(id, me), onSuccess: invalidate });
   const remove = useMutation({ mutationFn: (id: string) => deletePost(id), onSuccess: invalidate });
 
+  const shown = useMemo(
+    () => (side === 'a' && filter !== 'all' ? data.filter((p) => p.kind === filter) : data),
+    [data, side, filter],
+  );
+
   return (
     <>
-      <CassetteHeader count={data.length} />
+      <CassetteHeader label={current?.name ?? 'Kein Band'} count={data.length} />
 
       <main className="mx-auto flex max-w-xl flex-col gap-2.5 px-3 pb-32 pt-2">
-        {/* Laufzeile wie auf einem J-Card-Einleger: was laeuft gerade, wie viel. */}
         <div
-          className="font-mono flex items-center justify-between gap-3 pb-1 text-[0.64rem] uppercase tracking-[0.11em]"
+          className="font-mono flex items-center justify-between gap-2 pb-1 text-[0.64rem] uppercase tracking-[0.11em]"
           style={{ color: 'var(--dim)' }}
         >
-          <span className="truncate">
-            Seite {side.toUpperCase()} · {SIDE_HINT[side]} · {data.length}
-          </span>
+          <CassetteDeck />
           <span className="flex shrink-0 items-center gap-1.5">
             <Shelf />
             <Settings />
           </span>
         </div>
 
-        {isLoading && (
-          <p className="py-10 text-center font-mono text-xs" style={{ color: 'var(--dim)' }}>
-            Band wird eingelegt …
-          </p>
-        )}
-
-        {isError && (
-          <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'rgba(184,70,44,.18)', color: '#F0B5A5' }}>
-            {/* Bandsalat: wenn das Backend nicht antwortet, ist das Band verheddert. */}
-            Bandsalat — {(error as Error).message}
-          </p>
-        )}
-
-        {!isLoading && !isError && data.length === 0 && (
+        {!cassetteId && !loadingTapes && (
           <div className="py-16 text-center">
             <p className="font-hand text-lg" style={{ color: 'var(--dim)' }}>
-              Leeres Band.
+              Kein Band eingelegt.
             </p>
-            <p className="mt-1 font-mono text-[0.66rem] uppercase tracking-widest" style={{ color: 'var(--dim)' }}>
-              {SIDE_LABEL[side]}
+            <p className="mt-2 font-mono text-[0.64rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+              Eine Kassette ist eine Runde von Leuten.
+              <br />
+              Öffne oben das Fach und beschrifte dein erstes Band.
             </p>
           </div>
         )}
 
-        {data.map((item) => (
-          <PostCard
-            key={item.id}
-            item={item}
-            onReact={(id) => react.mutate(id)}
-            onDelete={(id) => remove.mutate(id)}
-          />
-        ))}
+        {cassetteId && (
+          <>
+            {/* Seite A ist ein Archiv und darf gefiltert werden — ein Filter, den
+                der Nutzer selbst setzt, war nie das Problem. Seite B laeuft ab,
+                da zaehlt nur die Restzeit. */}
+            {side === 'a' ? (
+              <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1">
+                {FILTERS.map((f) => {
+                  const n = f.key === 'all' ? data.length : data.filter((p) => p.kind === f.key).length;
+                  if (n === 0 && f.key !== 'all') return null;
+                  return (
+                    <button
+                      key={f.key}
+                      type="button"
+                      onClick={() => setFilter(f.key)}
+                      className="font-mono shrink-0 rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.1em]"
+                      style={{
+                        border: '1px solid var(--line)',
+                        background: filter === f.key ? 'var(--accent)' : 'transparent',
+                        color: filter === f.key ? '#17130E' : 'var(--dim)',
+                      }}
+                    >
+                      {f.label} {n}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="font-mono pb-1 text-[0.6rem] uppercase tracking-[0.11em]" style={{ color: 'var(--accent)' }}>
+                {SIDE_HINT.b} · diese Seite wird überspielt
+              </p>
+            )}
 
-        {data.length > 0 && (
-          <div className="flex flex-col items-center gap-1.5 pt-8">
-            {/* Bandende: der durchsichtige Vorspann. Hier hoert der Feed auf. */}
-            <div
-              className="h-1 w-24 rounded-full"
-              style={{ background: 'linear-gradient(90deg, var(--accent), transparent)' }}
-            />
-            <p className="font-hand text-base" style={{ color: 'var(--dim)' }}>
-              Bandende.
-            </p>
-            <p className="font-mono text-[0.6rem] uppercase tracking-widest" style={{ color: 'var(--dim)' }}>
-              kein Nachschub
-            </p>
-          </div>
+            {isLoading && (
+              <p className="font-mono py-10 text-center text-xs" style={{ color: 'var(--dim)' }}>
+                Band wird eingelegt …
+              </p>
+            )}
+
+            {isError && (
+              <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'rgba(184,70,44,.18)', color: '#F0B5A5' }}>
+                {/* Bandsalat: wenn das Backend nicht antwortet, ist das Band verheddert. */}
+                Bandsalat — {(error as Error).message}
+              </p>
+            )}
+
+            {!isLoading && !isError && shown.length === 0 && (
+              <div className="py-16 text-center">
+                <p className="font-hand text-lg" style={{ color: 'var(--dim)' }}>
+                  {data.length === 0 ? 'Leeres Band.' : 'Nichts davon auf diesem Band.'}
+                </p>
+                <p className="mt-1 font-mono text-[0.66rem] uppercase tracking-widest" style={{ color: 'var(--dim)' }}>
+                  Seite {side.toUpperCase()} · {SIDE_LABEL[side]}
+                </p>
+              </div>
+            )}
+
+            {shown.map((item) => (
+              <PostCard
+                key={item.id}
+                item={item}
+                onReact={(id) => react.mutate(id)}
+                onDelete={(id) => remove.mutate(id)}
+              />
+            ))}
+
+            {shown.length > 0 && (
+              <div className="flex flex-col items-center gap-1.5 pt-8">
+                {/* Bandende: der durchsichtige Vorspann. Hier hoert der Feed auf. */}
+                <div
+                  className="h-1 w-24 rounded-full"
+                  style={{ background: 'linear-gradient(90deg, var(--accent), transparent)' }}
+                />
+                <p className="font-hand text-base" style={{ color: 'var(--dim)' }}>
+                  Bandende.
+                </p>
+                <p className="font-mono text-[0.6rem] uppercase tracking-widest" style={{ color: 'var(--dim)' }}>
+                  kein Nachschub
+                </p>
+              </div>
+            )}
+          </>
         )}
       </main>
 
@@ -157,8 +235,8 @@ function NameGate() {
           Band einlegen
         </button>
         <p className="font-mono text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-          Achtung: Seite B ist in diesem Prototyp noch NICHT verschlüsselt. Keine echten
-          privaten Inhalte einstellen.
+          Achtung: In diesem Prototyp ist nichts verschlüsselt. Keine echten privaten Inhalte
+          einstellen.
         </p>
       </form>
     </div>

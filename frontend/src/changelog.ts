@@ -10,6 +10,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.5.0',
+    date: '2026-08-02',
+    changes: [
+      'Kassetten sind jetzt Runden von Leuten — mehrere Freundeskreise nebeneinander',
+      'Kassettenfach zum Wechseln, Leute dazuholen, Band umbenennen oder verlassen',
+      'Seite A ist das Archiv der Runde und lässt sich nach Art filtern',
+      'Seite B wird nach 24 Stunden überspielt, samt Bildern und Aufnahmen',
+      'Bestehende Beiträge sind in eine Kassette „Alle Freunde" gewandert',
+    ],
+  },
+  {
     version: '0.4.0',
     date: '2026-08-02',
     changes: [

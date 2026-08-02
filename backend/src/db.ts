@@ -13,6 +13,25 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 db.exec(`
+  -- Eine Kassette ist eine Runde von Leuten. Man legt sie ein, um mit genau
+  -- dieser Gruppe zu reden — verschiedene Freundeskreise vermischen sich nicht.
+  CREATE TABLE IF NOT EXISTS cassettes (
+    id         TEXT PRIMARY KEY,
+    name       TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+
+  -- Jedes Mitglied darf weitere holen. Wer wen geholt hat, bleibt sichtbar,
+  -- damit es nachvollziehbar ist.
+  CREATE TABLE IF NOT EXISTS cassette_members (
+    cassette_id TEXT NOT NULL REFERENCES cassettes(id) ON DELETE CASCADE,
+    member      TEXT NOT NULL,
+    added_by    TEXT NOT NULL,
+    joined_at   INTEGER NOT NULL,
+    PRIMARY KEY (cassette_id, member)
+  );
+
   CREATE TABLE IF NOT EXISTS media (
     id          TEXT PRIMARY KEY,
     mime        TEXT NOT NULL,
@@ -25,7 +44,10 @@ db.exec(`
   -- lesbar ist. Ein CHECK haette bei jeder neuen Beitragsart einen kompletten
   -- Tabellenumbau erzwungen.
   CREATE TABLE IF NOT EXISTS posts (
-    id         TEXT PRIMARY KEY,
+    id          TEXT PRIMARY KEY,
+    cassette_id TEXT REFERENCES cassettes(id) ON DELETE CASCADE,
+    -- Seite A bleibt, Seite B wird nach 24 Stunden ueberspielt.
+    expires_at  INTEGER,
     side       TEXT NOT NULL CHECK (side IN ('a','b')),
     author     TEXT NOT NULL,
     kind       TEXT NOT NULL,
@@ -93,6 +115,7 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_posts_side_time ON posts(side, created_at);
+  CREATE INDEX IF NOT EXISTS idx_members_person ON cassette_members(member);
   CREATE INDEX IF NOT EXISTS idx_hotlines_to ON hotlines(to_name, created_at);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_to ON mixtapes(to_name, sealed_at);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_from ON mixtapes(from_name, sealed_at);
@@ -196,14 +219,50 @@ repairReference(
   `CREATE INDEX IF NOT EXISTS idx_hotlines_to ON hotlines(to_name, created_at);`,
 );
 
-// Reine Spaltenergaenzung — kein Tabellenumbau noetig, weil kein Fremdschluessel
-// betroffen ist. Bestehende Beitraege haben NULL und gelten als Kamera-Aufnahme.
-if (
-  db.prepare(`PRAGMA table_info(posts)`).all().length > 0 &&
-  !(db.prepare(`PRAGMA table_info(posts)`).all() as { name: string }[]).some((c) => c.name === 'source')
-) {
-  console.log('[kliqtape] Ergaenze posts.source (Kamera oder Galerie)');
-  db.exec(`ALTER TABLE posts ADD COLUMN source TEXT`);
+/** Fehlende Spalte ergaenzen. Reine Ergaenzungen brauchen keinen Tabellenumbau. */
+function addColumn(table: string, column: string, ddl: string, note: string): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (cols.length === 0 || cols.some((c) => c.name === column)) return;
+  console.log(`[kliqtape] Ergaenze ${table}.${column} — ${note}`);
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+}
+
+addColumn('posts', 'source', 'source TEXT', 'Kamera oder Galerie');
+addColumn('posts', 'cassette_id', 'cassette_id TEXT REFERENCES cassettes(id)', 'Beitrag gehoert zu einer Runde');
+addColumn('posts', 'expires_at', 'expires_at INTEGER', 'Seite B wird ueberspielt');
+
+/**
+ * Bestehende Beitraege haben noch keine Kassette. Damit nichts verlorengeht,
+ * bekommen sie eine Standard-Runde, in der alle bisherigen Autoren Mitglied sind.
+ */
+const orphans = db.prepare(`SELECT COUNT(*) AS n FROM posts WHERE cassette_id IS NULL`).get() as {
+  n: number;
+};
+
+if (orphans.n > 0) {
+  console.log(`[kliqtape] Ordne ${orphans.n} Beitraege einer Standard-Kassette zu`);
+  db.transaction(() => {
+    const id = 'default-alle-freunde';
+    const authors = db.prepare(`SELECT DISTINCT author FROM posts WHERE cassette_id IS NULL`).all() as {
+      author: string;
+    }[];
+    const first = authors[0]?.author ?? 'unbekannt';
+
+    db.prepare(
+      `INSERT OR IGNORE INTO cassettes (id, name, created_by, created_at) VALUES (?, ?, ?, ?)`,
+    ).run(id, 'Alle Freunde', first, Date.now());
+
+    const join = db.prepare(
+      `INSERT OR IGNORE INTO cassette_members (cassette_id, member, added_by, joined_at) VALUES (?, ?, ?, ?)`,
+    );
+    for (const a of authors) join.run(id, a.author, first, Date.now());
+
+    db.prepare(`UPDATE posts SET cassette_id = ? WHERE cassette_id IS NULL`).run(id);
+    // Alte Seite-B-Beitraege bekommen rueckwirkend eine Frist ab Erstellung.
+    db.prepare(
+      `UPDATE posts SET expires_at = created_at + ? WHERE side = 'b' AND expires_at IS NULL`,
+    ).run(24 * 60 * 60 * 1000);
+  })();
 }
 
 /**
@@ -260,6 +319,8 @@ export type Kind = 'text' | 'photo' | 'video' | 'voice' | 'tape';
 
 export interface PostRow {
   id: string;
+  cassette_id: string;
+  expires_at: number | null;
   side: Side;
   author: string;
   kind: Kind;

@@ -1,10 +1,16 @@
 # Kliqtape
 
-Ein soziales Netz mit zwei Seiten — wie ein Mixtape.
-**Seite A („Die Crew")** sind alle deine Freunde. **Seite B („Die Kliqe")** sind die wenigen,
-denen du wirklich alles erzählst. Oben umschalten, wie eine Kassette umdrehen.
+Ein Regal voller Kassetten. **Jede Kassette ist eine Runde von Leuten** — du legst die
+ein, mit der du gerade redest. Man hat nicht *einen* Freundeskreis, sondern mehrere,
+und die zu vermischen funktioniert nicht.
 
-Chronologisch. Endlich. Ohne Algorithmus, ohne Werbung, ohne Zahlen.
+Jede Kassette hat zwei Seiten:
+
+- **Seite A — bleibt.** Das Archiv der Runde: Bilder, Absprachen, Infos. Filterbar nach Art.
+- **Seite B — wird überspielt.** Alles verschwindet nach 24 Stunden von selbst.
+
+Tippen auf die Kassette dreht sie um. Chronologisch, ohne Algorithmus, ohne Werbung,
+ohne Zahlen.
 
 **Hosting-Kontext:** Läuft self-hosted auf dem eigenen Server / Raspberry Pi via Docker.
 Kein Vercel, kein Netlify, keine externe Cloud. Zugriff im Tailnet über einen
@@ -62,10 +68,12 @@ python3 scripts/seed.py --reset          # anlegen (vorher aufräumen)
 python3 scripts/seed.py --reset --me Max # anderer Hauptnutzer
 ```
 
-Legt fünf Leute mit Profilbildern an, füllt beide Seiten mit Zetteln,
-Schnappschüssen und O-Tönen, baut drei Mixtapes (eines geschenkt, eines geteilt,
-eines als Entwurf), setzt Reaktionen und legt zwei Hotlines auf den
-Anrufbeantworter. Danach in der App als **Aaron** anmelden.
+Legt fünf Leute mit Profilbildern an und erzeugt **drei Kassetten mit
+unterschiedlichen Besetzungen** — Alle Freunde, Freitagsrunde, Die Kliqe —, damit
+sichtbar wird, dass sich die Kreise nicht vermischen. Füllt beide Seiten mit Zetteln,
+Schnappschüssen und O-Tönen, baut drei Mixtapes (eines geschenkt, eines geteilt, eines
+als Entwurf), setzt Reaktionen und legt zwei Hotlines auf den Anrufbeantworter.
+Danach in der App als **Aaron** anmelden.
 
 Bilder werden mit Pillow erzeugt, Ton als echtes WAV — beides muss abspielbar
 sein, weil der O-Ton-Spieler das Audio tatsächlich dekodiert.
