@@ -1,5 +1,6 @@
-import express, { type ErrorRequestHandler } from 'express';
-import { randomUUID } from 'node:crypto';
+import express, { type ErrorRequestHandler, type Request } from 'express';
+import rateLimit from 'express-rate-limit';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { mkdirSync, createReadStream, writeFileSync, statSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { db, type PostRow, type Side, type Kind } from './db.js';
@@ -12,7 +13,19 @@ mkdirSync(MEDIA_DIR, { recursive: true });
 
 const app = express();
 app.disable('x-powered-by');
+app.set('trust proxy', 1); // Caddy sitzt davor — sonst zaehlt das Limit unten alle IPs als eine.
 app.use(express.json({ limit: '256kb' }));
+// Grosszuegig, nur als Netz gegen Missbrauch/Bugs, sobald die API nicht mehr
+// nur uebers Tailnet erreichbar ist — nicht als Schutz vor gezielten Angriffen gedacht.
+app.use(
+  '/api',
+  rateLimit({
+    windowMs: 60_000,
+    limit: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
 
 /** Fehler mit HTTP-Status, damit die zentrale Middleware sauber antworten kann. */
 class HttpError extends Error {
@@ -40,6 +53,9 @@ const SIDES: Side[] = ['a', 'b'];
 const KINDS: Kind[] = ['text', 'photo', 'video', 'voice', 'tape'];
 /** Diese Arten brauchen eine hochgeladene Datei. */
 const MEDIA_KINDS: Kind[] = ['photo', 'video', 'voice'];
+/** Wie ein Zettel "befestigt" ist — nur fuer kind === 'text' relevant. */
+const NOTE_STYLES = ['tape', 'pin', 'staple', 'clip', 'fold'] as const;
+type NoteStyle = (typeof NOTE_STYLES)[number];
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, at: new Date().toISOString() });
@@ -112,6 +128,7 @@ app.get('/api/profiles', (_req, res) => {
 app.put('/api/profiles/:name', (req, res) => {
   const name = decodeURIComponent(req.params.name).trim().slice(0, 40);
   if (!name) throw new HttpError(400, 'Name fehlt');
+  requireIdentity(req, name);
 
   const avatarId = req.body?.avatarId ?? null;
   if (avatarId && !db.prepare(`SELECT 1 FROM media WHERE id = ?`).get(avatarId)) {
@@ -146,30 +163,131 @@ function dropMedia(id: string): void {
  * Kassetten — jede steht für eine Runde von Leuten
  * ---------------------------------------------------------------------- */
 
-const SIDE_B_TTL_MS = 24 * 60 * 60 * 1000;
+const BERLIN_DAY = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Berlin',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
 
-/**
- * Abgelaufene Seite-B-Beitraege entfernen, samt ihrer Medien.
- * Laeuft faul bei jedem Zugriff — bei dieser Datenmenge braucht es keinen
- * Hintergrundjob, und so ist garantiert nichts Abgelaufenes mehr sichtbar.
- */
-function sweepPosts(): void {
-  const gone = db
-    .prepare(`SELECT id, media_id FROM posts WHERE expires_at IS NOT NULL AND expires_at < ?`)
-    .all(Date.now()) as { id: string; media_id: string | null }[];
-  if (gone.length === 0) return;
-
-  db.transaction(() => {
-    const del = db.prepare(`DELETE FROM posts WHERE id = ?`);
-    for (const p of gone) {
-      del.run(p.id);
-      if (p.media_id) dropMedia(p.media_id);
-    }
-  })();
-  console.log(`[kliqtape] ${gone.length} abgelaufene Beiträge überspielt`);
+/** Kalendertag in Europe/Berlin als UTC-Mitternacht — bewusst NICHT der
+ *  rohe Zeitstempel, sonst driftet die Differenz an DST-Umstellungstagen
+ *  (23h/25h statt 24h) und Tagesgrenzen landen an der falschen Stelle. */
+function berlinCivilDay(ms: number): number {
+  const parts = BERLIN_DAY.formatToParts(new Date(ms));
+  const y = Number(parts.find((p) => p.type === 'year')!.value);
+  const m = Number(parts.find((p) => p.type === 'month')!.value);
+  const d = Number(parts.find((p) => p.type === 'day')!.value);
+  return Date.UTC(y, m - 1, d);
 }
 
-function requireMember(cassetteId: string, person: string): void {
+/** Tape-Nummer: 1 = Gruendungstag der Kassette, danach ein Tape pro
+ *  Kalendertag, unabhaengig davon ob gepostet wurde. */
+function tapeIndexOf(cassetteCreatedAt: number, postedAt: number): number {
+  const days = Math.round((berlinCivilDay(postedAt) - berlinCivilDay(cassetteCreatedAt)) / 86_400_000);
+  return days + 1;
+}
+
+/* -------------------------------------------------------------------------
+ * Minimale Identitaet — ein Token pro Name statt eines vollen Login-Systems.
+ *
+ * Vorher reichte ein bekannter/erratener Name, um sich als diese Person
+ * auszugeben (tragbar, solange nur ueber Tailscale erreichbar). Sobald das
+ * Backend oeffentlich haengt, aendert sich das Bedrohungsmodell qualitativ,
+ * nicht nur graduell. Absichtlich minimal: kein Passwort, keine E-Mail, kein
+ * Ablauf — ein zufaelliger Token pro Name, einmal beim ersten Beanspruchen
+ * ausgegeben, manuell auf ein Zweitgeraet uebertragbar (siehe Settings.tsx).
+ * ---------------------------------------------------------------------- */
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+/** Wirft 401, wenn der mitgeschickte Token nicht zum behaupteten Namen passt. */
+function requireIdentity(req: Request, claimedName: string): void {
+  const token = req.header('X-Auth-Token');
+  const row = token
+    ? (db.prepare(`SELECT name FROM person_tokens WHERE token_hash = ?`).get(hashToken(token)) as
+        | { name: string }
+        | undefined)
+    : undefined;
+  if (!row || row.name !== claimedName) throw new HttpError(401, 'Nicht angemeldet');
+}
+
+app.post('/api/auth/claim', (req, res) => {
+  const name = String(req.body?.name ?? '').trim().slice(0, 40);
+  if (!name) throw new HttpError(400, 'Name fehlt');
+
+  const existing = db.prepare(`SELECT 1 FROM person_tokens WHERE name = ?`).get(name);
+  if (existing) throw new HttpError(409, 'Name schon vergeben — Zugangscode von deinem anderen Gerät nötig');
+
+  const token = randomBytes(24).toString('base64url');
+  db.prepare(`INSERT INTO person_tokens (name, token_hash, created_at) VALUES (?, ?, ?)`).run(
+    name,
+    hashToken(token),
+    Date.now(),
+  );
+  res.status(201).json({ name, token });
+});
+
+app.get('/api/auth/whoami', (req, res) => {
+  const token = req.header('X-Auth-Token');
+  const row = token
+    ? (db.prepare(`SELECT name FROM person_tokens WHERE token_hash = ?`).get(hashToken(token)) as
+        | { name: string }
+        | undefined)
+    : undefined;
+  if (!row) throw new HttpError(401, 'Unbekannter Zugangscode');
+  res.json({ name: row.name });
+});
+
+// Frueher (vor dem Token) nur ein lokaler setMe() in Settings.tsx — die
+// eigenen alten Beitraege behielten bewusst den alten Namen ("Prototyp ohne
+// Login"). Mit dem Token ist der Name jetzt auch der Primaerschluessel der
+// Identitaet, ein rein lokales Umbenennen wuerde den Token von seinem Namen
+// trennen und ihn ungueltig machen. Deshalb hier ein echter, serverseitiger
+// Umzug — der Token bleibt derselbe, nur der Name dahinter aendert sich,
+// ueberall, wo er als Referenz auftaucht (anders als bei DELETE /api/me, wo
+// die Person verschwindet, bleibt sie hier ja dieselbe Person).
+app.post('/api/auth/rename', (req, res) => {
+  const token = req.header('X-Auth-Token');
+  const current = token
+    ? (db.prepare(`SELECT name FROM person_tokens WHERE token_hash = ?`).get(hashToken(token)) as
+        | { name: string }
+        | undefined)
+    : undefined;
+  if (!current) throw new HttpError(401, 'Nicht angemeldet');
+
+  const next = String(req.body?.name ?? '').trim().slice(0, 40);
+  if (!next) throw new HttpError(400, 'Name fehlt');
+  if (next === current.name) return void res.json({ name: current.name });
+
+  const taken = db.prepare(`SELECT 1 FROM person_tokens WHERE name = ?`).get(next);
+  if (taken) throw new HttpError(409, 'Name schon vergeben');
+
+  const from = current.name;
+  db.transaction(() => {
+    db.prepare(`UPDATE person_tokens SET name = ? WHERE name = ?`).run(next, from);
+    db.prepare(`UPDATE cassette_members SET member = ? WHERE member = ?`).run(next, from);
+    db.prepare(`UPDATE cassette_members SET added_by = ? WHERE added_by = ?`).run(next, from);
+    db.prepare(`UPDATE cassettes SET created_by = ? WHERE created_by = ?`).run(next, from);
+    db.prepare(`UPDATE posts SET author = ? WHERE author = ?`).run(next, from);
+    db.prepare(`UPDATE reactions SET author = ? WHERE author = ?`).run(next, from);
+    db.prepare(`UPDATE profiles SET name = ? WHERE name = ?`).run(next, from);
+    db.prepare(`UPDATE hotline_threads SET person_a = ? WHERE person_a = ?`).run(next, from);
+    db.prepare(`UPDATE hotline_threads SET person_b = ? WHERE person_b = ?`).run(next, from);
+    db.prepare(`UPDATE hotline_messages SET from_name = ? WHERE from_name = ?`).run(next, from);
+    db.prepare(`UPDATE mixtapes SET from_name = ? WHERE from_name = ?`).run(next, from);
+    db.prepare(`UPDATE mixtapes SET to_name = ? WHERE to_name = ?`).run(next, from);
+    db.prepare(`UPDATE cassette_tapes SET named_by = ? WHERE named_by = ?`).run(next, from);
+    db.prepare(`UPDATE cassette_tape_favorites SET member = ? WHERE member = ?`).run(next, from);
+  })();
+
+  res.json({ name: next });
+});
+
+function requireMember(req: Request, cassetteId: string, person: string): void {
+  requireIdentity(req, person);
   const ok = db
     .prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`)
     .get(cassetteId, person);
@@ -179,11 +297,11 @@ function requireMember(cassetteId: string, person: string): void {
 app.get('/api/cassettes', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
-  sweepPosts();
+  requireIdentity(req, me);
 
   const rows = db
     .prepare(
-      `SELECT c.id, c.name, c.created_by, c.created_at, c.color_seed,
+      `SELECT c.id, c.name, c.created_by, c.created_at, c.color_seed, c.color_index,
               (SELECT COUNT(*) FROM cassette_members m2 WHERE m2.cassette_id = c.id) AS members,
               (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'a') AS side_a,
               (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'b') AS side_b,
@@ -198,6 +316,7 @@ app.get('/api/cassettes', (req, res) => {
     created_by: string;
     created_at: number;
     color_seed: string | null;
+    color_index: number | null;
     members: number;
     side_a: number;
     side_b: number;
@@ -211,6 +330,7 @@ app.get('/api/cassettes', (req, res) => {
       createdBy: r.created_by,
       createdAt: r.created_at,
       colorSeed: r.color_seed,
+      colorIndex: r.color_index,
       memberCount: r.members,
       sideA: r.side_a,
       sideB: r.side_b,
@@ -233,6 +353,7 @@ app.post('/api/cassettes', (req, res) => {
   const colorSeed = req.body?.colorSeed ? String(req.body.colorSeed) : null;
   if (!name) throw new HttpError(400, 'Die Kassette braucht eine Beschriftung');
   if (!by) throw new HttpError(400, 'Name fehlt');
+  requireIdentity(req, by);
 
   const id = randomUUID();
   const now = Date.now();
@@ -245,12 +366,12 @@ app.post('/api/cassettes', (req, res) => {
     ).run(id, by, by, now);
   })();
 
-  res.status(201).json({ id, name, createdBy: by, colorSeed, memberCount: 1, sideA: 0, sideB: 0 });
+  res.status(201).json({ id, name, createdBy: by, colorSeed, colorIndex: null, memberCount: 1, sideA: 0, sideB: 0 });
 });
 
 app.patch('/api/cassettes/:id', (req, res) => {
   const by = String(req.body?.by ?? '').trim();
-  requireMember(req.params.id, by);
+  requireMember(req, req.params.id, by);
 
   // Name und Farb-Override sind unabhaengig voneinander setzbar — Umbenennen
   // soll das Aussehen nicht anfassen, und umgekehrt.
@@ -263,16 +384,28 @@ app.patch('/api/cassettes/:id', (req, res) => {
     const colorSeed = req.body.colorSeed ? String(req.body.colorSeed) : null;
     db.prepare(`UPDATE cassettes SET color_seed = ? WHERE id = ?`).run(colorSeed, req.params.id);
   }
-  if (req.body?.name === undefined && req.body?.colorSeed === undefined) {
+  if (req.body?.colorIndex !== undefined) {
+    // Anzahl Bandsorten dupliziert aus frontend/src/lib/cassetteLook.ts
+    // (PAIR_COUNT) — kein gemeinsames Package fuer eine einzelne Zahl.
+    const PAIR_COUNT = 16;
+    const raw = req.body.colorIndex;
+    const colorIndex = raw === null ? null : Number(raw);
+    if (colorIndex !== null && (!Number.isInteger(colorIndex) || colorIndex < 0 || colorIndex >= PAIR_COUNT)) {
+      throw new HttpError(400, `colorIndex muss 0-${PAIR_COUNT - 1} oder null sein`);
+    }
+    db.prepare(`UPDATE cassettes SET color_index = ? WHERE id = ?`).run(colorIndex, req.params.id);
+  }
+  if (req.body?.name === undefined && req.body?.colorSeed === undefined && req.body?.colorIndex === undefined) {
     throw new HttpError(400, 'Nichts zu ändern');
   }
 
-  const row = db.prepare(`SELECT id, name, color_seed FROM cassettes WHERE id = ?`).get(req.params.id) as {
+  const row = db.prepare(`SELECT id, name, color_seed, color_index FROM cassettes WHERE id = ?`).get(req.params.id) as {
     id: string;
     name: string;
     color_seed: string | null;
+    color_index: number | null;
   };
-  res.json({ id: row.id, name: row.name, colorSeed: row.color_seed });
+  res.json({ id: row.id, name: row.name, colorSeed: row.color_seed, colorIndex: row.color_index });
 });
 
 // Jedes Mitglied darf jemanden holen — wie im echten Freundeskreis.
@@ -280,7 +413,7 @@ app.post('/api/cassettes/:id/members', (req, res) => {
   const by = String(req.body?.by ?? '').trim();
   const member = String(req.body?.member ?? '').trim().slice(0, 40);
   if (!member) throw new HttpError(400, 'Wen denn?');
-  requireMember(req.params.id, by);
+  requireMember(req, req.params.id, by);
 
   db.prepare(
     `INSERT OR IGNORE INTO cassette_members (cassette_id, member, added_by, joined_at)
@@ -293,7 +426,7 @@ app.post('/api/cassettes/:id/members', (req, res) => {
 app.delete('/api/cassettes/:id/members/:member', (req, res) => {
   const by = String(req.query.by ?? '').trim();
   const target = decodeURIComponent(req.params.member);
-  requireMember(req.params.id, by);
+  requireMember(req, req.params.id, by);
 
   db.prepare(`DELETE FROM cassette_members WHERE cassette_id = ? AND member = ?`).run(
     req.params.id, target,
@@ -310,35 +443,73 @@ app.delete('/api/cassettes/:id/members/:member', (req, res) => {
       .all(req.params.id) as { media_id: string }[]) {
       dropMedia(p.media_id);
     }
+    db.prepare(`DELETE FROM posts WHERE cassette_id = ?`).run(req.params.id);
     db.prepare(`DELETE FROM cassettes WHERE id = ?`).run(req.params.id);
   }
 
   res.status(204).end();
 });
 
+// Jedes Mitglied darf die ganze Kassette loeschen, nicht nur eine gerade
+// leer gewordene — wie das Umbenennen/Umfaerben ist auch das eine
+// gleichberechtigte Aktion, keine, die nur der Gruendung vorbehalten ist.
+app.delete('/api/cassettes/:id', (req, res) => {
+  const by = String(req.query.by ?? '').trim();
+  requireMember(req, req.params.id, by);
+
+  const stats = db.transaction(() => {
+    // Medien zuerst einsammeln, danach loeschen — sonst sind die Referenzen weg.
+    const mediaIds = (
+      db
+        .prepare(`SELECT media_id AS id FROM posts WHERE cassette_id = ? AND media_id IS NOT NULL`)
+        .all(req.params.id) as { id: string }[]
+    ).map((r) => r.id);
+
+    const posts = db.prepare(`DELETE FROM posts WHERE cassette_id = ?`).run(req.params.id).changes;
+    // cassette_members/cassette_tapes/cassette_tape_favorites kaskadieren
+    // automatisch (ON DELETE CASCADE, siehe db.ts) — posts hingegen wurde per
+    // addColumn nachgeruestet und muss deshalb hier explizit zuerst raus.
+    db.prepare(`DELETE FROM cassettes WHERE id = ?`).run(req.params.id);
+
+    for (const id of mediaIds) dropMedia(id);
+    return { posts, medien: mediaIds.length };
+  })();
+
+  res.json({ geloescht: stats });
+});
+
 /* -------------------------------------------------------------------------
  * Posts
  * ---------------------------------------------------------------------- */
 
-interface FeedItem extends Omit<PostRow, 'media_id' | 'tape_id' | 'cassette_id' | 'expires_at'> {
+interface FeedItem extends Omit<PostRow, 'media_id' | 'tape_id' | 'cassette_id' | 'expires_at' | 'note_style'> {
   cassetteId: string;
-  expiresAt: number | null;
   mediaId: string | null;
   durationMs: number | null;
   tapeId: string | null;
   tape: { title: string; coverId: string | null; trackCount: number } | null;
   track: string;
-  reactors: string[];
+  /** Nur auf Seite A gesetzt — welches Tape (Kalendertag) dieser Post gehoert. */
+  tapeIndex: number | null;
+  tonfetzenCount: number;
+  iSentTonfetzen: boolean;
+  noteStyle: NoteStyle | null;
 }
 
 app.get('/api/posts', (req, res) => {
   const side = String(req.query.side ?? 'a') as Side;
   const cassetteId = String(req.query.cassette ?? '').trim();
+  const me = String(req.query.me ?? '').trim();
   if (!SIDES.includes(side)) throw new HttpError(400, 'side muss a oder b sein');
   if (!cassetteId) throw new HttpError(400, 'Welche Kassette?');
 
-  // Erst überspielen, dann ausliefern — so ist nie etwas Abgelaufenes sichtbar.
-  sweepPosts();
+  const cassette = db.prepare(`SELECT created_at FROM cassettes WHERE id = ?`).get(cassetteId) as
+    | { created_at: number }
+    | undefined;
+  if (!cassette) throw new HttpError(404, 'Kassette nicht gefunden');
+  // Fehlte bisher komplett: ohne diese Pruefung konnte jede Person mit einer
+  // Kassetten-ID deren ganzen Feed lesen, egal ob Mitglied oder nicht.
+  requireMember(req, cassetteId, me);
 
   // Aeltestes zuerst: der Feed laeuft wie ein Band von vorn nach hinten ab.
   const rows = db
@@ -359,49 +530,202 @@ app.get('/api/posts', (req, res) => {
     tape_tracks: number | null;
   })[];
 
+  // Tonfetzen sind eine private Geste: wie viele Reaktionen ein Beitrag hat, sieht
+  // nur die postende Person. Alle anderen sehen bloss, ob sie selbst schon
+  // getapt haben (kein erneutes Aufnehmen noetig/moeglich in der UI).
   const reactions = db
     .prepare(
       `SELECT r.post_id, r.author
          FROM reactions r
          JOIN posts p ON p.id = r.post_id
-        WHERE p.side = ? AND p.cassette_id = ?
-        ORDER BY r.created_at ASC`,
+        WHERE p.side = ? AND p.cassette_id = ? AND r.media_id IS NOT NULL`,
     )
     .all(side, cassetteId) as { post_id: string; author: string }[];
 
-  const byPost = new Map<string, string[]>();
+  const countByPost = new Map<string, number>();
+  const mineByPost = new Set<string>();
   for (const r of reactions) {
-    const list = byPost.get(r.post_id) ?? [];
-    list.push(r.author);
-    byPost.set(r.post_id, list);
+    countByPost.set(r.post_id, (countByPost.get(r.post_id) ?? 0) + 1);
+    if (r.author === me) mineByPost.add(r.post_id);
   }
 
-  const items: FeedItem[] = rows.map((row, i) => ({
-    id: row.id,
-    side: row.side,
-    author: row.author,
-    kind: row.kind,
-    body: row.body,
-    created_at: row.created_at,
-    cassetteId: row.cassette_id,
-    expiresAt: row.expires_at,
-    mediaId: row.media_id,
-    durationMs: row.duration_ms,
-    source: row.source ?? 'camera',
-    tapeId: row.tape_id,
-    tape: row.tape_id
-      ? { title: row.tape_title ?? '', coverId: row.tape_cover, trackCount: row.tape_tracks ?? 0 }
-      : null,
-    // Track-Nummer statt Zeitstempel: A1, A2, B1 ... Position auf dem Band.
-    track: `${side.toUpperCase()}${i + 1}`,
-    reactors: byPost.get(row.id) ?? [],
-  }));
+  // Track-Nummer: auf Seite A pro Tape (Kalendertag) neu ab 1 — wie bei
+  // einer echten Kassette hat jedes Tape seine eigene Tracklist. Seite B
+  // kennt kein Tape, dort bleibt es die durchgehende Position.
+  const tapePositions = new Map<number, number>();
+
+  const items: FeedItem[] = rows.map((row, i) => {
+    const tapeIndex = side === 'a' ? tapeIndexOf(cassette.created_at, row.created_at) : null;
+    let track: string;
+    if (tapeIndex != null) {
+      const pos = (tapePositions.get(tapeIndex) ?? 0) + 1;
+      tapePositions.set(tapeIndex, pos);
+      track = `A${pos}`;
+    } else {
+      track = `${side.toUpperCase()}${i + 1}`;
+    }
+    return {
+      id: row.id,
+      side: row.side,
+      author: row.author,
+      kind: row.kind,
+      body: row.body,
+      created_at: row.created_at,
+      cassetteId: row.cassette_id,
+      mediaId: row.media_id,
+      durationMs: row.duration_ms,
+      source: row.source ?? 'camera',
+      tapeId: row.tape_id,
+      tape: row.tape_id
+        ? { title: row.tape_title ?? '', coverId: row.tape_cover, trackCount: row.tape_tracks ?? 0 }
+        : null,
+      track,
+      tapeIndex,
+      tonfetzenCount: row.author === me ? countByPost.get(row.id) ?? 0 : 0,
+      iSentTonfetzen: mineByPost.has(row.id),
+      noteStyle: (row.note_style as NoteStyle | null) ?? null,
+    };
+  });
 
   res.json(items);
 });
 
+/* -------------------------------------------------------------------------
+ * Tapes — Seite A in Kalendertage gegliedert, siehe tapeIndexOf() oben.
+ * Kassettenweit benennbar, pro Person favorisierbar. Sparse: eine Zeile
+ * existiert nur, wenn jemand tatsaechlich benannt oder favorisiert hat.
+ * ---------------------------------------------------------------------- */
+
+/** Hoechste erreichbare Tape-Nummer heute — verhindert Benennen/Favorisieren
+ *  eines Tapes, das noch gar nicht angefangen hat. */
+function maxTapeIndex(cassetteCreatedAt: number): number {
+  return tapeIndexOf(cassetteCreatedAt, Date.now());
+}
+
+function loadCassetteOr404(cassetteId: string): { created_at: number } {
+  const row = db.prepare(`SELECT created_at FROM cassettes WHERE id = ?`).get(cassetteId) as
+    | { created_at: number }
+    | undefined;
+  if (!row) throw new HttpError(404, 'Kassette nicht gefunden');
+  return row;
+}
+
+app.get('/api/cassettes/:id/tapes', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireMember(req, req.params.id, me);
+
+  const names = db
+    .prepare(`SELECT tape_index, name FROM cassette_tapes WHERE cassette_id = ?`)
+    .all(req.params.id) as { tape_index: number; name: string }[];
+  const favCounts = db
+    .prepare(
+      `SELECT tape_index, COUNT(*) AS n FROM cassette_tape_favorites
+        WHERE cassette_id = ? GROUP BY tape_index`,
+    )
+    .all(req.params.id) as { tape_index: number; n: number }[];
+  const mine = new Set(
+    (
+      db
+        .prepare(`SELECT tape_index FROM cassette_tape_favorites WHERE cassette_id = ? AND member = ?`)
+        .all(req.params.id, me) as { tape_index: number }[]
+    ).map((r) => r.tape_index),
+  );
+
+  const byIndex = new Map<number, { name: string | null; favoriteCount: number }>();
+  for (const n of names) byIndex.set(n.tape_index, { name: n.name, favoriteCount: 0 });
+  for (const f of favCounts) {
+    const cur = byIndex.get(f.tape_index) ?? { name: null, favoriteCount: 0 };
+    cur.favoriteCount = f.n;
+    byIndex.set(f.tape_index, cur);
+  }
+
+  res.json(
+    [...byIndex.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([tapeIndex, v]) => ({
+        tapeIndex,
+        name: v.name,
+        favoriteCount: v.favoriteCount,
+        favoritedByMe: mine.has(tapeIndex),
+      })),
+  );
+});
+
+app.get('/api/cassettes/:id/tapes/favorites', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireMember(req, req.params.id, me);
+
+  const rows = db
+    .prepare(
+      `SELECT f.tape_index, f.favorited_at, t.name
+         FROM cassette_tape_favorites f
+         LEFT JOIN cassette_tapes t ON t.cassette_id = f.cassette_id AND t.tape_index = f.tape_index
+        WHERE f.cassette_id = ? AND f.member = ?
+        ORDER BY f.tape_index ASC`,
+    )
+    .all(req.params.id, me) as { tape_index: number; favorited_at: number; name: string | null }[];
+
+  res.json(rows.map((r) => ({ tapeIndex: r.tape_index, name: r.name, favoritedAt: r.favorited_at })));
+});
+
+app.put('/api/cassettes/:id/tapes/:tapeIndex', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  const name = String(req.body?.name ?? '').trim();
+  const tapeIndex = Number(req.params.tapeIndex);
+  if (!by) throw new HttpError(400, 'Name fehlt');
+  requireMember(req, req.params.id, by);
+
+  const cassette = loadCassetteOr404(req.params.id);
+  if (!Number.isInteger(tapeIndex) || tapeIndex < 1 || tapeIndex > maxTapeIndex(cassette.created_at)) {
+    throw new HttpError(400, 'Ungueltiges Tape');
+  }
+
+  if (!name) {
+    db.prepare(`DELETE FROM cassette_tapes WHERE cassette_id = ? AND tape_index = ?`).run(req.params.id, tapeIndex);
+  } else {
+    db.prepare(
+      `INSERT INTO cassette_tapes (cassette_id, tape_index, name, named_by, named_at) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(cassette_id, tape_index) DO UPDATE SET name = excluded.name, named_by = excluded.named_by, named_at = excluded.named_at`,
+    ).run(req.params.id, tapeIndex, name.slice(0, 60), by, Date.now());
+  }
+
+  res.json({ tapeIndex, name: name || null });
+});
+
+app.post('/api/cassettes/:id/tapes/:tapeIndex/favorite', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  const tapeIndex = Number(req.params.tapeIndex);
+  if (!by) throw new HttpError(400, 'Name fehlt');
+  requireMember(req, req.params.id, by);
+
+  const cassette = loadCassetteOr404(req.params.id);
+  if (!Number.isInteger(tapeIndex) || tapeIndex < 1 || tapeIndex > maxTapeIndex(cassette.created_at)) {
+    throw new HttpError(400, 'Ungueltiges Tape');
+  }
+
+  db.prepare(
+    `INSERT OR IGNORE INTO cassette_tape_favorites (cassette_id, tape_index, member, favorited_at) VALUES (?, ?, ?, ?)`,
+  ).run(req.params.id, tapeIndex, by, Date.now());
+
+  res.status(201).json({ ok: true });
+});
+
+app.delete('/api/cassettes/:id/tapes/:tapeIndex/favorite', (req, res) => {
+  const by = String(req.query.by ?? '').trim();
+  if (!by) throw new HttpError(400, 'Name fehlt');
+  requireMember(req, req.params.id, by);
+
+  db.prepare(
+    `DELETE FROM cassette_tape_favorites WHERE cassette_id = ? AND tape_index = ? AND member = ?`,
+  ).run(req.params.id, Number(req.params.tapeIndex), by);
+
+  res.status(204).end();
+});
+
 app.post('/api/posts', (req, res) => {
-  const { cassetteId, side, author, kind, body = '', mediaId = null, tapeId = null, source = null } =
+  const { cassetteId, side, author, kind, body = '', mediaId = null, tapeId = null, source = null, noteStyle = null } =
     req.body ?? {};
 
   if (!SIDES.includes(side)) throw new HttpError(400, 'side muss a oder b sein');
@@ -410,9 +734,12 @@ app.post('/api/posts', (req, res) => {
     throw new HttpError(400, 'Name fehlt');
   }
   if (!cassetteId) throw new HttpError(400, 'Welche Kassette?');
-  requireMember(cassetteId, author.trim());
+  requireMember(req, cassetteId, author.trim());
   if (kind === 'text' && String(body).trim().length === 0) {
     throw new HttpError(400, 'Leerer Text');
+  }
+  if (noteStyle != null && !NOTE_STYLES.includes(noteStyle)) {
+    throw new HttpError(400, 'Unbekannte Zettel-Optik');
   }
   if (MEDIA_KINDS.includes(kind) && !mediaId) {
     throw new HttpError(400, `Für ${kind} fehlt die Aufnahme`);
@@ -437,8 +764,8 @@ app.post('/api/posts', (req, res) => {
   const now = Date.now();
   db.prepare(
     `INSERT INTO posts (id, cassette_id, side, author, kind, body, media_id, tape_id, source,
-                        expires_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        note_style, expires_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     cassetteId,
@@ -449,8 +776,9 @@ app.post('/api/posts', (req, res) => {
     mediaId,
     kind === 'tape' ? tapeId : null,
     source === 'upload' ? 'upload' : 'camera',
-    // Seite B wird nach 24 Stunden überspielt, Seite A bleibt.
-    side === 'b' ? now + SIDE_B_TTL_MS : null,
+    kind === 'text' ? noteStyle : null,
+    // Beide Seiten sind dauerhaft — siehe db.ts fuer die Historie dazu.
+    null,
     now,
   );
 
@@ -471,44 +799,72 @@ app.delete('/api/posts/:id', (req, res) => {
   res.status(204).end();
 });
 
-// Reaktion ist ein Umschalter, nicht ein Zaehler: entweder du bist dabei oder nicht.
+// Tonfetzen: eine kurze, private Sprachreaktion statt eines oeffentlichen
+// Zaehlers. Ein zweiter Tonfetzen auf denselben Beitrag ersetzt den ersten, statt
+// sich anzuhaeufen — pro Person zaehlt die aktuellste Reaktion.
 app.post('/api/posts/:id/react', (req, res) => {
   const author = String(req.body?.author ?? '').trim();
+  const mediaId = String(req.body?.mediaId ?? '').trim();
   if (!author) throw new HttpError(400, 'Name fehlt');
-  if (!db.prepare(`SELECT 1 FROM posts WHERE id = ?`).get(req.params.id)) {
-    throw new HttpError(404, 'Post nicht gefunden');
-  }
+  if (!mediaId) throw new HttpError(400, 'Aufnahme fehlt');
 
-  const existing = db
-    .prepare(`SELECT 1 FROM reactions WHERE post_id = ? AND author = ?`)
-    .get(req.params.id, author);
+  const post = db.prepare(`SELECT cassette_id, author AS post_author FROM posts WHERE id = ?`).get(
+    req.params.id,
+  ) as { cassette_id: string; post_author: string } | undefined;
+  if (!post) throw new HttpError(404, 'Post nicht gefunden');
+  if (post.post_author === author) throw new HttpError(400, 'Kein Tonfetzen auf den eigenen Beitrag');
+  requireMember(req, post.cassette_id, author);
+  if (!db.prepare(`SELECT 1 FROM media WHERE id = ?`).get(mediaId)) throw new HttpError(400, 'Medium unbekannt');
 
-  if (existing) {
-    db.prepare(`DELETE FROM reactions WHERE post_id = ? AND author = ?`).run(req.params.id, author);
-    res.json({ reacted: false });
-  } else {
-    db.prepare(`INSERT INTO reactions (post_id, author, created_at) VALUES (?, ?, ?)`).run(
-      req.params.id,
-      author,
-      Date.now(),
-    );
-    res.json({ reacted: true });
-  }
+  const prev = db
+    .prepare(`SELECT media_id FROM reactions WHERE post_id = ? AND author = ?`)
+    .get(req.params.id, author) as { media_id: string | null } | undefined;
+
+  db.prepare(
+    `INSERT INTO reactions (post_id, author, media_id, created_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT(post_id, author) DO UPDATE SET media_id = excluded.media_id, created_at = excluded.created_at`,
+  ).run(req.params.id, author, mediaId, Date.now());
+
+  // Erst NACH dem Umbiegen aufraeumen — sonst schlaegt der Fremdschluessel
+  // zu, waehrend die Reaktion noch auf die alte Aufnahme zeigt.
+  if (prev?.media_id && prev.media_id !== mediaId) dropMedia(prev.media_id);
+
+  res.status(201).json({ mediaId });
+});
+
+// Nur die postende Person hoert ihre Tonfetzen — bewusst nicht oeffentlich,
+// sonst wird aus der Geste wieder eine Performance vor der ganzen Runde.
+app.get('/api/posts/:id/reactions', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  const post = db.prepare(`SELECT author FROM posts WHERE id = ?`).get(req.params.id) as
+    | { author: string }
+    | undefined;
+  if (!post) throw new HttpError(404, 'Post nicht gefunden');
+  if (!me || post.author !== me) throw new HttpError(403, 'Nur die postende Person hört das');
+  requireIdentity(req, me);
+
+  const rows = db
+    .prepare(
+      `SELECT author, media_id, created_at
+         FROM reactions
+        WHERE post_id = ? AND media_id IS NOT NULL
+        ORDER BY created_at ASC`,
+    )
+    .all(req.params.id) as { author: string; media_id: string; created_at: number }[];
+
+  res.json(rows.map((r) => ({ author: r.author, mediaId: r.media_id, createdAt: r.created_at })));
 });
 
 /* -------------------------------------------------------------------------
  * Hot Line — eine offene Leitung zwischen zwei Personen
  *
- * Rollierendes Fenster: jede Nachricht haelt die Leitung offen, aber nur die
- * letzten 24 Stunden bleiben sichtbar. Es gibt bewusst keine feste Frist auf
- * der Leitung selbst — sie "lebt" einfach, solange sie mindestens eine
- * Nachricht hat, die juenger als 24 Stunden ist. Schreibt niemand mehr,
- * fallen die letzten Nachrichten nach und nach raus, bis die Leitung leer
- * ist und verschwindet. So bleibt aktives Schreiben ohne Wirkung auf einen
- * waechst nie zu einem permanenten Archiv — beides zugleich.
+ * Dauerhaft, wie Seite B: eine Leitung sammelt den ganzen Verlauf, nichts
+ * verfaellt mehr. Fruehere Version hatte hier ein rollierendes 24h-Fenster
+ * (siehe Git-Historie) — bewusst aufgegeben, weil Hot Line WhatsApp fuer die
+ * Runde teilweise ersetzen soll und ein Verlauf dafuer nicht staendig
+ * Nachrichten verlieren darf.
  * ---------------------------------------------------------------------- */
 
-const HOTLINE_TTL_MS = 24 * 60 * 60 * 1000;
 const HOTLINE_MAX = 240;
 
 /** Zwei Namen alphabetisch sortiert — macht das Paar unabhaengig davon,
@@ -517,30 +873,16 @@ function pairOf(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];
 }
 
-/**
- * Nachrichten aelter als 24 Stunden entfernen — einzeln, nicht die ganze
- * Leitung. Leitungen ohne verbliebene Nachricht sind danach Karteileichen
- * und werden mit entfernt. Laeuft faul bei jedem Zugriff.
- */
-function sweepHotlineMessages(): void {
-  const cutoff = Date.now() - HOTLINE_TTL_MS;
-  db.prepare(`DELETE FROM hotline_messages WHERE created_at < ?`).run(cutoff);
-  db.prepare(
-    `DELETE FROM hotline_threads
-      WHERE NOT EXISTS (SELECT 1 FROM hotline_messages m WHERE m.thread_id = hotline_threads.id)`,
-  ).run();
-}
-
 app.get('/api/hotlines/threads', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
-
-  sweepHotlineMessages();
+  requireIdentity(req, me);
 
   const rows = db
     .prepare(
       `SELECT t.id, t.person_a, t.person_b, t.created_at,
               (SELECT body FROM hotline_messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_body,
+              (SELECT kind FROM hotline_messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_kind,
               (SELECT from_name FROM hotline_messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_from,
               (SELECT MAX(created_at) FROM hotline_messages m WHERE m.thread_id = t.id) AS last_at,
               (SELECT COUNT(*) FROM hotline_messages m WHERE m.thread_id = t.id AND m.from_name != ? AND m.heard_at IS NULL) AS unread
@@ -554,6 +896,7 @@ app.get('/api/hotlines/threads', (req, res) => {
     person_b: string;
     created_at: number;
     last_body: string | null;
+    last_kind: Kind | null;
     last_from: string | null;
     last_at: number | null;
     unread: number;
@@ -561,16 +904,15 @@ app.get('/api/hotlines/threads', (req, res) => {
 
   res.json(
     rows
-      // Nach dem Sweep hat jede verbliebene Leitung mindestens eine
-      // Nachricht — last_at waere sonst NULL. Defensiv trotzdem filtern.
+      // Eine Leitung ohne jede Nachricht kann es nicht geben (jede Zeile
+      // entsteht erst mit der ersten Nachricht) — defensiv trotzdem filtern.
       .filter((r) => r.last_at != null)
       .map((r) => ({
         id: r.id,
         other: r.person_a === me ? r.person_b : r.person_a,
         createdAt: r.created_at,
-        // Wann die Leitung einschlaeft, wenn niemand mehr schreibt.
-        expiresAt: r.last_at! + HOTLINE_TTL_MS,
         lastBody: r.last_body,
+        lastKind: r.last_kind,
         lastFrom: r.last_from,
         lastAt: r.last_at,
         unread: r.unread,
@@ -581,39 +923,57 @@ app.get('/api/hotlines/threads', (req, res) => {
 app.get('/api/hotlines/threads/:id/messages', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
-
-  sweepHotlineMessages();
+  requireIdentity(req, me);
 
   const thread = db.prepare(`SELECT * FROM hotline_threads WHERE id = ?`).get(req.params.id) as
     | { id: string; person_a: string; person_b: string; created_at: number }
     | undefined;
-  if (!thread) throw new HttpError(404, 'Leitung nicht gefunden — vielleicht schon überspielt');
+  if (!thread) throw new HttpError(404, 'Leitung nicht gefunden');
   if (thread.person_a !== me && thread.person_b !== me) {
     throw new HttpError(403, 'Du bist nicht in dieser Leitung');
   }
 
   const messages = db
     .prepare(
-      `SELECT id, from_name, body, created_at, heard_at FROM hotline_messages
-        WHERE thread_id = ? ORDER BY created_at ASC`,
+      `SELECT h.id, h.from_name, h.body, h.kind, h.media_id, h.tape_id, h.source, h.created_at, h.heard_at,
+              med.duration_ms AS duration_ms,
+              t.title AS tape_title, t.cover_id AS tape_cover,
+              (SELECT COUNT(*) FROM mixtape_tracks mt WHERE mt.mixtape_id = t.id) AS tape_tracks
+         FROM hotline_messages h
+         LEFT JOIN media med ON med.id = h.media_id
+         LEFT JOIN mixtapes t ON t.id = h.tape_id
+        WHERE h.thread_id = ? ORDER BY h.created_at ASC`,
     )
-    .all(thread.id) as { id: string; from_name: string; body: string; created_at: number; heard_at: number | null }[];
-
-  // Kann durch den Sweep gerade eben leer geworden sein — dann ist die
-  // Leitung faktisch geschlossen, auch wenn die Zeile noch kurz existiert.
-  if (messages.length === 0) throw new HttpError(404, 'Leitung nicht gefunden — vielleicht schon überspielt');
-
-  const lastAt = messages[messages.length - 1]!.created_at;
+    .all(thread.id) as {
+    id: string;
+    from_name: string;
+    body: string;
+    kind: Kind;
+    media_id: string | null;
+    tape_id: string | null;
+    source: 'camera' | 'upload' | null;
+    created_at: number;
+    heard_at: number | null;
+    duration_ms: number | null;
+    tape_title: string | null;
+    tape_cover: string | null;
+    tape_tracks: number | null;
+  }[];
 
   res.json({
     id: thread.id,
     other: thread.person_a === me ? thread.person_b : thread.person_a,
     createdAt: thread.created_at,
-    expiresAt: lastAt + HOTLINE_TTL_MS,
     messages: messages.map((m) => ({
       id: m.id,
       from: m.from_name,
       body: m.body,
+      kind: m.kind,
+      mediaId: m.media_id,
+      durationMs: m.duration_ms,
+      tapeId: m.tape_id,
+      tape: m.tape_id ? { title: m.tape_title ?? '', coverId: m.tape_cover, trackCount: m.tape_tracks ?? 0 } : null,
+      source: m.source,
       createdAt: m.created_at,
       heard: m.heard_at != null,
     })),
@@ -623,15 +983,31 @@ app.get('/api/hotlines/threads/:id/messages', (req, res) => {
 app.post('/api/hotlines/threads', (req, res) => {
   const from = String(req.body?.from ?? '').trim();
   const to = String(req.body?.to ?? '').trim();
+  const kind = (req.body?.kind ?? 'text') as Kind;
   const text = String(req.body?.body ?? '').trim();
+  const mediaId = req.body?.mediaId ? String(req.body.mediaId) : null;
+  const tapeId = req.body?.tapeId ? String(req.body.tapeId) : null;
+  const source = req.body?.source ? String(req.body.source) : null;
 
-  if (!text) throw new HttpError(400, 'Leere Nachricht');
+  if (!KINDS.includes(kind)) throw new HttpError(400, 'Unbekannte Nachrichtenart');
+  if (kind === 'text' && !text) throw new HttpError(400, 'Leere Nachricht');
   if (text.length > HOTLINE_MAX) throw new HttpError(400, `Maximal ${HOTLINE_MAX} Zeichen`);
   if (!from) throw new HttpError(400, 'Absender fehlt');
   if (!to) throw new HttpError(400, 'Empfänger fehlt');
   if (from === to) throw new HttpError(400, 'Man ruft sich nicht selbst an');
-
-  sweepHotlineMessages();
+  requireIdentity(req, from);
+  if (MEDIA_KINDS.includes(kind) && !mediaId) throw new HttpError(400, `Für ${kind} fehlt die Aufnahme`);
+  if (mediaId && !db.prepare(`SELECT 1 FROM media WHERE id = ?`).get(mediaId)) {
+    throw new HttpError(400, 'Medium unbekannt');
+  }
+  if (kind === 'tape') {
+    if (!tapeId) throw new HttpError(400, 'Welches Mixtape?');
+    const tape = db.prepare(`SELECT sealed_at FROM mixtapes WHERE id = ?`).get(tapeId) as
+      | { sealed_at: number | null }
+      | undefined;
+    if (!tape) throw new HttpError(404, 'Mixtape nicht gefunden');
+    if (!tape.sealed_at) throw new HttpError(400, 'Nur versiegelte Mixtapes lassen sich teilen');
+  }
 
   const [a, b] = pairOf(from, to);
   const now = Date.now();
@@ -654,15 +1030,17 @@ app.post('/api/hotlines/threads', (req, res) => {
 
   const messageId = randomUUID();
   db.prepare(
-    `INSERT INTO hotline_messages (id, thread_id, from_name, body, created_at) VALUES (?, ?, ?, ?, ?)`,
-  ).run(messageId, threadId, from, text, now);
+    `INSERT INTO hotline_messages (id, thread_id, from_name, body, kind, media_id, tape_id, source, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(messageId, threadId, from, text, kind, mediaId, tapeId, source, now);
 
-  res.status(201).json({ threadId, messageId, expiresAt: now + HOTLINE_TTL_MS });
+  res.status(201).json({ threadId, messageId });
 });
 
 app.post('/api/hotlines/threads/:id/heard', (req, res) => {
   const me = String(req.body?.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
 
   const thread = db.prepare(`SELECT person_a, person_b FROM hotline_threads WHERE id = ?`).get(req.params.id) as
     | { person_a: string; person_b: string }
@@ -734,6 +1112,7 @@ const shapeTape = (t: TapeRow, withTracks = true) => ({
 app.get('/api/mixtapes', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
 
   const rows = db
     .prepare(
@@ -748,6 +1127,7 @@ app.get('/api/mixtapes', (req, res) => {
 
 app.get('/api/mixtapes/:id', (req, res) => {
   const me = String(req.query.me ?? '').trim();
+  if (me) requireIdentity(req, me);
   const tape = loadTape(req.params.id);
   // Ein unversiegeltes Tape ist privat — der Empfaenger darf nichts sehen,
   // bevor es uebergeben wurde. Das ist die halbe Idee.
@@ -763,6 +1143,7 @@ app.post('/api/mixtapes', (req, res) => {
   if (!from) throw new HttpError(400, 'Absender fehlt');
   if (!to) throw new HttpError(400, 'Für wen ist das Tape?');
   if (from === to) throw new HttpError(400, 'Ein Mixtape macht man für jemand anderen');
+  requireIdentity(req, from);
 
   const id = randomUUID();
   db.prepare(
@@ -866,6 +1247,7 @@ app.delete('/api/mixtapes/:id', (req, res) => {
 app.get('/api/export', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
 
   const tapes = (db.prepare(`SELECT * FROM mixtapes WHERE from_name = ? OR to_name = ?`).all(me, me) as TapeRow[])
     .map((t) => ({ ...shapeTape(t), tracks: tracksOf(t.id) }));
@@ -884,6 +1266,7 @@ app.get('/api/export', (req, res) => {
     hotlineLeitungen: db
       .prepare(`SELECT * FROM hotline_threads WHERE person_a = ? OR person_b = ?`)
       .all(me, me),
+    tapeFavoriten: db.prepare(`SELECT * FROM cassette_tape_favorites WHERE member = ?`).all(me),
     mixtapes: tapes,
   });
 });
@@ -891,6 +1274,7 @@ app.get('/api/export', (req, res) => {
 app.delete('/api/me', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
 
   const stats = db.transaction(() => {
     // Medien zuerst einsammeln, danach loeschen — sonst sind die Referenzen weg.
@@ -908,6 +1292,12 @@ app.delete('/api/me', (req, res) => {
     db.prepare(`DELETE FROM hotline_threads WHERE person_a = ? OR person_b = ?`).run(me, me);
     db.prepare(`DELETE FROM profiles WHERE name = ?`).run(me);
     db.prepare(`DELETE FROM cassette_members WHERE member = ?`).run(me);
+    db.prepare(`DELETE FROM cassette_tape_favorites WHERE member = ?`).run(me);
+    // Ein Tape-Name ist kassettenweit sichtbar, nicht privat — kann beim
+    // Loeschen der benennenden Person trotzdem mit verschwinden, konsistent
+    // damit dass auch Posts geloescht statt anonymisiert werden.
+    db.prepare(`DELETE FROM cassette_tapes WHERE named_by = ?`).run(me);
+    db.prepare(`DELETE FROM person_tokens WHERE name = ?`).run(me);
 
     for (const id of mediaIds) dropMedia(id);
     return { posts, tapes, medien: mediaIds.length };

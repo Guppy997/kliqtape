@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteEverything, downloadExport, saveProfile, uploadMedia } from '@/lib/api';
+import { ApiError, deleteEverything, downloadExport, renameIdentity, saveProfile, uploadMedia } from '@/lib/api';
 import { useApp, SIDE_LABEL, SIDE_HINT, type Side } from '@/store/appStore';
 import Avatar, { useProfiles } from './Avatar';
 import CameraCapture from './CameraCapture';
@@ -11,7 +11,8 @@ import { VERSION } from '@/changelog';
 
 export default function Settings() {
   const me = useApp((s) => s.me);
-  const setMe = useApp((s) => s.setMe);
+  const token = useApp((s) => s.token);
+  const setIdentity = useApp((s) => s.setIdentity);
   const side = useApp((s) => s.side);
   const startSide = useApp((s) => s.startSide);
   const setStartSide = useApp((s) => s.setStartSide);
@@ -21,6 +22,8 @@ export default function Settings() {
   const [shooting, setShooting] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [name, setName] = useState(me);
+  const [renaming, setRenaming] = useState(false);
+  const [tokenVisible, setTokenVisible] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,13 +45,35 @@ export default function Settings() {
     onError: (e: Error) => setError(e.message),
   });
 
-  function renameMe() {
+  async function renameMe() {
     const next = name.trim();
     if (!next || next === me) return;
-    // Beitraege haengen im Prototyp am Namen, nicht an einer ID.
-    setMe(next);
-    setNote(`Ab jetzt heißt du ${next}. Alte Aufnahmen behalten den alten Namen.`);
-    refresh();
+    setRenaming(true);
+    setError(null);
+    try {
+      // Serverseitiger Umzug: cascaded ueber Beitraege, Mixtapes, Hotlines
+      // etc. (POST /api/auth/rename) — der Token bleibt derselbe, nur der
+      // Name aendert sich.
+      const res = await renameIdentity(next);
+      if (token) setIdentity(res.name, token);
+      setNote(`Ab jetzt heißt du ${res.name}. Alte Aufnahmen behalten den alten Namen.`);
+      refresh();
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) setError('Der Name ist schon vergeben.');
+      else setError(e instanceof Error ? e.message : 'Umbenennen fehlgeschlagen');
+    } finally {
+      setRenaming(false);
+    }
+  }
+
+  async function copyToken() {
+    if (!token) return;
+    try {
+      await navigator.clipboard.writeText(token);
+      setNote('Zugangscode kopiert.');
+    } catch {
+      setError('Kopieren fehlgeschlagen — Zugangscode von Hand markieren.');
+    }
   }
 
   async function wipe() {
@@ -154,14 +179,47 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={renameMe}
-                  disabled={!name.trim() || name.trim() === me}
+                  disabled={!name.trim() || name.trim() === me || renaming}
                   className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
                   style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
                 >
-                  Ändern
+                  {renaming ? '…' : 'Ändern'}
                 </button>
               </div>
-              <Hint>Im Prototyp ist der Name deine Identität — alte Aufnahmen behalten den alten.</Hint>
+              <Hint>Der Name ist deine Identität — alte Aufnahmen behalten den alten.</Hint>
+            </Block>
+
+            <Block title="Zugangscode">
+              <div className="flex gap-2">
+                <div
+                  className="min-w-0 flex-1 truncate rounded-lg px-3 py-2.5 font-mono text-sm"
+                  style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+                >
+                  {token ? (tokenVisible ? token : '•'.repeat(20)) : '—'}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTokenVisible((v) => !v)}
+                  disabled={!token}
+                  className="shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+                  style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+                >
+                  {tokenVisible ? 'Verbergen' : 'Anzeigen'}
+                </button>
+                <button
+                  type="button"
+                  onClick={copyToken}
+                  disabled={!token}
+                  className="shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+                  style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+                >
+                  Kopieren
+                </button>
+              </div>
+              <Hint>
+                Beweist, dass du {me} bist — auf einem zweiten Gerät beim Namen "{me}" eintippen, um
+                dort dieselbe Identität zu übernehmen. Nicht per E-Mail oder SMS verschicken.
+              </Hint>
             </Block>
 
             {/* --- Startseite --- */}

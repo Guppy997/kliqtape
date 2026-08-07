@@ -59,23 +59,21 @@ button {
 }
 
 /* Seitenabhaengige Tokens. Alle Komponenten lesen nur diese Variablen,
-   nie direkt die Seiten-Farben — dadurch ist der A/B-Wechsel eine Zeile. */
-.side-a {
+   nie direkt die Seiten-Farben — dadurch ist der A/B-Wechsel eine Zeile.
+   BEWUSST nicht mehr ueber .side-a/.side-b-Klassen gesetzt: eine Klasse auf
+   demselben Element wie das Farb-Inline-Style von App.tsx (auf <html>) haette
+   das JS-gesetzte, kassettenspezifische Farbe *immer* wieder ueberschrieben
+   — das Ergebnis war, dass Seite B nie ihre eigene Bandfarbe zeigte, sondern
+   dauerhaft dieses Lila hier. Deshalb nur noch als :root-Basiswert (fuer den
+   kurzen Moment vor dem ersten Effect-Lauf), App.tsx setzt danach per Inline-
+   Style auf demselben Element (<html>) — das gewinnt dann korrekt. */
+:root {
   --screen: var(--color-a-screen);
   --ink: var(--color-a-label);
   --dim: var(--color-a-dim);
   --accent: var(--color-a-stripe);
   --card: var(--color-a-card);
   --line: var(--color-a-line);
-}
-
-.side-b {
-  --screen: var(--color-b-screen);
-  --ink: var(--color-b-ink);
-  --dim: var(--color-b-dim);
-  --accent: var(--color-b-glow);
-  --card: rgba(107, 74, 158, 0.2);
-  --line: rgba(201, 175, 239, 0.28);
 }
 
 /* --- Kassettengehaeuse ---------------------------------------------------- */

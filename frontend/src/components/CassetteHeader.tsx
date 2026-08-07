@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useApp, SIDE_LABEL, type Side } from '@/store/appStore';
 import { lookFor, type CassetteLook } from '@/lib/cassetteLook';
 import Lockup from './Lockup';
@@ -11,6 +11,9 @@ interface Props {
   /** Was auf dem Beschriftungsfeld steht — der Name der Runde. */
   label: string;
   count: number;
+  /** Welches Tape heute aktiv ist (Datum + Name/Nummer) — Tage gehoeren zur
+   *  Kassette, nicht zur Seite, deshalb auf A und B gleich. */
+  currentTape?: { dateLabel: string; shortName: string; fullName: string } | null;
 }
 
 const R_MAX = 26;
@@ -33,7 +36,7 @@ const FLIP_MS = 180;
  * Beim Scrollen faehrt das Beschriftungsfeld ein, das Fenster bleibt: die
  * Spulen laufen weiter mit, links duenner, rechts dicker.
  */
-export default function CassetteHeader({ cassetteId, pairIndex, label, count }: Props) {
+export default function CassetteHeader({ cassetteId, pairIndex, label, count, currentTape }: Props) {
   const side = useApp((s) => s.side);
   const setSide = useApp((s) => s.setSide);
 
@@ -64,6 +67,19 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count }: 
     };
   }, [side, count, cassetteId]);
 
+  // Seiten-/Kassettenwechsel soll IMMER aufgeklappt und oben starten — sonst
+  // bliebe das Beschriftungsfeld bei einem lang gewachsenen Band fuer immer
+  // eingeklappt, sobald man einmal tief gescrollt hatte. useLayoutEffect statt
+  // useEffect UND getrennt von flip(): der Aufruf muss erst laufen, NACHDEM
+  // React den Inhalt der neuen Seite/Kassette schon ins DOM committed hat —
+  // vorher gerufen, kann der Browser das Scrollen-auf-0 durch "scroll
+  // anchoring" beim anschliessenden Content-Wechsel wieder rueckgaengig machen.
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0 });
+    setCollapse(0);
+    setProgress(0);
+  }, [side, cassetteId]);
+
   useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
 
   function flip() {
@@ -72,13 +88,11 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count }: 
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setSide(next);
-      window.scrollTo({ top: 0 });
       return;
     }
     setFlipping(true);
     timer.current = window.setTimeout(() => {
       setSide(next);
-      window.scrollTo({ top: 0 });
       setFlipping(false);
     }, FLIP_MS);
   }
@@ -102,6 +116,17 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count }: 
       }
     : {
         backgroundImage:
+          // Marmor-/Konfetti-Flecken, nur bei gemusterten Sorten — weiche
+          // Farbkleckse an denselben (pro Kassette festen) Positionen wie die
+          // Gebrauchsspuren, damit es sich nicht bei jedem Rendern verschiebt.
+          (plastic.fleck
+            ? plastic.fleck
+                .map((c, i) => {
+                  const [x, y] = wear.specks[i] ?? [30 + i * 25, 45];
+                  return `radial-gradient(40% 36% at ${x}% ${y}%, ${c}66 0%, ${c}00 70%)`;
+                })
+                .join(',') + ','
+            : '') +
           `repeating-linear-gradient(180deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,0) 1px 5px),` +
           `radial-gradient(120% 80% at 18% 6%, rgba(255,255,255,.45), rgba(255,255,255,0) 46%),` +
           `radial-gradient(90% 70% at 84% 96%, ${plastic.pcb}55, ${plastic.pcb}00 55%),` +
@@ -163,7 +188,9 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count }: 
                 </span>
               </span>
               <span className="font-mono shrink-0 text-[0.5rem] uppercase tracking-[0.16em] opacity-80">
-                Position {count.toString().padStart(3, '0')}
+                {/* Ecke zeigt immer nur die kurze Nummernform, nie einen
+                    umbenannten Namen — hier ist kein Platz fuers Umbrechen. */}
+                {currentTape ? currentTape.shortName : `Position ${count.toString().padStart(3, '0')}`}
               </span>
             </div>
 
@@ -179,7 +206,12 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count }: 
               </div>
               <div className="pt-1.5" style={{ borderBottom: `1px solid ${rule}` }}>
                 <span className="font-hand block truncate pb-0.5 text-[0.95rem] leading-tight opacity-70" style={{ color: ink }}>
-                  Seite {side.toUpperCase()} — {SIDE_LABEL[side]}
+                  {/* Seite A zeigt den (ggf. umbenannten) Tape-Namen, Seite B
+                      immer nur "Gruppenchat" — Tape-Namen sind ein Konzept
+                      des Archivs, nicht des laufenden Gesprächs. */}
+                  {currentTape
+                    ? `${currentTape.dateLabel} — ${isA ? currentTape.fullName : SIDE_LABEL.b}`
+                    : `Seite ${side.toUpperCase()} — ${SIDE_LABEL[side]}`}
                 </span>
               </div>
             </div>

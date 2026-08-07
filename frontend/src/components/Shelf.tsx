@@ -1,60 +1,127 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createMixtape, fetchMixtapes, mediaUrl, type Mixtape } from '@/lib/api';
+import { useMemo, useState } from 'react';
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
+import { favoriteTape, fetchFeed, fetchTapes, setTapeName, unfavoriteTape, type Cassette, type TapeOverride } from '@/lib/api';
+import { berlinDateLabel, dateOfTapeIndex } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
-import Avatar, { useProfiles } from './Avatar';
+import { MiniCassette, useCassettes, useLookIndex } from './CassetteDeck';
+import { defaultTapeName, tapeDisplayName } from './TapeHeader';
 import Sheet from './Sheet';
-import TapeEditor from './TapeEditor';
-import TapeView from './TapeView';
 
-type View = null | 'shelf' | 'new' | { open: string } | { edit: string };
+interface TapeRow {
+  cassette: Cassette;
+  tapeIndex: number;
+  override: TapeOverride | undefined;
+  dateMs: number;
+}
 
 /**
- * Das Regal — hier liegen die Mixtapes.
+ * Das Regal — jetzt ein Regal voller Tapes ueber ALLE Kassetten hinweg,
+ * nicht nur die gerade eingelegte. Optik wie das Kassettenfach beim Eject:
+ * Miniaturband in der echten Farbe der jeweiligen Kassette, Zeile fuer
+ * Zeile, nach Datum sortiert — "Alle Freunde · Tape 04" kann direkt neben
+ * "Die Kliqe · Tape 02" stehen, je nachdem was aktueller ist.
  *
- * Getrennt vom Feed, weil ein Mixtape kein Beitrag ist: es geht an genau eine
- * Person, es entsteht ueber Tage, und es bleibt.
+ * Mixtapes haben seit kurzem einen eigenen Knopf im Laufwerk (siehe
+ * MixtapeShelf.tsx) — das hier ist ausschliesslich Seite-A-Archiv.
  */
-export default function Shelf() {
-  const me = useApp((s) => s.me);
-  const side = useApp((s) => s.side);
+export default function Shelf({ me }: { me: string }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [cassetteFilter, setCassetteFilter] = useState<string | 'all'>('all');
+
   const qc = useQueryClient();
+  const { data: cassettes = [] } = useCassettes();
+  const looks = useLookIndex();
+  const cassetteId = useApp((s) => s.cassetteId);
+  const setCassette = useApp((s) => s.setCassette);
+  const setSide = useApp((s) => s.setSide);
 
-  const [view, setView] = useState<View>(null);
-  const [to, setTo] = useState('');
-  const [title, setTitle] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  const { data: tapes = [] } = useQuery({
-    queryKey: ['mixtapes', me],
-    queryFn: () => fetchMixtapes(me),
-    enabled: Boolean(me),
+  // Pro Kassette einmal den Seite-A-Feed (fuer "hat dieses Tape ueberhaupt
+  // etwas") und die Tape-Namen/Favoriten holen — nur wenn das Regal offen
+  // ist, kein Hintergrund-Traffic fuer eine selten geoeffnete Ansicht. Der
+  // Query-Key ist bewusst identisch zu dem, den Deck() fuer die gerade
+  // eingelegte Kassette nutzt — TanStack Query teilt sich den Cache dann.
+  const feedQueries = useQueries({
+    queries: cassettes.map((c) => ({
+      queryKey: ['feed', c.id, 'a', me],
+      queryFn: () => fetchFeed(c.id, 'a', me),
+      enabled: open,
+    })),
   });
-  const { data: profiles = [] } = useProfiles();
-
-  const create = useMutation({
-    mutationFn: () => createMixtape(me, to.trim(), title.trim()),
-    onSuccess: (tape) => {
-      void qc.invalidateQueries({ queryKey: ['mixtapes', me] });
-      setTo('');
-      setTitle('');
-      setView({ edit: tape.id });
-    },
-    onError: (e: Error) => setError(e.message),
+  const tapeQueries = useQueries({
+    queries: cassettes.map((c) => ({
+      queryKey: ['tapes', c.id, me],
+      queryFn: () => fetchTapes(c.id, me),
+      enabled: open,
+    })),
   });
+  const loading = open && [...feedQueries, ...tapeQueries].some((q) => q.isLoading);
 
-  const forMe = tapes.filter((t) => t.to === me && t.sealed);
-  const drafts = tapes.filter((t) => t.from === me && !t.sealed);
-  const given = tapes.filter((t) => t.from === me && t.sealed);
+  const rows = useMemo(() => {
+    const out: TapeRow[] = [];
+    cassettes.forEach((c, i) => {
+      const feed = feedQueries[i]?.data ?? [];
+      const tapes = tapeQueries[i]?.data ?? [];
+      const overrideByIndex = new Map(tapes.map((t) => [t.tapeIndex, t]));
+      const withContent = new Set(feed.map((item) => item.tapeIndex).filter((n): n is number => n != null));
+      // Leere Tapes tauchen gar nicht erst auf — ein abgeschlossener Tag laesst
+      // sich sowieso nicht nachtraeglich befuellen, eine leere Zeile waere
+      // reiner Ballast ohne dass man je etwas damit tun koennte.
+      for (const idx of withContent) {
+        out.push({
+          cassette: c,
+          tapeIndex: idx,
+          override: overrideByIndex.get(idx),
+          dateMs: dateOfTapeIndex(c.createdAt, idx).getTime(),
+        });
+      }
+    });
+    // Neuestes zuerst, ueber alle Kassetten hinweg gemischt nach echtem Datum.
+    out.sort((a, b) => b.dateMs - a.dateMs);
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cassettes, feedQueries.map((q) => q.dataUpdatedAt).join(','), tapeQueries.map((q) => q.dataUpdatedAt).join(',')]);
 
-  const others = profiles.map((p) => p.name).filter((n) => n !== me);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (cassetteFilter !== 'all' && r.cassette.id !== cassetteFilter) return false;
+      if (!q) return true;
+      const tapeName = tapeDisplayName(r.tapeIndex, r.override?.name).toLowerCase();
+      return tapeName.includes(q) || r.cassette.name.toLowerCase().includes(q);
+    });
+  }, [rows, query, cassetteFilter]);
+
+  function invalidateTapesOf(id: string) {
+    void qc.invalidateQueries({ queryKey: ['tapes', id, me] });
+  }
+
+  function jumpTo(row: TapeRow) {
+    setCassette(row.cassette.id);
+    setSide('a');
+    setOpen(false);
+    // Bei einem Kassettenwechsel muss der Feed erst laden, bevor der Anker
+    // existiert — kurz nachschauen, bis er da ist (bei der schon eingelegten
+    // Kassette meist schon beim ersten Versuch).
+    let tries = 0;
+    const check = () => {
+      const el = document.getElementById(`tape-${row.tapeIndex}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      if (tries++ < 60) requestAnimationFrame(check);
+    };
+    requestAnimationFrame(check);
+  }
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setView('shelf')}
-        className="font-mono flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.1em]"
+        onClick={() => setOpen(true)}
+        className="font-mono flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.58rem] uppercase tracking-[0.1em]"
         style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
       >
         <svg width="11" height="9" viewBox="0 0 11 9" fill="currentColor" aria-hidden="true">
@@ -63,185 +130,203 @@ export default function Shelf() {
           <circle cx="7.4" cy="4.5" r="1.5" />
         </svg>
         Regal
-        {forMe.length + drafts.length > 0 && (
-          <span className="tabular-nums" style={{ color: 'var(--accent)' }}>
-            {forMe.length + drafts.length}
-          </span>
-        )}
       </button>
 
-      {/* Regal-Übersicht */}
-      <Sheet open={view === 'shelf'} onClose={() => setView(null)} variant="full" title="Regal">
-        <div className="flex flex-col gap-6">
-          <button
-            type="button"
-            onClick={() => {
-              setError(null);
-              setView('new');
-            }}
-            className="font-disp rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-[0.12em]"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
-          >
-            Neues Mixtape bauen
-          </button>
+      <Sheet open={open} onClose={() => setOpen(false)} variant="full" title="Regal">
+        <div className="flex flex-col gap-3">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Tape oder Kassette suchen …"
+            className="rounded-lg px-3 py-2 text-sm outline-none"
+            style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+          />
 
-          <Group title="Für dich" tapes={forMe} side={side} empty="Noch nichts geschenkt bekommen." onOpen={(id) => setView({ open: id })} />
-          <Group title="In Arbeit" tapes={drafts} side={side} empty="Kein Entwurf offen." onOpen={(id) => setView({ edit: id })} draft />
-          <Group title="Verschenkt" tapes={given} side={side} empty="Noch nichts verschenkt." onOpen={(id) => setView({ open: id })} />
-        </div>
-      </Sheet>
-
-      {/* Neues Tape anlegen */}
-      <Sheet open={view === 'new'} onClose={() => setView('shelf')} variant="full" title="Neues Mixtape">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="font-mono text-[0.62rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
-              Für wen?
-            </label>
-            <input
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              maxLength={40}
-              placeholder="Name"
-              className="rounded-lg px-3 py-2.5 text-base outline-none"
-              style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-            />
-            {others.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {others.map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setTo(n)}
-                    className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[0.72rem]"
-                    style={{
-                      background: to === n ? 'var(--accent)' : 'var(--card)',
-                      border: '1px solid var(--line)',
-                      color: to === n ? '#17130E' : 'var(--ink)',
-                    }}
-                  >
-                    <Avatar name={n} side={side} size={1.1} />
-                    {n}
-                  </button>
-                ))}
-              </div>
-            )}
+          <div>
+            <button
+              type="button"
+              onClick={() => setFilterOpen((v) => !v)}
+              aria-expanded={filterOpen}
+              className="font-mono shrink-0 rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.1em]"
+              style={{
+                border: '1px solid var(--line)',
+                color: cassetteFilter === 'all' ? 'var(--dim)' : 'var(--accent)',
+              }}
+            >
+              {cassetteFilter === 'all' ? 'Filter' : cassettes.find((c) => c.id === cassetteFilter)?.name ?? 'Filter'}{' '}
+              {filterOpen ? '▴' : '▾'}
+            </button>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="font-mono text-[0.62rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
-              Titel
-            </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={60}
-              placeholder="z. B. Für den Heimweg"
-              className="font-hand rounded-lg px-3 py-2.5 text-[1.05rem] outline-none"
-              style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-            />
+          {/* Ausgeklappt statt einer Dauerreihe — die Auswahl (welche
+              Kassette) braucht nicht staendig Platz. */}
+          {filterOpen && (
+            <div
+              className="flex flex-wrap gap-1.5 rounded-lg p-2"
+              style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setCassetteFilter('all');
+                  setFilterOpen(false);
+                }}
+                className="font-mono rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.08em]"
+                style={{
+                  background: cassetteFilter === 'all' ? 'var(--accent)' : 'transparent',
+                  border: '1px solid var(--line)',
+                  color: cassetteFilter === 'all' ? '#17130E' : 'var(--ink)',
+                }}
+              >
+                Alle
+              </button>
+              {cassettes.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    setCassetteFilter(c.id);
+                    setFilterOpen(false);
+                  }}
+                  className="font-mono rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.08em]"
+                  style={{
+                    background: cassetteFilter === c.id ? 'var(--accent)' : 'transparent',
+                    border: '1px solid var(--line)',
+                    color: cassetteFilter === c.id ? '#17130E' : 'var(--ink)',
+                  }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {loading && (
+            <p className="font-mono py-6 text-center text-xs" style={{ color: 'var(--dim)' }}>
+              Lädt …
+            </p>
+          )}
+
+          {!loading && filtered.length === 0 && (
+            <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>
+              Nichts gefunden.
+            </p>
+          )}
+
+          <div className="flex flex-col gap-1.5">
+            {filtered.map((row) => (
+              <TapeRowItem
+                key={`${row.cassette.id}-${row.tapeIndex}`}
+                row={row}
+                pairIndex={looks.get(row.cassette.id)}
+                active={row.cassette.id === cassetteId}
+                me={me}
+                onJump={() => jumpTo(row)}
+                onChanged={() => invalidateTapesOf(row.cassette.id)}
+              />
+            ))}
           </div>
-
-          {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
-
-          <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-            Bis zu 12 Titel. {to.trim() || 'Der Empfänger'} sieht nichts davon, solange du daran
-            baust — erst das Versiegeln überreicht das Tape.
-          </p>
-
-          <button
-            type="button"
-            disabled={!to.trim() || !title.trim() || create.isPending}
-            onClick={() => create.mutate()}
-            className="font-disp rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-[0.12em] disabled:opacity-40"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
-          >
-            Band einlegen
-          </button>
         </div>
-      </Sheet>
-
-      {/* Entwurf bearbeiten */}
-      <Sheet
-        open={typeof view === 'object' && view !== null && 'edit' in view}
-        onClose={() => setView('shelf')}
-        variant="full"
-        title="Mixtape bauen"
-      >
-        {typeof view === 'object' && view !== null && 'edit' in view && (
-          <TapeEditor id={view.edit} onClose={() => setView('shelf')} />
-        )}
-      </Sheet>
-
-      {/* Versiegeltes Tape ansehen */}
-      <Sheet
-        open={typeof view === 'object' && view !== null && 'open' in view}
-        onClose={() => setView('shelf')}
-        variant="full"
-        title="Mixtape"
-      >
-        {typeof view === 'object' && view !== null && 'open' in view && <TapeView id={view.open} />}
       </Sheet>
     </>
   );
 }
 
-function Group({
-  title,
-  tapes,
-  side,
-  empty,
-  onOpen,
-  draft,
+function TapeRowItem({
+  row,
+  pairIndex,
+  active,
+  me,
+  onJump,
+  onChanged,
 }: {
-  title: string;
-  tapes: Mixtape[];
-  side: 'a' | 'b';
-  empty: string;
-  onOpen: (id: string) => void;
-  draft?: boolean;
+  row: TapeRow;
+  pairIndex: number | undefined;
+  active: boolean;
+  me: string;
+  onJump: () => void;
+  onChanged: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const { cassette, tapeIndex, override, dateMs } = row;
+  const name = tapeDisplayName(tapeIndex, override?.name);
+
+  const rename = useMutation({
+    mutationFn: (value: string) => setTapeName(cassette.id, tapeIndex, value, me),
+    onSuccess: () => {
+      setEditing(false);
+      onChanged();
+    },
+  });
+
+  const favorite = useMutation({
+    mutationFn: () =>
+      override?.favoritedByMe ? unfavoriteTape(cassette.id, tapeIndex, me) : favoriteTape(cassette.id, tapeIndex, me),
+    onSuccess: onChanged,
+  });
+
   return (
-    <section className="flex flex-col gap-2">
-      <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
-        {title}
-      </h3>
+    <div
+      className="flex items-center gap-2.5 rounded-xl p-2.5"
+      style={{
+        background: 'var(--card)',
+        border: `1px solid ${active ? 'var(--accent)' : 'var(--line)'}`,
+      }}
+    >
+      <button type="button" onClick={onJump} aria-label={`${cassette.name}, ${name} ansehen`} className="shrink-0">
+        <MiniCassette id={cassette.id} pairIndex={pairIndex} active={active} side="a" />
+      </button>
 
-      {tapes.length === 0 ? (
-        <p className="font-mono text-[0.64rem]" style={{ color: 'var(--dim)' }}>{empty}</p>
-      ) : (
-        tapes.map((t) => (
+      <div className="min-w-0 flex-1">
+        <span className="font-mono block truncate text-[0.56rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+          {cassette.name}
+        </span>
+        {editing ? (
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => rename.mutate(draft.trim())}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              if (e.key === 'Escape') setEditing(false);
+            }}
+            maxLength={60}
+            placeholder={defaultTapeName(tapeIndex)}
+            className="font-hand w-full rounded px-1 py-0.5 text-[1.02rem] outline-none"
+            style={{ background: 'var(--screen)', border: '1px solid var(--accent)', color: 'var(--ink)' }}
+          />
+        ) : (
           <button
-            key={t.id}
             type="button"
-            onClick={() => onOpen(t.id)}
-            className="flex items-center gap-3 rounded-xl p-2.5 text-left"
-            style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+            onClick={() => {
+              setDraft(override?.name ?? '');
+              setEditing(true);
+            }}
+            className="font-hand block w-full truncate text-left text-[1.05rem]"
+            style={{ color: 'var(--ink)' }}
           >
-            <span
-              className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md"
-              style={{ background: '#D8CFBB' }}
-            >
-              {t.coverId ? (
-                <img src={mediaUrl(t.coverId)} alt="" className="size-full object-cover" />
-              ) : (
-                <span className="font-hand text-lg text-[#3B3226]">♪</span>
-              )}
-            </span>
-
-            <span className="min-w-0 flex-1">
-              <span className="font-hand block truncate text-[1.02rem]" style={{ color: 'var(--ink)' }}>
-                {t.title || 'Ohne Titel'}
-              </span>
-              <span className="font-mono block truncate text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
-                {draft ? `für ${t.to}` : t.from === t.to ? '' : `von ${t.from} · für ${t.to}`} · {t.trackCount}/12
-              </span>
-            </span>
-
-            <Avatar name={draft ? t.to : t.from} side={side} size={1.5} />
+            {name}
           </button>
-        ))
-      )}
-    </section>
+        )}
+      </div>
+
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <button
+          type="button"
+          onClick={() => favorite.mutate()}
+          disabled={favorite.isPending}
+          aria-label={override?.favoritedByMe ? 'Favorit entfernen' : 'Als Favorit markieren'}
+          className="text-[0.8rem] leading-none disabled:opacity-50"
+          style={{ color: override?.favoritedByMe ? 'var(--accent)' : 'var(--dim)' }}
+        >
+          {override?.favoritedByMe ? '★' : '☆'}
+        </button>
+        <span className="font-mono text-[0.52rem]" style={{ color: 'var(--dim)' }}>
+          {berlinDateLabel(dateMs)}
+        </span>
+      </div>
+    </div>
   );
 }

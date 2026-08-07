@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchHotlineThreads } from '@/lib/api';
+import { previewFor } from '@/lib/chat';
 import { useApp } from '@/store/appStore';
+import { useBottomNav } from '@/store/navStore';
 import Avatar, { useProfiles } from './Avatar';
-import HotlineThread, { HOTLINE_AMBER } from './HotlineThread';
+import ChatThread, { HOTLINE_AMBER } from './ChatThread';
+import NavButton from './NavButton';
 import Sheet from './Sheet';
 
 /**
- * Der Hot-Line-Knopf — wie eine Kurzwahltaste an einem Walkman.
+ * Der Hot-Line-Knopf — einer von drei gleich gestalteten Bereichen der
+ * unteren Leiste (siehe NavButton), Icon + Zaehler statt eigener Optik.
  *
  * Antippen zeigt erst, mit wem gerade eine Leitung offen ist (weiterschreiben)
  * und mit wem man neu anfangen kann. Wählt man jemanden, öffnet sich direkt
@@ -18,7 +22,9 @@ export default function HotlineComposer() {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
 
-  const [open, setOpen] = useState(false);
+  const navActive = useBottomNav((s) => s.active);
+  const setActiveNav = useBottomNav((s) => s.setActive);
+  const open = navActive === 'hotline';
   const [target, setTarget] = useState<{ name: string; threadId?: string } | null>(null);
 
   // Nicht erst beim Oeffnen laden: die Taste soll schon vorher wissen, ob sie
@@ -37,30 +43,31 @@ export default function HotlineComposer() {
 
   return (
     <>
-      {/* Beschriftung ueber der Taste, wie an einem Walkman. Vollflaechig
-          gelb mit einem leichten schwarzen Rahmen — Definition ohne
-          Gehaeuse oder Platte drumherum. */}
-      <span className="flex shrink-0 flex-col items-center gap-1">
-        <span className="font-mono text-[0.5rem] uppercase tracking-[0.18em]" style={{ color: HOTLINE_AMBER }}>
-          Hot Line
-        </span>
-        <button
-          type="button"
-          aria-label={unread > 0 ? `Hot Line, ${unread} neu` : 'Hot Line — jemandem direkt und privat schreiben'}
-          onClick={() => {
-            setTarget(null);
-            setOpen(true);
-          }}
-          className={`grid h-9 w-9 place-items-center rounded-[3px] transition-transform active:translate-y-px active:scale-95 ${unread > 0 ? 'blink' : ''}`}
-          style={{
-            background: HOTLINE_AMBER,
-            border: '1px solid rgba(0,0,0,.4)',
-            boxShadow: `0 0 0.35rem ${HOTLINE_AMBER}80`,
-          }}
-        />
-      </span>
+      <NavButton
+        icon={
+          <svg width="17" height="15" viewBox="0 0 17 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+            <path d="M1.5 2.5A1.5 1.5 0 0 1 3 1h11a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 14 11H6.8L3 14v-3H3a1.5 1.5 0 0 1-1.5-1.5v-7Z" />
+          </svg>
+        }
+        label="Hot Line"
+        badge={unread > 0 ? unread : undefined}
+        active={open}
+        onClick={() => {
+          setTarget(null);
+          setActiveNav('hotline');
+        }}
+      />
 
-      <Sheet open={open} onClose={() => setOpen(false)} variant="full" title={target ? undefined : 'Hot Line'}>
+      {/* reserveBottomNav nur in der Uebersicht — sobald ein konkretes
+          Gespraech offen ist (target gesetzt), volle Konzentration aufs
+          Schreiben, genau wie im Gruppenchat auf Seite B. */}
+      <Sheet
+        open={open}
+        onClose={() => setActiveNav(null)}
+        variant="full"
+        reserveBottomNav={!target}
+        title={target ? undefined : 'Hot Line'}
+      >
         {target ? (
           <div className="flex h-[calc(100vh-8rem)] flex-col">
             <button
@@ -71,7 +78,8 @@ export default function HotlineComposer() {
             >
               ← Wählen
             </button>
-            <HotlineThread
+            <ChatThread
+              variant="hotline"
               threadId={target.threadId}
               startWith={target.threadId ? undefined : target.name}
               onStarted={(id) => setTarget({ name: target.name, threadId: id })}
@@ -105,7 +113,9 @@ export default function HotlineComposer() {
                           </span>
                         )}
                       </div>
-                      <p className="truncate text-[0.78rem]" style={{ color: 'var(--dim)' }}>{t.lastBody}</p>
+                      <p className="truncate text-[0.78rem]" style={{ color: 'var(--dim)' }}>
+                        {previewFor(t.lastKind ?? 'text', t.lastBody)}
+                      </p>
                     </div>
                   </button>
                 ))}
@@ -139,8 +149,7 @@ export default function HotlineComposer() {
             </section>
 
             <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-              Nur Text. Eine Leitung lebt, solange geschrieben wird — nur die letzten 24 Stunden
-              bleiben sichtbar.
+              Nur Text. Der Verlauf bleibt dauerhaft.
             </p>
           </div>
         )}

@@ -47,7 +47,9 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS posts (
     id          TEXT PRIMARY KEY,
     cassette_id TEXT REFERENCES cassettes(id) ON DELETE CASCADE,
-    -- Seite A bleibt, Seite B wird nach 24 Stunden ueberspielt.
+    -- Aktuell ungenutzt: beide Seiten sind dauerhaft. Bleibt fuer
+    -- moegliche spaetere Wiederverwendung stehen, wird von keinem Code
+    -- mehr gesetzt oder gelesen.
     expires_at  INTEGER,
     side       TEXT NOT NULL CHECK (side IN ('a','b')),
     author     TEXT NOT NULL,
@@ -77,12 +79,9 @@ db.exec(`
     PRIMARY KEY (post_id, author)
   );
 
-  -- Hot Line: eine offene Leitung zwischen zwei Personen. Rollierendes
-  -- 24-Stunden-Fenster — kein expires_at auf der Leitung selbst, sie lebt
-  -- einfach, solange sie eine Nachricht hat, die juenger als 24h ist (siehe
-  -- sweepHotlineMessages in server.ts). person_a/person_b liegen alphabetisch
-  -- sortiert, damit "wer schreibt wem zuerst" keine zwei Leitungen fuer
-  -- dasselbe Paar erzeugt.
+  -- Hot Line: eine offene Leitung zwischen zwei Personen, dauerhaft wie
+  -- Seite B. person_a/person_b liegen alphabetisch sortiert, damit "wer
+  -- schreibt wem zuerst" keine zwei Leitungen fuer dasselbe Paar erzeugt.
   CREATE TABLE IF NOT EXISTS hotline_threads (
     id         TEXT PRIMARY KEY,
     person_a   TEXT NOT NULL,
@@ -128,11 +127,45 @@ db.exec(`
     url        TEXT NOT NULL DEFAULT ''
   );
 
+  -- Ein Tape ist ein Kalendertag seit Gruendung der Kassette (Europe/Berlin,
+  -- siehe server.ts) — Gruendungstag ist Tape 1. tape_index wird nicht
+  -- gespeichert, nur aus cassettes.created_at berechnet; hier liegt nur der
+  -- optionale, kassettenweite Name, sparse (Zeile existiert nur wenn jemand
+  -- umbenannt hat).
+  CREATE TABLE IF NOT EXISTS cassette_tapes (
+    cassette_id TEXT NOT NULL REFERENCES cassettes(id) ON DELETE CASCADE,
+    tape_index  INTEGER NOT NULL,
+    name        TEXT NOT NULL,
+    named_by    TEXT NOT NULL,
+    named_at    INTEGER NOT NULL,
+    PRIMARY KEY (cassette_id, tape_index)
+  );
+
+  -- Favorit ist privat pro Person, anders als der Name — sonst wuerde eine
+  -- Person alle anderen mit-favorisieren.
+  CREATE TABLE IF NOT EXISTS cassette_tape_favorites (
+    cassette_id  TEXT NOT NULL REFERENCES cassettes(id) ON DELETE CASCADE,
+    tape_index   INTEGER NOT NULL,
+    member       TEXT NOT NULL,
+    favorited_at INTEGER NOT NULL,
+    PRIMARY KEY (cassette_id, tape_index, member)
+  );
+
+  -- Minimale Identitaet: ein Token pro Name statt eines vollen Login-Systems
+  -- (siehe server.ts, requireIdentity). Der Token selbst wird nie
+  -- gespeichert, nur sein Hash.
+  CREATE TABLE IF NOT EXISTS person_tokens (
+    name       TEXT PRIMARY KEY,
+    token_hash TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_posts_side_time ON posts(side, created_at);
   CREATE INDEX IF NOT EXISTS idx_members_person ON cassette_members(member);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_to ON mixtapes(to_name, sealed_at);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_from ON mixtapes(from_name, sealed_at);
   CREATE INDEX IF NOT EXISTS idx_tracks_tape ON mixtape_tracks(mixtape_id, position);
+  CREATE INDEX IF NOT EXISTS idx_tape_favorites_member ON cassette_tape_favorites(cassette_id, member);
 `);
 
 /* ---------------------------------------------------------------------------
@@ -313,12 +346,31 @@ function addColumn(table: string, column: string, ddl: string, note: string): vo
 
 addColumn('posts', 'source', 'source TEXT', 'Kamera oder Galerie');
 addColumn('posts', 'cassette_id', 'cassette_id TEXT REFERENCES cassettes(id)', 'Beitrag gehoert zu einer Runde');
-addColumn('posts', 'expires_at', 'expires_at INTEGER', 'Seite B wird ueberspielt');
+addColumn('posts', 'expires_at', 'expires_at INTEGER', 'aktuell ungenutzt, fuer spaetere Wiederverwendung verfuegbar');
 // Optionaler Override fuer die Bandsorte: normalerweise haengt das Aussehen
 // an der Kassetten-ID, damit es auf jedem Geraet gleich ist. Wer explizit ein
 // anderes Muster will (oder zwei Kassetten tauschen moechte), setzt hier einen
 // eigenen Schluessel statt der ID.
 addColumn('cassettes', 'color_seed', 'color_seed TEXT', 'manueller Override fuer die Bandsorte');
+// Tonfetzen: eine kurze Sprachreaktion statt eines oeffentlichen Zaehlers.
+// Alte Reaktionen ohne media_id sind Karteileichen aus der "da war ich"-Zeit
+// davor und werden ueberall herausgefiltert, statt sie zu migrieren.
+addColumn('reactions', 'media_id', 'media_id TEXT REFERENCES media(id)', 'Tonfetzen — kurze Sprachreaktion');
+// Optik des Zettels: wie er "befestigt" ist. Null (alte Zettel) faellt beim
+// Rendern auf 'tape' zurueck, kein Backfill noetig.
+addColumn('posts', 'note_style', 'note_style TEXT', 'Zettel-Optik (Tesa, Pin, Tacker, Klammer, Eselsohr)');
+// Direkte, feste Wahl einer der 6 Bandsorten (0-5) beim Anlegen — anders als
+// color_seed (ein Hash-Eingabewert fuers automatische Kollisions-Vermeiden)
+// zeigt das IMMER genau diese Sorte, ohne Zufall. Null = weiterhin automatisch
+// per Hash zugewiesen.
+addColumn('cassettes', 'color_index', 'color_index INTEGER', 'fest gewaehlte Bandsorte (0-5), unabhaengig vom Hash');
+// Hot Line konnte bisher nur Text — jetzt dieselben Beitragsarten wie posts,
+// damit der Anhang-Knopf im Chat auf beiden Seiten (Leitung/Gruppe) gleich
+// funktioniert. 'text' als Default haelt alte Nachrichten gueltig.
+addColumn('hotline_messages', 'kind', "kind TEXT NOT NULL DEFAULT 'text'", 'Nachrichtenart wie bei posts');
+addColumn('hotline_messages', 'media_id', 'media_id TEXT REFERENCES media(id)', 'Foto/Video/O-Ton');
+addColumn('hotline_messages', 'tape_id', 'tape_id TEXT REFERENCES mixtapes(id)', 'geteiltes Mixtape');
+addColumn('hotline_messages', 'source', 'source TEXT', 'Kamera oder Galerie, wie bei posts');
 
 /**
  * Bestehende Beitraege haben noch keine Kassette. Damit nichts verlorengeht,
@@ -347,11 +399,23 @@ if (orphans.n > 0) {
     for (const a of authors) join.run(id, a.author, first, Date.now());
 
     db.prepare(`UPDATE posts SET cassette_id = ? WHERE cassette_id IS NULL`).run(id);
-    // Alte Seite-B-Beitraege bekommen rueckwirkend eine Frist ab Erstellung.
-    db.prepare(
-      `UPDATE posts SET expires_at = created_at + ? WHERE side = 'b' AND expires_at IS NULL`,
-    ).run(24 * 60 * 60 * 1000);
   })();
+}
+
+/**
+ * Seite B ist kein Story-Format mehr, sondern ein dauerhafter Gruppenchat —
+ * bestehende Seite-B-Beitraege mit einer noch offenen Frist wuerden sonst
+ * kurz nach diesem Update ueberspielt, obwohl das nicht mehr Sinn der Sache
+ * ist. Danach setzt server.ts fuer neue Seite-B-Beitraege gar kein
+ * expires_at mehr — dieser Block ist von Natur aus einmalig wirksam.
+ */
+const pendingSideB = db
+  .prepare(`SELECT COUNT(*) AS n FROM posts WHERE side = 'b' AND expires_at IS NOT NULL`)
+  .get() as { n: number };
+
+if (pendingSideB.n > 0) {
+  console.log(`[kliqtape] Seite B wird dauerhaft — ${pendingSideB.n} Beitraege verlieren ihre Frist`);
+  db.prepare(`UPDATE posts SET expires_at = NULL WHERE side = 'b' AND expires_at IS NOT NULL`).run();
 }
 
 repairReference(
@@ -378,5 +442,6 @@ export interface PostRow {
   media_id: string | null;
   tape_id: string | null;
   source: 'camera' | 'upload' | null;
+  note_style: string | null;
   created_at: number;
 }

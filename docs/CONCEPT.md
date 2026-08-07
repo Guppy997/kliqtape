@@ -76,7 +76,9 @@ saubere Typografie, großzügige Abstände, flüssige Bewegung. Kein Sepia über
   Inhalt — man sieht ihn nie umklappen.
 - **Die Spulen laufen beim Scrollen mit.** Links wird dünner, rechts dicker.
 - **Track-Nummern statt Zeitstempel.** `A3`, `B7` — Position auf dem Band, kein Zeitdruck.
-- **Reaktionen sind Gesichter, keine Zahl.** Bei zwölf Leuten ist „wer" interessanter als „wie viele".
+- **Tonfetzen statt „da war ich".** Reagieren heißt: eine 3 Sekunden kurze Sprachaufnahme an die
+  postende Person. Privat — nur sie hört, wer wie reagiert hat, niemand sonst sieht eine Liste
+  oder einen öffentlichen Zähler.
 - **Ein REC-Knopf**, kein Menüband. Was aufs Band kommt, entscheidest du danach.
 - **Live-Aufnahmen sehen anders aus als Uploads.** Kein Verbot, aber ein sichtbarer Unterschied.
 
@@ -169,7 +171,9 @@ cassette_members(cassette_id, member, added_by, joined_at)
 posts(id, cassette_id, side, author, kind, body,
       media_id, tape_id, source, expires_at, created_at)
       -- side='b' setzt expires_at = created_at + 24h
-reactions(post_id, author, created_at)
+reactions(post_id, author, media_id, created_at)
+      -- Tonfetzen: media_id zeigt auf eine kurze Sprachaufnahme, sichtbar nur fuer
+      -- posts.author selbst — sonst nur "iSentTonfetzen" (ja/nein), keine Namen
 
 mixtapes(id, from_name, to_name, title, note, cover_id, sealed_at, created_at)
 mixtape_tracks(id, mixtape_id, position, title, artist, url)

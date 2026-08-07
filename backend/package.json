@@ -1,6 +1,6 @@
 {
   "name": "kliqtape-backend",
-  "version": "0.9.3",
+  "version": "0.19.6",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.5.0",
-    "express": "^4.21.1"
+    "express": "^4.21.1",
+    "express-rate-limit": "^8.6.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",

@@ -10,6 +10,345 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.19.6',
+    date: '2026-08-07',
+    changes: [
+      'Home markiert sich jetzt auch selbst, wenn man dort tatsächlich ist — vierter echter Tab-Zustand statt reiner Aktion',
+      'Der Erstellen-Knopf oben links ist jetzt nur noch in der Home-Übersicht zu sehen, nicht mehr während Eject, Hot Line oder Neuigkeiten offen sind',
+      'Erstellen-Knopf zeigt jetzt ein Plus statt des roten REC-Punkts — dreht sich beim Öffnen zum X',
+      'Filter ist von links nach rechts gewandert, jetzt zusammen mit Regal und Profil in einer Gruppe',
+    ],
+  },
+  {
+    version: '0.19.5',
+    date: '2026-08-07',
+    changes: [
+      'Bug behoben: Home schaltete zwar auf Seite A um, ließ aber ein offenes Eject/Hot-Line/Neuigkeiten-Fenster weiter stehen — dadurch wirkte es, als würde gar nichts passieren. Home schließt den jeweiligen Bereich jetzt zuerst.',
+    ],
+  },
+  {
+    version: '0.19.4',
+    date: '2026-08-07',
+    changes: [
+      'Home-Knopf zeigt jetzt eine kleine Kassette statt eines Haussymbols — passt besser zum Rest der App',
+    ],
+  },
+  {
+    version: '0.19.3',
+    date: '2026-08-07',
+    changes: [
+      'Untere Leiste jetzt näher an Signal & Co.: eine einheitliche, etwas hellere Fläche für die ganze Leiste statt einzeln getönter Spalten — nur der gerade offene Bereich bekommt eine eng sitzende Kapsel ums Icon',
+      'Bug behoben: Eject, Hot Line und Neuigkeiten ließen sich gleichzeitig offen halten — jetzt schließt das Öffnen eines Bereichs die anderen automatisch, wie eine echte Tableiste, und wechselt sofort dorthin',
+    ],
+  },
+  {
+    version: '0.19.2',
+    date: '2026-08-07',
+    changes: [
+      'Neuer Home-Knopf in der unteren Leiste (zwischen Hot Line und Neuigkeiten) — zurück zur Startansicht der eingelegten Kassette, egal wo man gerade ist',
+      'Jeder Bereich der unteren Leiste hat jetzt eine leicht hellere Spalte als Hintergrund, damit die Flächen besser zu erkennen sind',
+      'Ist eine Kassette/Hot-Line-Liste/Neuigkeiten-Liste offen, markiert sich der zugehörige Bereich in Akzentfarbe — bleibt beim Browsen sichtbar, welcher Knopf gerade "offen" ist',
+      'Beim Öffnen von Eject, Hot Line oder Neuigkeiten bleibt die untere Leiste jetzt sichtbar, statt komplett hinter dem Fenster zu verschwinden — nur sobald ein konkretes Gespräch aufgeht, zieht sich die Leiste wieder zurück, wie schon im Gruppenchat',
+    ],
+  },
+  {
+    version: '0.19.1',
+    date: '2026-08-07',
+    changes: [
+      'Eject, Hot Line und Neuigkeiten jetzt einheitlich gestaltet: gleiche Form, gleiche Farbe, nur Icon und Beschriftung wechseln — cleaner, näher an WhatsApp & Co.',
+      'Neuigkeiten zeigt jetzt wie Hot Line eine Zahl oben rechts statt nur zu blinken',
+    ],
+  },
+  {
+    version: '0.19.0',
+    date: '2026-08-07',
+    changes: [
+      'Untere Leiste komplett aufgeräumt: nur noch drei gleich große Bereiche wie bei WhatsApp & Co. — Eject, Hot Line, Neuigkeiten',
+      'Neuer Action-Button oben links (an Ejects alter Stelle) zum Erstellen: Mixtape, O-Ton, Schnappschuss, Clip oder Zettel',
+      'Rücklauf/Vorlauf und das durchgehende Abspielen aller O-Töne einer Seite ("Walkman") sind entfallen — jeder O-Ton lässt sich weiterhin einzeln direkt im Beitrag abspielen',
+    ],
+  },
+  {
+    version: '0.18.0',
+    date: '2026-08-07',
+    changes: [
+      'Jeder Name bekommt jetzt beim ersten Beanspruchen einen eigenen Zugangscode — schützt davor, dass jemand einen fremden Namen einfach mit eintippt, sobald die App nicht mehr nur im eigenen Tailnet läuft',
+      'Neuer Bereich "Zugangscode" in den Einstellungen: eigenen Code anzeigen (wie ein Passwortfeld) und kopieren, um ihn auf ein zweites Gerät zu übertragen',
+      'Umbenennen läuft jetzt über den Server und zieht Beiträge, Mixtapes, Hotlines und Mitgliedschaften konsistent mit um',
+      'Optionales Setup für öffentliches Hosting mit automatischem HTTPS-Zertifikat (Caddy) — weiterhin komplett optional, lokaler/Tailscale-Betrieb bleibt unverändert',
+      'Bug behoben: der Feed einer Kassette ließ sich bisher mit einer bekannten Kassetten-ID auch ohne Mitgliedschaft abrufen',
+    ],
+  },
+  {
+    version: '0.17.2',
+    date: '2026-08-05',
+    changes: [
+      'Emoji werden jetzt als eigene Grafiken angezeigt (wie bei WhatsApp/Telegram), statt sich auf die oft lückenhafte Emoji-Schrift des Geräts zu verlassen — betrifft den Picker und alle gesendeten Nachrichten',
+    ],
+  },
+  {
+    version: '0.17.1',
+    date: '2026-08-05',
+    changes: [
+      'Chat-Eingabezeile komplett neu, näher an Signal/WhatsApp: Emoji links, Textfeld, "+" für Anhänge, Mikro/Senden rechts (morpht je nachdem ob getippt wird)',
+      '"+" schickt jetzt Foto, Video oder ein Mixtape direkt im Gespräch — auch in Hot Line, die konnte bisher nur Text',
+      'Neuer Emoji-Picker mit kuratierter Auswahl',
+    ],
+  },
+  {
+    version: '0.17.0',
+    date: '2026-08-05',
+    changes: [
+      'Eigene Nachrichten erscheinen jetzt sofort beim Senden (optimistisch), nicht erst nach der Server-Antwort',
+      'Chat holt neue Nachrichten alle 4 statt 15 Sekunden',
+      'O-Ton in Seite B jetzt direkt im Schreibfeld aufnehmen — kein eigener Vollbild-Umweg mehr',
+      'Bug behoben: Kassetten-Kopf blieb nach dem Seitenwechsel manchmal dauerhaft eingeklappt, wenn vorher weit gescrollt wurde',
+    ],
+  },
+  {
+    version: '0.16.8',
+    date: '2026-08-05',
+    changes: [
+      'Hot Line blinkt nicht mehr bei Ungelesenem, sondern zeigt oben rechts eine kleine Zahl — wie beim Mixtape-Knopf',
+    ],
+  },
+  {
+    version: '0.16.7',
+    date: '2026-08-04',
+    changes: [
+      'Hot Line saß nach der letzten Ausrichtung zu weit oben — jetzt wirklich auf gleicher Mitte wie REC, nicht nur gleicher Oberkante',
+    ],
+  },
+  {
+    version: '0.16.6',
+    date: '2026-08-04',
+    changes: [
+      'Hot Line und REC beginnen jetzt auf exakt gleicher Höhe, mehr Abstand dazwischen',
+      'Mixtape-Knopf vorerst aus der Leiste raus — der Platz fürs Erstellen wird noch überlegt',
+    ],
+  },
+  {
+    version: '0.16.5',
+    date: '2026-08-04',
+    changes: [
+      'Hot Line sitzt jetzt direkt neben REC statt am rechten Rand',
+      'Hot-Line-Farbton minimal Richtung Orange gezogen',
+    ],
+  },
+  {
+    version: '0.16.4',
+    date: '2026-08-04',
+    changes: [
+      'Hot-Line-Knopf sieht jetzt aus wie eine echte gepolsterte Taste mit Metallschild, statt einem flachen Farbfeld',
+    ],
+  },
+  {
+    version: '0.16.3',
+    date: '2026-08-04',
+    changes: [
+      'Löschen-Knopf trägt jetzt ein Mülleimer-Symbol statt nur Text',
+      '"Jemanden holen" umgebaut: Suchfeld filtert bekannte Personen live als Liste, statt eine ungefilterte Wolke von Namen zu zeigen',
+    ],
+  },
+  {
+    version: '0.16.2',
+    date: '2026-08-04',
+    changes: [
+      'Kassette lässt sich jetzt endgültig löschen (samt aller Beiträge und Medien) — im Kassettenfach über den neuen Bearbeiten-Knopf statt "Leute"',
+      'Neues Band anlegen legt sofort dieses Band ein, egal ob man danach eine Farbe wählt oder überspringt',
+    ],
+  },
+  {
+    version: '0.16.1',
+    date: '2026-08-04',
+    changes: [
+      '10 neue Bandsorten dazu (16 statt 6): Graphit, Rost, Petrol, Pflaume einfarbig, plus 6 gemusterte — Jazz Marmor, Rauchglas, Konfetti, Camo, Perlmutt, Türkis Marmor',
+      'Gemusterte Sorten zeigen echte Sprenkel/Marmorierung, nicht nur eine andere Farbe — sichtbar im Farb-Schritt beim Anlegen, im Kassettenfach und im Kassetten-Kopf auf Seite B',
+    ],
+  },
+  {
+    version: '0.16.0',
+    date: '2026-08-04',
+    changes: [
+      'Neue Kassette: nach dem Einlegen lässt sich jetzt gleich die Bandfarbe wählen (6 Sorten), überspringbar — sonst bleibt die automatisch zugewiesene',
+    ],
+  },
+  {
+    version: '0.15.9',
+    date: '2026-08-04',
+    changes: [
+      'Alle Seite-B-Bandfarben gedämpfter — vor allem Kiwi (Grün) war deutlich zu grell, jetzt näher an den ruhigen, materialhaften Farben von Seite A',
+    ],
+  },
+  {
+    version: '0.15.8',
+    date: '2026-08-04',
+    changes: [
+      'Bug behoben: Seite B zeigte immer dasselbe feste Lila statt der Farbe der eingelegten Kassette — betraf Hintergrund, Rahmen und Akzentfarbe überall auf Seite B, nicht nur die Schreibleiste',
+    ],
+  },
+  {
+    version: '0.15.7',
+    date: '2026-08-04',
+    changes: [
+      'O-Ton-Knopf auf Seite B trägt jetzt die Leucht-Farbe der eingelegten Kassette statt des Kassetten-Braun/Rot vom REC-Knopf',
+      'Schreibleiste auf Seite B jetzt dunkler und deutlicher in der Farbe der eingelegten Kassette, statt mit dem Bildschirm zu verschmelzen',
+    ],
+  },
+  {
+    version: '0.15.6',
+    date: '2026-08-04',
+    changes: [
+      'Seite B zeigt unten keine Werkzeugleiste mehr, nur noch das Schreibfeld — voller Fokus auf den Chat',
+      'Neuer O-Ton-Knopf direkt neben Senden — Sprachnachricht ohne Umweg über REC aufnehmen',
+    ],
+  },
+  {
+    version: '0.15.5',
+    date: '2026-08-04',
+    changes: [
+      'O-Ton lässt sich jetzt nur noch auf Seite B aufnehmen — im kuratierten Archiv (Seite A) macht eine Sprachnachricht weniger Sinn',
+      '"Noch kein Band im Regal" im Kassettenfach hieß fälschlich noch nach dem alten Regal — jetzt "Noch kein Band im Fach"',
+    ],
+  },
+  {
+    version: '0.15.4',
+    date: '2026-08-04',
+    changes: [
+      'Mixtape-Knopf in der Leiste hat jetzt ein eigenes Symbol (Achtelnoten) statt des Kassetten-Zeichens, das sich sonst mit dem Regal überschnitt',
+    ],
+  },
+  {
+    version: '0.15.3',
+    date: '2026-08-04',
+    changes: [
+      'Seite B: Eingabefeld hängt jetzt fest über der Werkzeugleiste, statt beim Scrollen zu verschwinden',
+      'Seite B zeigt jetzt oben dasselbe Tape-Datum wie Seite A, daneben "Gruppenchat" statt "Gespräch"',
+    ],
+  },
+  {
+    version: '0.15.2',
+    date: '2026-08-04',
+    changes: [
+      'Umbenannte Tapes zeigen die Standard-Nummer weiterhin daneben, z.B. "Der Anfang · Tape 01" — die Zählung geht so nicht verloren',
+    ],
+  },
+  {
+    version: '0.15.1',
+    date: '2026-08-04',
+    changes: [
+      'Leere Tapes erscheinen nicht mehr im Regal — ein abgeschlossener Tag lässt sich sowieso nicht mehr nachträglich befüllen',
+    ],
+  },
+  {
+    version: '0.15.0',
+    date: '2026-08-04',
+    changes: [
+      'Regal komplett umgebaut: jetzt eine Liste statt Kacheln, wie das Kassettenfach beim Eject',
+      'Zeigt Tapes über alle Kassetten hinweg, sortiert nach echtem Datum — nicht mehr nur die eingelegte Kassette',
+      'Jede Zeile mit dem echten Kassetten-Logo in der richtigen Farbe',
+      'Filter klappt jetzt aus und wählt eine Kassette aus, statt Beitragsarten zu zeigen',
+      'Antippen einer Zeile legt bei Bedarf die passende Kassette automatisch ein und springt zum Tape',
+    ],
+  },
+  {
+    version: '0.14.2',
+    date: '2026-08-04',
+    changes: [
+      'Tape-Kacheln im Regal zeigen jetzt ein kleines Vorschaubild (erstes Foto des Tages)',
+      'Suchfeld fürs Regal — nach Tape-Namen suchen',
+      'Filter fürs Regal — nur Tapes mit bestimmter Beitragsart zeigen (Fotos, O-Töne, …)',
+    ],
+  },
+  {
+    version: '0.14.1',
+    date: '2026-08-04',
+    changes: [
+      'Regal zeigt jetzt die Tapes von Seite A statt Mixtapes — jedes Tape als Kachel, umbenennbar, favorisierbar, antippen springt hin',
+      'Mixtapes bekommen einen eigenen Knopf im Laufwerk statt im Regal',
+      'Der kleine "Springen"-Knopf ist wieder raus, das Regal übernimmt seine Aufgabe',
+    ],
+  },
+  {
+    version: '0.14.0',
+    date: '2026-08-04',
+    changes: [
+      'Seite A ist jetzt in Tapes gegliedert — ein Tape pro Kalendertag seit Gründung, umbenennbar, favorisierbar',
+      'Track-Nummern (A1, A2, …) fangen jetzt pro Tape wieder bei 1 an, wie bei einer echten Kassette',
+      'Kassetten-Kopf zeigt jetzt das aktuelle Tape samt Datum statt "Seite A — Bleibt"',
+      'Neuer "Springen"-Knopf: per Datum oder über Favoriten direkt zu einem Tape springen',
+      'Jeder Beitrag zeigt jetzt zusätzlich Datum und Uhrzeit',
+    ],
+  },
+  {
+    version: '0.13.0',
+    date: '2026-08-04',
+    changes: [
+      'Seite B ist jetzt ein echter Gruppenchat — Eingabefeld direkt da, Bubbles statt Karten, Tagestrenner',
+      'Hot Line ist jetzt auch dauerhaft — kein Verlauf verfällt mehr',
+      'Fotos, Clips, O-Ton und Mixtapes erscheinen als Bubble im Chat, weiterhin über REC',
+      'Mit aktivem Filter auf Seite B (z.B. "nur Fotos") bleibt die bisherige Kartenansicht zum Durchsuchen',
+    ],
+  },
+  {
+    version: '0.12.0',
+    date: '2026-08-04',
+    changes: [
+      'Seite B verfällt nicht mehr — kein Beitrag verschwindet mehr nach 24 Stunden',
+      'Erster Schritt zum Gruppenchat auf Seite B, die eigentliche Chat-Oberfläche folgt als Nächstes',
+    ],
+  },
+  {
+    version: '0.11.2',
+    date: '2026-08-04',
+    changes: [
+      'Jeder Zettel-Stil hat jetzt sein eigenes Papier: Tacker liniert, Klammer kariert und dunkler, Pin Post-it-gelb, Eselsohr Packpapier',
+      'Tesa, Pin und Klammer halten das Papier jetzt sichtbar fest, statt daneben zu schweben',
+    ],
+  },
+  {
+    version: '0.11.1',
+    date: '2026-08-04',
+    changes: [
+      'Echte Live-Vorschau beim Zettel-Schreiben statt nur Textauswahl',
+      'Optik-Kacheln zeigen jetzt verkleinerte, echte Vorschauen statt Namen allein',
+    ],
+  },
+  {
+    version: '0.11.0',
+    date: '2026-08-04',
+    changes: [
+      'Zettel gibt es jetzt in 5 Optiken: Tesa, Pin, Tacker, Klammer, Eselsohr',
+      'Optik wird beim Schreiben gewählt, jede Karte hängt leicht schief',
+    ],
+  },
+  {
+    version: '0.10.2',
+    date: '2026-08-03',
+    changes: [
+      '„Tapen" heißt jetzt Tonfetzen — „tapen" war im Deutschen schon an Kinesio-Tape vergeben',
+    ],
+  },
+  {
+    version: '0.10.1',
+    date: '2026-08-03',
+    changes: [
+      'Tapen läuft nicht mehr auf einer eigenen Seite — halten zum Aufnehmen, direkt am Knopf',
+      'Eject-Knopf zeigt jetzt "Eject" statt des Kassettennamens, der steht schon oben im Kopf',
+    ],
+  },
+  {
+    version: '0.10.0',
+    date: '2026-08-03',
+    changes: [
+      '„da war ich" ist raus — Reagieren heißt jetzt Tapen: eine 3 Sekunden kurze Sprachaufnahme',
+      'Tapen ist privat: nur die postende Person hört, wer wie reagiert hat',
+      'Eigene Tapen-Reaktionen zu einem Beitrag laufen nacheinander ab, wie ein kleiner Walkman',
+      'Zweites Tapen auf denselben Beitrag ersetzt das erste, statt sich anzuhäufen',
+      'Eject-Knopf im Kassettenfach jetzt rot markiert',
+    ],
+  },
+  {
     version: '0.9.3',
     date: '2026-08-03',
     changes: ['Zählwerk zieht mit der Lampe mit — beide stehen jetzt zusammen ganz rechts'],

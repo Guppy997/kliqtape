@@ -1,6 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { useApp } from '@/store/appStore';
 
 interface Props {
   open: boolean;
@@ -8,12 +7,18 @@ interface Props {
   title?: string;
   /** 'sheet' faehrt von unten ein, 'full' deckt den Bildschirm komplett ab. */
   variant?: 'sheet' | 'full';
+  /** Nur fuer variant 'full': laesst die untere Navigations-Leiste sichtbar
+   *  (niedrigerer z-index als normal, mehr Platz am unteren Rand), statt sie
+   *  wie sonst komplett zu verdecken. Fuer Eject/Hot-Line-Liste/Neuigkeiten
+   *  gedacht — dort soll man sehen, wo man gerade "drin" ist, waehrend man
+   *  noch auswaehlt. Sobald es dort tatsaechlich in ein fokussiertes
+   *  Gespraech geht (ChatThread), schaltet der jeweilige Aufrufer das wieder
+   *  ab, genau wie beim Gruppenchat auf Seite B. */
+  reserveBottomNav?: boolean;
   children: ReactNode;
 }
 
-export default function Sheet({ open, onClose, title, variant = 'sheet', children }: Props) {
-  const side = useApp((s) => s.side);
-
+export default function Sheet({ open, onClose, title, variant = 'sheet', reserveBottomNav, children }: Props) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -32,6 +37,7 @@ export default function Sheet({ open, onClose, title, variant = 'sheet', childre
   if (!open) return null;
 
   const full = variant === 'full';
+  const navAware = full && reserveBottomNav;
 
   const header = (
     <div className="mb-4 flex items-center gap-3">
@@ -54,15 +60,22 @@ export default function Sheet({ open, onClose, title, variant = 'sheet', childre
   // seines Elternteils und der Header mit z-30 legt sich darueber — dann ist
   // der Schliessen-Knopf nicht mehr erreichbar.
   //
-  // WICHTIG: Die Seitenklasse muss mit. Am body gibt es .side-a/.side-b nicht,
-  // und damit waeren --screen, --card, --ink & Co. hier undefiniert — der
-  // Hintergrund faellt dann auf durchsichtig zurueck.
+  // --screen, --card, --ink & Co. kommen inzwischen per Inline-Style direkt
+  // von App.tsx auf <html> — die vererben sich an jeden Nachfahren, auch an
+  // per Portal ausgelagerte Knoten wie diesen hier. Keine eigene Seitenklasse
+  // mehr noetig (die hat die Kassettenfarbe frueher sogar verdeckt).
   return createPortal(
     <div
-      className={`${side === 'a' ? 'side-a' : 'side-b'} fixed inset-0 z-50 flex justify-center ${
-        full ? '' : 'items-end'
-      }`}
-      style={{ background: full ? 'var(--screen)' : 'rgba(0,0,0,.88)', backdropFilter: full ? 'none' : 'blur(3px)' }}
+      className={`fixed inset-0 flex justify-center ${full ? '' : 'items-end'}`}
+      style={{
+        // navAware sitzt bewusst unter der BottomBar (z-45), aber weiter ueber
+        // dem Kassetten-Kopf (z-30) — der bleibt verdeckt wie bisher, nur die
+        // Leiste unten schaut noch durch. Normale Sheets bleiben bei z-50,
+        // decken alles ab wie eh und je.
+        zIndex: navAware ? 35 : 50,
+        background: full ? 'var(--screen)' : 'rgba(0,0,0,.88)',
+        backdropFilter: full ? 'none' : 'blur(3px)',
+      }}
       onClick={full ? undefined : onClose}
     >
       <div
@@ -72,10 +85,18 @@ export default function Sheet({ open, onClose, title, variant = 'sheet', childre
         onClick={(e) => e.stopPropagation()}
         className={
           full
-            ? 'flex h-full w-full max-w-xl flex-col overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]'
+            ? 'flex h-full w-full max-w-xl flex-col overflow-y-auto px-4 pt-[max(1rem,env(safe-area-inset-top))]'
             : 'max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-2xl p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]'
         }
-        style={{ background: 'var(--screen)', borderTop: full ? 'none' : '1px solid var(--line)' }}
+        style={{
+          background: 'var(--screen)',
+          borderTop: full ? 'none' : '1px solid var(--line)',
+          paddingBottom: full
+            ? navAware
+              ? 'calc(var(--bottombar-h, 6rem) + 1rem)'
+              : 'max(1.5rem, env(safe-area-inset-bottom))'
+            : undefined,
+        }}
       >
         {!full && <div className="mx-auto mb-3 h-1 w-10 rounded-full" style={{ background: 'var(--line)' }} />}
         {header}

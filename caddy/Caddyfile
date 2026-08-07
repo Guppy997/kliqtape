@@ -1,0 +1,21 @@
+# Oeffentlicher Zugang zu Kliqtape — reicht alles an die frontend-nginx
+# durch, die ihrerseits /api/ intern an den backend-Container weiterleitet
+# (siehe frontend/nginx.conf). Zertifikat holt/erneuert Caddy von selbst.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	reverse_proxy frontend:80
+
+	encode gzip
+
+	# Gleiche Sicherheits-Grundausstattung wie bei jedem oeffentlichen
+	# Dienst — kostet nichts, verhindert ein paar billige Angriffsklassen.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}

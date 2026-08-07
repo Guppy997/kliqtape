@@ -3,15 +3,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addMember,
   createCassette,
+  deleteCassette,
   fetchCassettes,
   fetchMembers,
   removeMember,
   renameCassette,
+  setCassetteColorIndex,
   type Cassette,
 } from '@/lib/api';
 import { useApp } from '@/store/appStore';
-import { assignPairs, lookFor } from '@/lib/cassetteLook';
+import { useBottomNav } from '@/store/navStore';
+import { assignPairs, lookFor, PAIR_COUNT } from '@/lib/cassetteLook';
 import Avatar, { useProfiles } from './Avatar';
+import NavButton from './NavButton';
 import Sheet from './Sheet';
 
 /** Alle Kassetten dieser Person. Zentral, weil App und Fach sie brauchen. */
@@ -44,16 +48,34 @@ export function useCassetteNews(): Cassette[] {
 
 /**
  * Welches Band welche Sorte bekommt — im Regal nie zweimal dieselbe.
- * Wer einen colorSeed gesetzt hat (manueller Override, z. B. um zwei Baender
- * zu tauschen), zaehlt der statt der ID — sonst bestimmt weiterhin die ID.
+ *
+ * Drei Ebenen, in dieser Reihenfolge:
+ * 1. colorIndex — fest von Hand gewaehlt (siehe Farb-Schritt beim Anlegen),
+ *    zeigt IMMER genau diese Sorte, keine Kollisions-Logik.
+ * 2. colorSeed — manueller Hash-Override (z. B. um zwei Baender zu tauschen),
+ *    zaehlt statt der ID.
+ * 3. sonst die ID selbst.
+ * Von Hand gewaehlte Sorten (1.) reservieren ihren Platz auch fuer die
+ * automatisch zugewiesenen (2./3.) — sonst koennte ein frisch angelegtes Band
+ * zufaellig dieselbe Sorte hashen, die jemand bewusst gewaehlt hat.
  */
 export function useLookIndex(): Map<string, number> {
   const { data: cassettes = [] } = useCassettes();
   return useMemo(() => {
-    const keys = cassettes.map((c) => c.colorSeed || c.id);
-    const byKey = assignPairs(keys);
     const out = new Map<string, number>();
-    cassettes.forEach((c) => {
+    const fixed = new Set<number>();
+    const auto: Cassette[] = [];
+    for (const c of cassettes) {
+      if (c.colorIndex != null) {
+        out.set(c.id, c.colorIndex);
+        fixed.add(c.colorIndex);
+      } else {
+        auto.push(c);
+      }
+    }
+    const keys = auto.map((c) => c.colorSeed || c.id);
+    const byKey = assignPairs(keys, fixed);
+    auto.forEach((c) => {
       const idx = byKey.get(c.colorSeed || c.id);
       if (idx != null) out.set(c.id, idx);
     });
@@ -75,15 +97,21 @@ export default function CassetteDeck() {
   const setCassette = useApp((s) => s.setCassette);
   const qc = useQueryClient();
 
-  const [open, setOpen] = useState(false);
+  // Echte Tableiste: der Store haelt, welcher der drei unteren Knoepfe gerade
+  // offen ist — nie mehrere gleichzeitig (siehe navStore.ts).
+  const navActive = useBottomNav((s) => s.active);
+  const setActiveNav = useBottomNav((s) => s.setActive);
+  const open = navActive === 'eject';
   const [manage, setManage] = useState<string | null>(null);
+  // Nach "Einlegen" haelt das die ID des frisch angelegten Bands, solange
+  // der Farb-Schritt offen ist — danach (fertig oder uebersprungen) wieder null.
+  const [pickColor, setPickColor] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [invite, setInvite] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const { data: cassettes = [] } = useCassettes();
   const looks = useLookIndex();
-  const current = cassettes.find((c) => c.id === cassetteId);
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['cassettes', me] });
@@ -97,30 +125,49 @@ export default function CassetteDeck() {
       refresh();
       setNewName('');
       setCassette(c.id);
-      setOpen(false);
+      // Nicht sofort schliessen — erst die Farbe anbieten, kann aber
+      // uebersprungen werden (dann bleibt die automatisch gewuerfelte Sorte).
+      setPickColor(c.id);
+    },
+    onError: fail,
+  });
+
+  const chooseColor = useMutation({
+    mutationFn: (idx: number) => setCassetteColorIndex(pickColor!, idx, me),
+    onSuccess: () => {
+      refresh();
+      setPickColor(null);
+      setActiveNav(null);
     },
     onError: fail,
   });
 
   return (
     <>
-      <button
-        type="button"
+      <NavButton
+        icon={
+          <svg width="16" height="13" viewBox="0 0 16 13" fill="currentColor" aria-hidden="true">
+            <path d="M8 0l8 8H0z" />
+            <rect x="0" y="10.5" width="16" height="2.5" rx="1" />
+          </svg>
+        }
+        label="Eject"
+        active={open}
         onClick={() => {
           setError(null);
           setManage(null);
-          setOpen(true);
+          setPickColor(null);
+          setActiveNav('eject');
         }}
-        className="font-mono flex min-w-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.1em]"
-        style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
-      >
-        <span aria-hidden="true">⏏</span>
-        <span className="truncate" style={{ color: 'var(--ink)' }}>
-          {current?.name ?? 'Kein Band'}
-        </span>
-      </button>
+      />
 
-      <Sheet open={open} onClose={() => setOpen(false)} variant="full" title="Kassettenfach">
+      <Sheet
+        open={open}
+        onClose={() => setActiveNav(null)}
+        variant="full"
+        reserveBottomNav
+        title={pickColor ? 'Farbe wählen' : 'Kassettenfach'}
+      >
         {manage ? (
           <Members
             cassette={cassettes.find((c) => c.id === manage)!}
@@ -131,12 +178,65 @@ export default function CassetteDeck() {
               refresh();
             }}
           />
+        ) : pickColor ? (
+          <div className="flex flex-col gap-5">
+            <div>
+              <p className="font-hand text-lg" style={{ color: 'var(--ink)' }}>
+                Welche Farbe soll das Band haben?
+              </p>
+              <p className="font-mono mt-1 text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+                Ohne Auswahl bleibt die automatisch zugewiesene Sorte.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              {Array.from({ length: PAIR_COUNT }, (_, idx) => {
+                const { case: c } = lookFor(pickColor, idx);
+                const isCurrent = looks.get(pickColor) === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    disabled={chooseColor.isPending}
+                    onClick={() => chooseColor.mutate(idx)}
+                    className="flex flex-col items-center gap-1.5 rounded-xl p-2 disabled:opacity-50"
+                    style={{
+                      background: 'var(--card)',
+                      border: `1px solid ${isCurrent ? 'var(--accent)' : 'var(--line)'}`,
+                    }}
+                  >
+                    {/* Immer als Seite B gezeigt (unabhaengig davon, auf
+                        welcher Seite man gerade steht) — nur dort tragen die
+                        Sorten ihre Muster, und genau darum geht es hier. */}
+                    <MiniCassette id={pickColor} pairIndex={idx} active side="b" />
+                    <span className="font-mono text-center text-[0.52rem] uppercase tracking-[0.06em]" style={{ color: 'var(--dim)' }}>
+                      {c.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+
+            <button
+              type="button"
+              onClick={() => {
+                setPickColor(null);
+                setActiveNav(null);
+              }}
+              className="font-mono rounded-lg px-4 py-2.5 text-[0.66rem] uppercase tracking-[0.1em]"
+              style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
+            >
+              Überspringen
+            </button>
+          </div>
         ) : (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               {cassettes.length === 0 && (
                 <p className="font-hand py-6 text-center text-lg" style={{ color: 'var(--dim)' }}>
-                  Noch kein Band im Regal.
+                  Noch kein Band im Fach.
                 </p>
               )}
 
@@ -153,7 +253,7 @@ export default function CassetteDeck() {
                     type="button"
                     onClick={() => {
                       setCassette(c.id);
-                      setOpen(false);
+                      setActiveNav(null);
                       window.scrollTo({ top: 0 });
                     }}
                     className="flex min-w-0 flex-1 items-center gap-3 text-left"
@@ -174,11 +274,16 @@ export default function CassetteDeck() {
                   <button
                     type="button"
                     onClick={() => setManage(c.id)}
-                    aria-label={`${c.name} verwalten`}
-                    className="font-mono shrink-0 rounded-full px-2 py-1 text-[0.56rem] uppercase tracking-[0.1em]"
+                    aria-label={`${c.name} bearbeiten`}
+                    title="Bearbeiten"
+                    className="grid size-7 shrink-0 place-items-center rounded-full"
                     style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
                   >
-                    Leute
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                         strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M11 2l3 3-8 8-3.5.5.5-3.5z" />
+                      <path d="M9.5 3.5l3 3" />
+                    </svg>
                   </button>
                 </div>
               ))}
@@ -238,6 +343,9 @@ export default function CassetteDeck() {
     });
     const { data: profiles = [] } = useProfiles();
     const known = profiles.map((p) => p.name).filter((n) => !members.some((m) => m.name === n));
+    const query = add.trim().toLowerCase();
+    const foundKnown = query ? known.filter((n) => n.toLowerCase().includes(query)) : known;
+    const isNewName = query.length > 0 && !known.some((n) => n.toLowerCase() === query);
 
     const doAdd = useMutation({
       mutationFn: (who: string) => addMember(cassette.id, who, me),
@@ -253,6 +361,17 @@ export default function CassetteDeck() {
       onSuccess: (_d, who) => {
         refresh();
         if (who === me) onLeft();
+      },
+      onError: fail,
+    });
+    const doDelete = useMutation({
+      mutationFn: () => deleteCassette(cassette.id, me),
+      onSuccess: () => {
+        refresh();
+        // Dieselbe Aufraeum-Logik wie beim Verlassen: Fach schliesst die
+        // Ansicht, und falls es die gerade eingelegte Kassette war, wird
+        // sie ausgelegt.
+        onLeft();
       },
       onError: fail,
     });
@@ -336,52 +455,103 @@ export default function CassetteDeck() {
           <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
             Jemanden holen
           </h3>
-          <div className="flex gap-2">
-            <input
-              value={add}
-              onChange={(e) => setAdd(e.target.value)}
-              maxLength={40}
-              placeholder="Name"
-              className="min-w-0 flex-1 rounded-lg px-3 py-2.5 text-base outline-none"
-              style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-            />
-            <button
-              type="button"
-              disabled={!add.trim() || doAdd.isPending}
-              onClick={() => doAdd.mutate(add.trim())}
-              className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
-              style={{ background: 'var(--accent)', color: '#17130E' }}
-            >
-              Dazu
-            </button>
+          <input
+            value={add}
+            onChange={(e) => setAdd(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && add.trim() && !doAdd.isPending) doAdd.mutate(add.trim());
+            }}
+            maxLength={40}
+            placeholder="Suchen oder neuen Namen eintippen"
+            className="rounded-lg px-3 py-2.5 text-base outline-none"
+            style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+          />
+
+          <div className="flex flex-col gap-1.5">
+            {foundKnown.map((n) => (
+              <button
+                key={n}
+                type="button"
+                disabled={doAdd.isPending}
+                onClick={() => doAdd.mutate(n)}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left disabled:opacity-50"
+                style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+              >
+                <Avatar name={n} side={side} size={1.4} />
+                <span className="min-w-0 flex-1 truncate text-sm" style={{ color: 'var(--ink)' }}>{n}</span>
+                <span aria-hidden="true" className="font-disp text-base font-bold" style={{ color: 'var(--accent)' }}>+</span>
+              </button>
+            ))}
+
+            {isNewName && (
+              <button
+                type="button"
+                disabled={doAdd.isPending}
+                onClick={() => doAdd.mutate(add.trim())}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left disabled:opacity-50"
+                style={{ background: 'var(--card)', border: '1px dashed var(--line)' }}
+              >
+                <Avatar name={add.trim()} side={side} size={1.4} />
+                <span className="min-w-0 flex-1 truncate text-sm" style={{ color: 'var(--ink)' }}>
+                  „{add.trim()}“ neu holen
+                </span>
+                <span aria-hidden="true" className="font-disp text-base font-bold" style={{ color: 'var(--accent)' }}>+</span>
+              </button>
+            )}
+
+            {!query && known.length === 0 && (
+              <p className="font-mono py-1 text-[0.62rem]" style={{ color: 'var(--dim)' }}>
+                Noch niemand sonst bekannt — einfach oben einen Namen eintippen.
+              </p>
+            )}
           </div>
-          {known.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {known.map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => doAdd.mutate(n)}
-                  className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[0.72rem]"
-                  style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-                >
-                  <Avatar name={n} side={side} size={1.1} />
-                  {n}
-                </button>
-              ))}
-            </div>
-          )}
+
           <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
             Jedes Mitglied darf jemanden holen — wer wen geholt hat, steht oben und bleibt sichtbar.
           </p>
+        </section>
+
+        <section className="flex flex-col gap-2 border-t pt-5" style={{ borderColor: 'var(--line)' }}>
+          <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: '#F0B5A5' }}>
+            Gefahrenzone
+          </h3>
+          <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+            Löscht das Band für alle Mitglieder — Beiträge, Fotos, Videos und O-Töne darauf sind
+            danach weg. Mixtapes bleiben, die gehören nicht zu einer Kassette.
+          </p>
+          <button
+            type="button"
+            disabled={doDelete.isPending}
+            onClick={() => {
+              if (
+                confirm(
+                  `"${cassette.name}" endgültig löschen? Das lässt sich nicht rückgängig machen.`,
+                )
+              ) {
+                doDelete.mutate();
+              }
+            }}
+            className="font-mono inline-flex w-fit shrink-0 items-center gap-2 rounded-lg px-3.5 py-2.5 text-[0.66rem] uppercase tracking-[0.1em] disabled:opacity-50"
+            style={{ background: 'rgba(184,70,44,.18)', border: '1px solid #B8462C', color: '#F0B5A5' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                 strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 4.5h10" />
+              <path d="M6.3 4.5V2.8h3.4v1.7" />
+              <path d="M4.2 4.5l.6 8.4a1 1 0 0 0 1 .9h4.4a1 1 0 0 0 1-.9l.6-8.4" />
+              <path d="M6.5 7v4M8 7v4M9.5 7v4" />
+            </svg>
+            Kassette löschen
+          </button>
         </section>
       </div>
     );
   }
 }
 
-/** Miniaturband fuers Regal — zeigt echte Bandsorte, Spuren und Streifen. */
-function MiniCassette({ id, pairIndex, active, side }:
+/** Miniaturband — zeigt echte Bandsorte, Spuren und Streifen. Auch vom
+ *  Tape-Regal genutzt (Shelf.tsx), daher exportiert. */
+export function MiniCassette({ id, pairIndex, active, side }:
   { id: string; pairIndex?: number; active: boolean; side: 'a' | 'b' }) {
   const { type, case: plastic, wear } = lookFor(id, pairIndex);
   const onB = active && side === 'b';
@@ -395,6 +565,13 @@ function MiniCassette({ id, pairIndex, active, side }:
     <svg width="46" height="32" viewBox="0 0 46 32" aria-hidden="true" className="shrink-0"
          style={{ opacity: active ? 1 : 0.72 }}>
       <rect width="46" height="32" rx="3" fill={shell} />
+      {/* Marmor-/Konfetti-Sprenkel, nur bei gemusterten Sorten (plastic.fleck)
+          und nur auf Seite B — sitzen unter dem Etikett, das Etikett-Rechteck
+          deckt die Mitte ab, am Rand bleiben sie sichtbar. */}
+      {onB && plastic.fleck && wear.specks.slice(0, 7).map(([x, y, r], i) => (
+        <circle key={i} cx={x * 0.46} cy={y * 0.32} r={Math.max(1, r * 0.9)}
+                fill={plastic.fleck![i % plastic.fleck!.length]} opacity={0.88} />
+      ))}
       <rect x="4" y="6" width="38" height="16" rx="1.5" fill={paper} />
       <circle cx="16" cy="14" r="4.5" fill={tape} />
       <circle cx="30" cy="14" r="4.5" fill={tape} />

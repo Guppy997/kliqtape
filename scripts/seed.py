@@ -375,7 +375,7 @@ def main() -> None:
     post("Die Kliqe", "b", "Mira", "voice", "zu lang für einen Zettel", media=aid, key="oton_b")
     print(" fertig")
 
-    # --- Reaktionen -------------------------------------------------------
+    # --- Tonfetzen: kurze Sprachreaktionen statt "da war ich" ---------------
     for key, who in [
         ("grill", ["Tarek", me]),
         ("wohnung", ["Jonas", "Tarek", me]),
@@ -385,8 +385,10 @@ def main() -> None:
         ("spontan", ["Tarek", me]),
     ]:
         for person in who:
-            call("POST", f"/api/posts/{posts[key]}/react", {"author": person})
-    print("Reaktionen gesetzt")
+            take, ms = wav_take(1.5, 180.0)
+            aid = upload(take, "audio/wav", ms)
+            call("POST", f"/api/posts/{posts[key]}/react", {"author": person, "mediaId": aid})
+    print("Tonfetzen gesetzt")
 
     # --- Mixtapes ---------------------------------------------------------
     print("Mixtapes …", end="", flush=True)

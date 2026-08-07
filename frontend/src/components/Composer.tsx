@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createPost, fetchMixtapes, mediaUrl, uploadMedia, type Kind } from '@/lib/api';
+import { createPost, fetchMixtapes, mediaUrl, uploadMedia, NOTE_STYLES, type Kind, type NoteStyle } from '@/lib/api';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
 import MixtapeRecorder from './MixtapeRecorder';
 import CameraCapture from './CameraCapture';
 import Sheet from './Sheet';
+import Zettel, { NOTE_STYLE_LABEL } from './Zettel';
 
 type Step = null | 'choose' | Kind;
 
@@ -13,7 +14,7 @@ interface Props {
 }
 
 const CHOICES: { kind: Kind; label: string; hint: string }[] = [
-  { kind: 'tape', label: 'Mixtape', hint: 'Musik aus deinem Regal teilen' },
+  { kind: 'tape', label: 'Mixtape', hint: 'Eines deiner Mixtapes teilen' },
   { kind: 'voice', label: 'O-Ton', hint: '90 Sekunden Stimme' },
   { kind: 'photo', label: 'Schnappschuss', hint: 'nur jetzt, kein Upload' },
   { kind: 'video', label: 'Clip', hint: 'max. 10 Sekunden' },
@@ -34,6 +35,7 @@ export default function Composer({ onPosted }: Props) {
   const cassetteId = useApp((s) => s.cassetteId);
   const [step, setStep] = useState<Step>(null);
   const [text, setText] = useState('');
+  const [noteStyle, setNoteStyle] = useState<NoteStyle>('tape');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,13 +61,14 @@ export default function Composer({ onPosted }: Props) {
     onPosted();
   }
 
-  async function post(kind: Kind, extra: { body?: string; tapeId?: string }) {
+  async function post(kind: Kind, extra: { body?: string; tapeId?: string; noteStyle?: NoteStyle }) {
     setBusy(true);
     setError(null);
     try {
       if (!cassetteId) throw new Error('Keine Kassette eingelegt');
       await createPost({ cassetteId, side, author: me, kind, ...extra });
       setText('');
+      setNoteStyle('tape');
       setStep(null);
       onPosted();
     } catch (err) {
@@ -75,6 +78,12 @@ export default function Composer({ onPosted }: Props) {
     }
   }
 
+  // Auf Seite B laeuft Text direkt ueber ChatThreads eigenes Eingabefeld,
+  // nicht mehr ueber den REC-Umweg — der Zettel-Eintrag faellt dort weg.
+  // Zettel ist nur auf Seite A sinnvoll (Seite B schreibt direkt im Chat),
+  // O-Ton umgekehrt nur auf Seite B (laufendes Gespraech) — auf Seite A
+  // waere eine Sprachnachricht ein Fremdkoerper im kuratierten Archiv.
+  const choices = CHOICES.filter((c) => (side === 'b' ? c.kind !== 'text' : c.kind !== 'voice'));
   const fanOpen = step === 'choose';
 
   return (
@@ -93,27 +102,39 @@ export default function Composer({ onPosted }: Props) {
           setError(null);
           setStep(fanOpen ? null : 'choose');
         }}
-        className="relative z-50 grid size-16 place-items-center rounded-full transition-transform active:scale-95"
+        className="relative z-50 grid size-8 place-items-center rounded-full transition-transform active:scale-95"
         style={{
           background: 'linear-gradient(180deg, #2E2925, #1A1714)',
-          boxShadow: '0 0.4rem 1rem rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.12) inset',
+          boxShadow: '0 0.25rem 0.6rem rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.12) inset',
         }}
       >
-        {/* Roter Punkt wie die Aufnahmetaste an einem Tapedeck */}
-        <span
-          className="size-7 rounded-full"
-          style={{ background: '#C7452A', boxShadow: '0 0 0.7rem rgba(199,69,42,.7)' }}
-        />
+        {/* Plus statt REC-Punkt — dreht sich beim Oeffnen zum X, damit klar
+            ist, dass derselbe Knopf den Fan auch wieder schliesst. */}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="var(--ink)"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          aria-hidden="true"
+          style={{ transform: fanOpen ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}
+        >
+          <path d="M7 1v12M1 7h12" />
+        </svg>
       </button>
 
-      {/* Die Optionen kommen als kleine Felder um den Knopf herum. Immer im
-          DOM, damit rein und raus weich uebergeht — geschlossen sind sie nur
-          geschrumpft, durchsichtig und unklickbar. */}
+      {/* Die Optionen klappen unter dem Knopf auf. Immer im DOM, damit rein und
+          raus weich uebergeht — geschlossen sind sie nur geschrumpft,
+          durchsichtig und unklickbar. Oeffnet nach unten links statt nach oben
+          zentriert wie frueher — der Knopf sitzt jetzt oben links unter dem
+          Kassetten-Kopf, ein nach oben oeffnendes Fenster wuerde dort hinausragen. */}
       <div
-        className="pointer-events-none absolute bottom-[calc(100%+0.9rem)] left-1/2 z-50 flex w-60 -translate-x-1/2 flex-wrap justify-center gap-2"
+        className="pointer-events-none absolute top-[calc(100%+0.9rem)] left-0 z-50 flex w-60 flex-wrap gap-2"
         aria-hidden={!fanOpen}
       >
-        {CHOICES.map((c, i) => (
+        {choices.map((c, i) => (
           <button
             key={c.kind}
             type="button"
@@ -126,7 +147,7 @@ export default function Composer({ onPosted }: Props) {
               minWidth: '4.6rem',
               pointerEvents: fanOpen ? 'auto' : 'none',
               opacity: fanOpen ? 1 : 0,
-              transform: fanOpen ? 'scale(1) translateY(0)' : 'scale(0.3) translateY(0.7rem)',
+              transform: fanOpen ? 'scale(1) translateY(0)' : 'scale(0.3) translateY(-0.7rem)',
               transition: `transform 240ms cubic-bezier(.2,1.4,.4,1) ${fanOpen ? i * 25 : 0}ms, opacity 160ms ease ${fanOpen ? i * 25 : 0}ms`,
             }}
           >
@@ -137,12 +158,12 @@ export default function Composer({ onPosted }: Props) {
         ))}
       </div>
 
-      {/* Mixtape aus dem Regal teilen */}
+      {/* Eines der eigenen Mixtapes teilen */}
       <Sheet open={step === 'tape'} onClose={() => setStep(null)} variant="full" title={`Mixtape teilen · ${SIDE_LABEL[side]}`}>
         <div className="flex flex-col gap-3">
           {shareable.length === 0 ? (
             <p className="font-hand py-8 text-center text-lg" style={{ color: 'var(--dim)' }}>
-              Noch kein versiegeltes Tape im Regal.
+              Noch kein versiegeltes Mixtape.
             </p>
           ) : (
             shareable.map((t) => (
@@ -182,16 +203,53 @@ export default function Composer({ onPosted }: Props) {
 
       <Sheet open={step === 'text'} onClose={() => setStep(null)} variant="full" title="Zettel">
         <div className="flex flex-col gap-4">
+          {/* Echte Vorschau statt Text-Beschreibung — zeigt exakt, was
+              nachher auf dem Band landet, live waehrend man tippt. */}
+          <div className="rounded-lg py-3" style={{ background: 'rgba(0,0,0,.18)' }}>
+            <Zettel id="vorschau" style={noteStyle} text={text.trim() || 'Was ist gerade?'} />
+          </div>
+
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            rows={4}
+            rows={3}
             maxLength={500}
             autoFocus
             placeholder="Was ist gerade?"
             className="resize-none rounded-lg p-3 text-[0.95rem] outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
+
+          {/* Wie der Zettel "befestigt" ist — jede Kachel eine verkleinerte
+              echte Vorschau, antippen waehlt den Stil. */}
+          <div className="flex justify-between gap-1.5">
+            {NOTE_STYLES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setNoteStyle(s)}
+                className="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5"
+                style={{
+                  background: noteStyle === s ? 'rgba(0,0,0,.18)' : 'transparent',
+                  border: `1px solid ${noteStyle === s ? 'var(--accent)' : 'transparent'}`,
+                }}
+              >
+                {/* Breit genug fuer die volle skalierte Kartenbreite (kein
+                    seitliches Abschneiden, wichtig fuer Eselsohr oben rechts),
+                    unten leicht beschnitten — die Optik zeigt sich oben. */}
+                <div className="pointer-events-none h-11 w-[5.8rem] overflow-hidden">
+                  <Zettel id={`vorschau-${s}`} style={s} text="Zettel" scale={0.34} />
+                </div>
+                <span
+                  className="font-mono text-[0.56rem] uppercase tracking-[0.06em]"
+                  style={{ color: noteStyle === s ? 'var(--accent)' : 'var(--dim)' }}
+                >
+                  {NOTE_STYLE_LABEL[s]}
+                </span>
+              </button>
+            ))}
+          </div>
+
           {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
           <div className="flex gap-2">
             <button
@@ -204,7 +262,7 @@ export default function Composer({ onPosted }: Props) {
             </button>
             <button
               type="button"
-              onClick={() => post('text', { body: text.trim() })}
+              onClick={() => post('text', { body: text.trim(), noteStyle })}
               disabled={busy || !text.trim()}
               className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
               style={{ background: 'var(--accent)', color: '#17130E' }}

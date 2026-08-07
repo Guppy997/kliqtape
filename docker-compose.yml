@@ -80,7 +80,42 @@ services:
         limits:
           memory: 128M
 
+  # Oeffentlicher Zugang statt/zusaetzlich zu Tailscale: ein echtes,
+  # automatisch erneuertes Let's-Encrypt-Zertifikat fuer eine eigene Domain.
+  # Optional wie tailscale oben — startet nur mit
+  # "docker compose --profile public up". Reicht intern per Docker-DNS bis
+  # zu frontend:80 durch, braucht dafuer keinen eigenen Host-Port an frontend.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["public"]
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      # Leere Defaults noetig: Compose loest Variablen auch in inaktiven
+      # Profilen auf (gleiches Problem wie beim TS_AUTHKEY oben) — ein
+      # ":?"-Pflichtwert wuerde dann JEDEN docker-compose-Aufruf brechen,
+      # auch rein lokale/Tailscale-Betriebe ohne oeffentliches Hosting.
+      # Ohne echte Domain startet Caddy stattdessen mit einer klaren
+      # Fehlermeldung — aber nur, wenn man das "public"-Profil tatsaechlich startet.
+      DOMAIN: ${DOMAIN:-}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - kliqtape-caddy-data:/data
+      - kliqtape-caddy-config:/config
+    depends_on:
+      - frontend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
 volumes:
   kliqtape-data:
   kliqtape-media:
   kliqtape-ts:
+  kliqtape-caddy-data:
+  kliqtape-caddy-config:

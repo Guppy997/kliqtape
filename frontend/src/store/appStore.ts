@@ -4,22 +4,29 @@ import { persist } from 'zustand/middleware';
 export type Side = 'a' | 'b';
 
 /**
- * Die Seiten unterscheiden sich nach HALTBARKEIT, nicht nach Publikum —
- * wer mitliest, entscheidet die eingelegte Kassette.
+ * Beide Seiten sind dauerhaft — sie unterscheiden sich nach ART, nicht nach
+ * Haltbarkeit. Seite A ist das kuratierte Archiv, Seite B das laufende
+ * Gespräch der Runde (siehe Etappe 3: eigener Chat statt einzelner Karten).
  */
 export const SIDE_LABEL: Record<Side, string> = {
   a: 'Bleibt',
-  b: 'Überspielt',
+  b: 'Gruppenchat',
 };
 
 export const SIDE_HINT: Record<Side, string> = {
   a: 'was bleiben soll',
-  b: 'weg nach 24 Stunden',
+  b: 'läuft weiter',
 };
 
 interface AppState {
-  /** Kein Login im Prototyp — nur ein Name, der lokal gespeichert wird. */
+  /** Der Name, der lokal gespeichert wird — die eigentliche Identitaet ist
+   *  aber `token` (siehe dort), der Name allein reicht seit dem minimalen
+   *  Auth-Token nicht mehr. */
   me: string;
+  /** Zugangscode aus /api/auth/claim bzw. /api/auth/whoami — beweist, dass
+   *  dieses Geraet wirklich `me` ist, nicht nur behauptet es zu sein. Ohne
+   *  Token (z.B. altes Geraet vor diesem Update) gilt man als abgemeldet. */
+  token: string | null;
   side: Side;
   /** Welche Seite beim Öffnen liegt. */
   startSide: Side;
@@ -28,21 +35,27 @@ interface AppState {
   /** Wann eine Kassette zuletzt eingelegt war — lokal, nur für die
    *  "Neuigkeiten"-Anzeige, kein Serverzustand. */
   cassetteSeenAt: Record<string, number>;
-  setMe: (name: string) => void;
+  /** Name und Token gehoeren zusammen — ein Aufruf statt zwei getrennte
+   *  Sets, damit nie eins ohne das andere gesetzt wird. */
+  setIdentity: (me: string, token: string) => void;
   setSide: (side: Side) => void;
   setStartSide: (side: Side) => void;
   setCassette: (id: string | null) => void;
+  /** Lokal abmelden — der Zugangscode bleibt serverseitig gueltig, ein
+   *  erneutes Beanspruchen desselben Namens auf diesem Geraet fragt danach. */
+  logout: () => void;
 }
 
 export const useApp = create<AppState>()(
   persist(
     (set) => ({
       me: '',
+      token: null,
       side: 'a',
       startSide: 'a',
       cassetteId: null,
       cassetteSeenAt: {},
-      setMe: (me) => set({ me: me.trim().slice(0, 40) }),
+      setIdentity: (me, token) => set({ me: me.trim().slice(0, 40), token }),
       setSide: (side) => set({ side }),
       setStartSide: (startSide) => set({ startSide }),
       // Einlegen zaehlt als "gesehen" — die Kassette faellt danach aus der
@@ -53,6 +66,7 @@ export const useApp = create<AppState>()(
           side: 'a',
           cassetteSeenAt: cassetteId ? { ...s.cassetteSeenAt, [cassetteId]: Date.now() } : s.cassetteSeenAt,
         })),
+      logout: () => set({ me: '', token: null, cassetteId: null }),
     }),
     { name: 'kliqtape' },
   ),
