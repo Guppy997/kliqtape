@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { claimName, deletePost, fetchFeed, fetchTapes, whoami, ApiError, KIND_LABEL, type FeedItem, type Kind } from '@/lib/api';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
+import { useViewMode } from '@/store/viewStore';
 import { berlinDateLabel, tapeIndexOf } from '@/lib/berlinDay';
 import CassetteHeader from '@/components/CassetteHeader';
 import { useCassettes, useLookIndex } from '@/components/CassetteDeck';
@@ -14,11 +15,14 @@ import BottomBar from '@/components/BottomBar';
 import Lockup from '@/components/Lockup';
 import Settings from '@/components/Settings';
 import Shelf from '@/components/Shelf';
+import NewsView from '@/components/NewsView';
+import StoryView from '@/components/StoryView';
 import TapeHeader, { defaultTapeName, tapeDisplayName } from '@/components/TapeHeader';
 import UpdateNotification from '@/components/UpdateNotification';
 
 export default function App() {
   const me = useApp((s) => s.me);
+  const token = useApp((s) => s.token);
   const side = useApp((s) => s.side);
   const cassetteId = useApp((s) => s.cassetteId);
 
@@ -73,10 +77,15 @@ export default function App() {
 
   // Der Rahmen ist immer derselbe — nur die Seitentokens wechseln. Sonst
   // springt das Layout zwischen Anmeldung und App.
+  // me OHNE token heisst: dieses Geraet stammt noch von vor dem
+  // Zugangscode-System (oder der Code ist verlorengegangen) — jede
+  // identitaetsgebundene Anfrage wuerde sonst still mit 401 fehlschlagen,
+  // ohne dass man je einen Hinweis darauf sieht. Zurueck zu NameGate statt
+  // eines Geistermodus.
   return (
     <div style={{ background: 'var(--screen)', minHeight: '100%' }}>
       <UpdateNotification />
-      {me ? <Deck /> : <NameGate />}
+      {me && token ? <Deck /> : <NameGate prefill={me} />}
     </div>
   );
 }
@@ -97,11 +106,14 @@ function Deck() {
   const setSide = useApp((s) => s.setSide);
   const cassetteId = useApp((s) => s.cassetteId);
   const setCassette = useApp((s) => s.setCassette);
+  const markSideSeen = useApp((s) => s.markSideSeen);
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Kind | 'all'>('all');
   const [filterOpen, setFilterOpen] = useState(false);
   const navActive = useBottomNav((s) => s.active);
   const setActiveNav = useBottomNav((s) => s.setActive);
+  const viewMode = useViewMode((s) => s.viewMode);
+  const setViewMode = useViewMode((s) => s.setViewMode);
 
   // Home-Knopf in der BottomBar: zurueck zur Startansicht der eingelegten
   // Kassette, egal von wo (Seite B, aktiver Filter, weit runtergescrollt —
@@ -205,87 +217,143 @@ function Deck() {
   // Abstand unten, sonst verschwindet die letzte Nachricht dahinter.
   const isCassetteChat = side === 'b' && filter === 'all';
 
+  // Beim Ankommen auf einer Seite zum ersten UNGESEHENEN Beitrag springen,
+  // statt immer ganz oben (aeltester) oder blind ganz unten (aktuellster) zu
+  // landen — "ans Ende" allein wuerde alles ueberspringen, was seit dem
+  // letzten Mal dazugekommen ist, ist aber der richtige Fallback, wenn es
+  // nichts Neues gibt. Zwei Effekte, bewusst getrennt: der erste friert den
+  // ALTEN Gesehen-Stand einmal ein, bevor der zweite ihn (durch fortlaufendes
+  // Nachziehen waehrend man hier verweilt) ueberschreiben kann — sonst haette
+  // der Sprung nichts mehr zum Vergleichen.
+  const arrival = useRef<{ key: string; lastSeen: number; jumped: boolean }>({ key: '', lastSeen: 0, jumped: true });
+  useLayoutEffect(() => {
+    if (!cassetteId) return;
+    const key = `${cassetteId}:${side}`;
+    arrival.current = { key, lastSeen: useApp.getState().sideSeenAt[key] ?? 0, jumped: false };
+  }, [cassetteId, side]);
+
+  useLayoutEffect(() => {
+    // Seite B ungefiltert ist Chat — der springt beim Laden schon selbst ans
+    // Ende (ChatThread), hier nichts extra tun.
+    if (!cassetteId || isCassetteChat || isLoading) return;
+    const key = `${cassetteId}:${side}`;
+    const a = arrival.current;
+    if (a.key !== key) return;
+
+    if (!a.jumped) {
+      a.jumped = true;
+      const target = data.find((p) => p.created_at > a.lastSeen);
+      if (target) document.getElementById(`post-${target.id}`)?.scrollIntoView({ block: 'start' });
+      else if (data.length > 0) window.scrollTo({ top: document.documentElement.scrollHeight });
+    }
+
+    // Fortlaufend nachziehen, auch nach dem ersten Sprung: was waehrend des
+    // Verweilens hier noch nachlaedt (z.B. Hintergrund-Polling auf Seite B),
+    // zaehlt beim naechsten Mal nicht mehr als ungesehen.
+    const newest = data.reduce((m, p) => Math.max(m, p.created_at), a.lastSeen);
+    markSideSeen(cassetteId, side, newest);
+  }, [cassetteId, side, isCassetteChat, isLoading, data, markSideSeen]);
+
   return (
     <>
-      <CassetteHeader
-        cassetteId={cassetteId}
-        pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
-        label={current?.name ?? 'Kein Band'}
-        count={data.length}
-        currentTape={currentTape}
-      />
+      {/* Kassetten-Kopf UND die Zeile mit Erstellen/Filter/Regal/Profil
+          teilen sich jetzt EINEN sticky-Block, statt dass nur der Kopf oben
+          klebt und die Zeile mit dem normalen Inhalt wegscrollt — genau das
+          war der gemeldete Bug: "+"/Filter/Regal/Profil waren nur ganz oben
+          erreichbar. Der Kopf darf weiterhin einklappen (siehe
+          CassetteHeader.tsx), die Zeile darunter bleibt davon unabhaengig
+          immer sichtbar, weil beide gemeinsam in normalem Fluss innerhalb
+          dieses EINEN sticky-Containers stehen — kein Abgleich zweier
+          getrennter sticky-Hoehen noetig. */}
+      <div
+        className="sticky top-0 z-30"
+        style={{ background: 'color-mix(in srgb, var(--screen) 90%, transparent)', backdropFilter: 'blur(6px)' }}
+      >
+        <CassetteHeader
+          cassetteId={cassetteId}
+          pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
+          label={current?.name ?? 'Kein Band'}
+          count={data.length}
+          currentTape={currentTape}
+        />
+
+        <div className="mx-auto flex max-w-xl flex-col gap-1.5 px-3 pb-2">
+          <div
+            className="font-mono flex items-center justify-between gap-1.5 text-[0.64rem] uppercase tracking-[0.11em]"
+            style={{ color: 'var(--dim)' }}
+          >
+            <span className="flex min-w-0 items-center gap-1.5">
+              {/* Seite B ungefiltert ist reiner Chat (siehe isCassetteChat unten) —
+                  dort soll nichts mit dem Schreiben konkurrieren. Ausserdem nur
+                  in der Home-Uebersicht (kein Sheet aus der unteren Leiste
+                  offen) — sonst schwebt der Knopf noch ueber Eject & Co., weil
+                  deren Sheet dort bewusst nicht alles verdeckt (reserveBottomNav). */}
+              {!isCassetteChat && navActive === null && <Composer onPosted={invalidate} />}
+            </span>
+            <span className="flex shrink-0 items-center gap-1.5">
+              {/* Auf beiden Seiten filterbar — auch Seite B sammelt sich mit der
+                  Zeit, und "was ist grad an O-Toenen da" ist dort genauso eine
+                  sinnvolle Frage wie im Archiv. */}
+              <button
+                type="button"
+                onClick={() => setFilterOpen((v) => !v)}
+                aria-expanded={filterOpen}
+                className="shrink-0 rounded-full px-2 py-1 text-[0.58rem]"
+                style={{
+                  border: '1px solid var(--line)',
+                  color: filter === 'all' ? 'var(--dim)' : 'var(--accent)',
+                }}
+              >
+                {filter === 'all' ? 'Filter' : FILTERS.find((f) => f.key === filter)?.label} {filterOpen ? '▴' : '▾'}
+              </button>
+              {/* Regal geht jetzt ueber alle Kassetten — holt sich seine Daten
+                  selbst, unabhaengig von der gerade eingelegten. */}
+              <Shelf me={me} />
+              <Settings />
+            </span>
+          </div>
+
+          {/* Kleines Fenster, das direkt unter der Zeile aufklappt — kein
+              eigener Bildschirm fuer eine so kurze Auswahl. */}
+          {filterOpen && (
+            <div
+              className="flex flex-wrap gap-1.5 rounded-lg p-2"
+              style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+            >
+              {FILTERS.map((f) => {
+                const n = f.key === 'all' ? data.length : data.filter((p) => p.kind === f.key).length;
+                if (n === 0 && f.key !== 'all') return null;
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => {
+                      setFilter(f.key);
+                      setFilterOpen(false);
+                    }}
+                    className="font-mono rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.08em]"
+                    style={{
+                      background: filter === f.key ? 'var(--accent)' : 'transparent',
+                      border: '1px solid var(--line)',
+                      color: filter === f.key ? '#17130E' : 'var(--ink)',
+                    }}
+                  >
+                    {f.label} {n}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <StoryView open={viewMode === 'story'} onClose={() => setViewMode('cassette')} />
+      <NewsView open={viewMode === 'news'} onClose={() => setViewMode('cassette')} />
 
       <main
         className="mx-auto flex max-w-xl flex-col gap-1.5 px-3 pt-2"
         style={{ paddingBottom: isCassetteChat ? 'calc(var(--chatcomposer-h, 5rem) + 1rem)' : '6rem' }}
       >
-        <div
-          className="font-mono flex items-center justify-between gap-1.5 text-[0.64rem] uppercase tracking-[0.11em]"
-          style={{ color: 'var(--dim)' }}
-        >
-          <span className="flex min-w-0 items-center gap-1.5">
-            {/* Seite B ungefiltert ist reiner Chat (siehe isCassetteChat unten) —
-                dort soll nichts mit dem Schreiben konkurrieren. Ausserdem nur
-                in der Home-Uebersicht (kein Sheet aus der unteren Leiste
-                offen) — sonst schwebt der Knopf noch ueber Eject & Co., weil
-                deren Sheet dort bewusst nicht alles verdeckt (reserveBottomNav). */}
-            {!isCassetteChat && navActive === null && <Composer onPosted={invalidate} />}
-          </span>
-          <span className="flex shrink-0 items-center gap-1.5">
-            {/* Auf beiden Seiten filterbar — auch Seite B sammelt sich mit der
-                Zeit, und "was ist grad an O-Toenen da" ist dort genauso eine
-                sinnvolle Frage wie im Archiv. */}
-            <button
-              type="button"
-              onClick={() => setFilterOpen((v) => !v)}
-              aria-expanded={filterOpen}
-              className="shrink-0 rounded-full px-2 py-1 text-[0.58rem]"
-              style={{
-                border: '1px solid var(--line)',
-                color: filter === 'all' ? 'var(--dim)' : 'var(--accent)',
-              }}
-            >
-              {filter === 'all' ? 'Filter' : FILTERS.find((f) => f.key === filter)?.label} {filterOpen ? '▴' : '▾'}
-            </button>
-            {/* Regal geht jetzt ueber alle Kassetten — holt sich seine Daten
-                selbst, unabhaengig von der gerade eingelegten. */}
-            <Shelf me={me} />
-            <Settings />
-          </span>
-        </div>
-
-        {/* Kleines Fenster, das direkt unter der Zeile aufklappt — kein
-            eigener Bildschirm fuer eine so kurze Auswahl. */}
-        {filterOpen && (
-          <div
-            className="flex flex-wrap gap-1.5 rounded-lg p-2"
-            style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
-          >
-            {FILTERS.map((f) => {
-              const n = f.key === 'all' ? data.length : data.filter((p) => p.kind === f.key).length;
-              if (n === 0 && f.key !== 'all') return null;
-              return (
-                <button
-                  key={f.key}
-                  type="button"
-                  onClick={() => {
-                    setFilter(f.key);
-                    setFilterOpen(false);
-                  }}
-                  className="font-mono rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.08em]"
-                  style={{
-                    background: filter === f.key ? 'var(--accent)' : 'transparent',
-                    border: '1px solid var(--line)',
-                    color: filter === f.key ? '#17130E' : 'var(--ink)',
-                  }}
-                >
-                  {f.label} {n}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         {!cassetteId && !loadingTapes && (
           <div className="py-16 text-center">
             <p className="font-hand text-lg" style={{ color: 'var(--dim)' }}>
@@ -389,9 +457,13 @@ function Deck() {
   );
 }
 
-function NameGate() {
+function NameGate({ prefill }: { prefill?: string }) {
   const setIdentity = useApp((s) => s.setIdentity);
-  const [value, setValue] = useState('');
+  // Vorausgefuellt, wenn schon ein Name lokal bekannt ist, nur der
+  // Zugangscode fehlt (siehe App()) — spart das erneute Eintippen, ein Tipp
+  // auf "Band einlegen" reicht, um wieder reinzukommen (oder den bestehenden
+  // Code einzutragen, falls der Name schon woanders beansprucht ist).
+  const [value, setValue] = useState(prefill ?? '');
   // Ein Name gehoert jetzt genau einer Person — beim ersten Beanspruchen
   // bekommt das Geraet automatisch einen Zugangscode (siehe /api/auth/claim).
   // Ist der Name schon vergeben (z.B. dasselbe Konto auf einem neuen Geraet),
@@ -442,7 +514,9 @@ function NameGate() {
           <Lockup size="clamp(3rem, 17vw, 4.6rem)" />
         </h1>
         <p className="text-sm" style={{ color: 'var(--dim)' }}>
-          Tipp deinen Namen ein — beim ersten Mal wird er für dich reserviert.
+          {prefill
+            ? 'Diesem Gerät fehlt noch der Zugangscode zu diesem Namen — einmal bestätigen.'
+            : 'Tipp deinen Namen ein — beim ersten Mal wird er für dich reserviert.'}
         </p>
         <input
           value={value}

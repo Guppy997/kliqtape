@@ -160,12 +160,57 @@ db.exec(`
     created_at INTEGER NOT NULL
   );
 
+  -- Storys: kassettenuebergreifend sichtbar fuer jeden, mit dem man in
+  -- IRGENDEINER Kassette zusammen ist (siehe server.ts, die Netzwerk-Abfrage
+  -- ueber cassette_members) — anders als posts, das strikt an eine einzelne
+  -- Runde gebunden ist. expires_at wird serverseitig beim Anlegen gesetzt
+  -- (created_at + 24h), nie vom Client. Kein duration_ms hier: steht schon
+  -- auf media.duration_ms, wird beim Lesen dazugejoint statt dupliziert.
+  -- Kein Hintergrund-Job fuer den Ablauf (die App hat bewusst keinen Cron) —
+  -- server.ts filtert abgelaufene Zeilen beim Lesen heraus und raeumt sie
+  -- gelegentlich beim Zugriff mit auf (sweepExpiredStories).
+  CREATE TABLE IF NOT EXISTS stories (
+    id         TEXT PRIMARY KEY,
+    author     TEXT NOT NULL,
+    kind       TEXT NOT NULL,
+    media_id   TEXT NOT NULL REFERENCES media(id),
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
+  );
+
+  -- Der Kliqtape-Kanal: News/Insights von den Betreiber:innen, dauerhaft und
+  -- fuer WIRKLICH ALLE sichtbar (keine Kassetten-Mitgliedschaft noetig,
+  -- anders als posts, und auch nicht auf das eigene Netzwerk beschraenkt wie
+  -- stories). Schreiben darf nur, wessen Name in ADMIN_NAME steht (siehe
+  -- server.ts) — author wird trotzdem gespeichert, rein zur Nachvollziehbarkeit.
+  CREATE TABLE IF NOT EXISTS news_posts (
+    id         TEXT PRIMARY KEY,
+    author     TEXT NOT NULL,
+    kind       TEXT NOT NULL,
+    body       TEXT NOT NULL DEFAULT '',
+    media_id   TEXT REFERENCES media(id),
+    created_at INTEGER NOT NULL
+  );
+
+  -- Foerderstand des Projekts: genau ein Datensatz (id = 1), gepflegt von
+  -- ADMIN_NAME im Kliqtape-Kanal. Freitext statt Cent-Betrag mit
+  -- Waehrungscode — wird von Hand selten aktualisiert, da reicht ein String
+  -- wie "128,40 €" voellig, ganz ohne Formatierungslogik.
+  CREATE TABLE IF NOT EXISTS project_funding (
+    id         INTEGER PRIMARY KEY CHECK (id = 1),
+    balance    TEXT NOT NULL DEFAULT '',
+    note       TEXT NOT NULL DEFAULT '',
+    updated_at INTEGER NOT NULL DEFAULT 0
+  );
+
   CREATE INDEX IF NOT EXISTS idx_posts_side_time ON posts(side, created_at);
   CREATE INDEX IF NOT EXISTS idx_members_person ON cassette_members(member);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_to ON mixtapes(to_name, sealed_at);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_from ON mixtapes(from_name, sealed_at);
   CREATE INDEX IF NOT EXISTS idx_tracks_tape ON mixtape_tracks(mixtape_id, position);
   CREATE INDEX IF NOT EXISTS idx_tape_favorites_member ON cassette_tape_favorites(cassette_id, member);
+  CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories(expires_at);
+  CREATE INDEX IF NOT EXISTS idx_stories_author_time ON stories(author, created_at);
 `);
 
 /* ---------------------------------------------------------------------------
@@ -444,4 +489,33 @@ export interface PostRow {
   source: 'camera' | 'upload' | null;
   note_style: string | null;
   created_at: number;
+}
+
+export type StoryKind = 'photo' | 'video';
+
+export interface StoryRow {
+  id: string;
+  author: string;
+  kind: StoryKind;
+  media_id: string;
+  created_at: number;
+  expires_at: number;
+}
+
+export type NewsKind = 'text' | 'photo' | 'video';
+
+export interface NewsPostRow {
+  id: string;
+  author: string;
+  kind: NewsKind;
+  body: string;
+  media_id: string | null;
+  created_at: number;
+}
+
+export interface ProjectFundingRow {
+  id: 1;
+  balance: string;
+  note: string;
+  updated_at: number;
 }

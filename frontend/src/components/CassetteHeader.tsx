@@ -44,10 +44,22 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
   const [progress, setProgress] = useState(0);
   const [flipping, setFlipping] = useState(false);
   const timer = useRef<number | null>(null);
+  // Waehrend "settling" ignoriert die Scroll-Verfolgung die tatsaechliche
+  // Position — siehe Effekt weiter unten.
+  const settling = useRef(false);
 
+  // Scroll-Verfolgung UND das kurze "Settling"-Fenster nach einem Wechsel
+  // sind bewusst EIN Effekt: das Ende des Fensters muss den Klapp-Zustand
+  // aktiv nachholen (sonst bliebe der Kopf aufgeklappt "stehen", falls
+  // seitdem kein weiterer Scroll/Resize mehr passiert ist, obwohl die
+  // tatsaechliche Position laengst woanders liegt — App.tsx springt beim
+  // Ankommen ja direkt zum ersten ungesehenen Beitrag bzw. ans Bandende).
   useEffect(() => {
     let raf = 0;
+    let settleTimer: number | null = null;
+
     const update = () => {
+      if (settling.current) return;
       const max = document.documentElement.scrollHeight - window.innerHeight;
       const y = window.scrollY;
       setCollapse(Math.min(1, y / 150));
@@ -57,23 +69,51 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(update);
     };
+    // Kurz nach einem Seiten-/Kassettenwechsel (bzw. solange die Seite noch
+    // waechst, weil Inhalt nachlaedt — z.B. Chat, der selbst ans Ende
+    // springt) bleibt der Kopf aufgeklappt. Erst wenn eine Weile nichts mehr
+    // wächst, greift wieder normales Scroll-Verhalten — und zwar sofort mit
+    // der dann tatsaechlichen Position, nicht erst beim naechsten Scroll.
+    const arm = () => {
+      settling.current = true;
+      if (settleTimer) window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        settling.current = false;
+        update();
+      }, 200);
+    };
+
+    arm();
     update();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
+    const ro = new ResizeObserver(() => {
+      setCollapse(0);
+      arm();
+    });
+    ro.observe(document.documentElement);
+
     return () => {
       cancelAnimationFrame(raf);
+      if (settleTimer) window.clearTimeout(settleTimer);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      ro.disconnect();
     };
   }, [side, count, cassetteId]);
 
   // Seiten-/Kassettenwechsel soll IMMER aufgeklappt und oben starten — sonst
   // bliebe das Beschriftungsfeld bei einem lang gewachsenen Band fuer immer
-  // eingeklappt, sobald man einmal tief gescrollt hatte. useLayoutEffect statt
-  // useEffect UND getrennt von flip(): der Aufruf muss erst laufen, NACHDEM
-  // React den Inhalt der neuen Seite/Kassette schon ins DOM committed hat —
-  // vorher gerufen, kann der Browser das Scrollen-auf-0 durch "scroll
-  // anchoring" beim anschliessenden Content-Wechsel wieder rueckgaengig machen.
+  // eingeklappt, sobald man einmal tief gescrollt hatte. Wichtig: das gilt
+  // AUCH fuer den Gruppenchat (Seite B ungefiltert) — dort bestimmt zwar
+  // ChatThread selbst noch das endgueltige Scrollziel (ans Gespraechsende),
+  // aber OHNE diesen Reset bliebe bis dahin die alte Scrollposition der
+  // vorherigen Seite stehen. Das "Settling"-Fenster unten liest dann kurz
+  // danach eine viel zu grosse Position und klappt sofort alles ein, obwohl
+  // man gerade erst angekommen ist. App.tsx (Deck) ueberschreibt dieses
+  // Ziel danach noch mit dem eigentlich richtigen (erster ungesehener
+  // Beitrag bzw. Bandende) — aber eben nur fuer die Karten-Ansicht, nicht
+  // fuer den Chat.
   useLayoutEffect(() => {
     window.scrollTo({ top: 0 });
     setCollapse(0);
@@ -95,6 +135,18 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
       setSide(next);
       setFlipping(false);
     }, FLIP_MS);
+  }
+
+  // Linke Spule = Rueckspulen (aeltester Stand), rechte = Vorspulen
+  // (aktuellster Stand) — wie an einem echten Deck. Eigene Tasten statt Teil
+  // der Umdrehen-Flaeche, damit beides nebeneinander bedienbar bleibt.
+  function scrollToStart(e: React.MouseEvent) {
+    e.stopPropagation();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function scrollToEnd(e: React.MouseEvent) {
+    e.stopPropagation();
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
   }
 
   const look = lookFor(cassetteId ?? '', pairIndex);
@@ -142,22 +194,43 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
   const bandInk = isA ? type.stripeInk : plastic.ink;
   const windowBg = isA ? type.shellDark : plastic.inner;
 
+  // Kein eigenes sticky/Hintergrund mehr hier — App.tsx umschliesst diesen
+  // Kopf jetzt zusammen mit der Erstellen/Filter/Regal/Profil-Zeile in EINEM
+  // gemeinsamen sticky-Block, damit beide zusammen oben kleben bleiben,
+  // statt dass nur der Kopf klebt und die Zeile darunter wegscrollt.
   return (
-    <header
-      className="sticky top-0 z-30 px-3 pb-2 pt-3"
-      style={{ background: 'color-mix(in srgb, var(--screen) 90%, transparent)', backdropFilter: 'blur(6px)' }}
-    >
+    <header className="px-3 pb-2 pt-3">
       <div className="mx-auto max-w-xl" style={{ perspective: '900px' }}>
-        <button
-          type="button"
+        {/* Kein <button> mehr, sonst duerften die Spulen darin (siehe unten)
+            nicht selbst klickbar sein — verschachtelte interaktive Elemente
+            sind ungueltig. Tastatur bleibt bedienbar (role/tabIndex/onKeyDown). */}
+        <div
+          role="button"
+          tabIndex={0}
           onClick={flip}
-          disabled={!cassetteId}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              flip();
+            }
+          }}
           aria-label={`Seite ${side.toUpperCase()} von ${label} — tippen für Seite ${isA ? 'B' : 'A'}`}
-          className="relative block w-full overflow-hidden rounded-xl px-3 pb-2.5 pt-3 text-left disabled:opacity-60"
+          aria-disabled={!cassetteId}
+          className="relative block w-full cursor-pointer overflow-hidden rounded-xl px-3 pb-2.5 pt-3 text-left"
           style={{
             ...shellStyle,
+            opacity: cassetteId ? 1 : 0.6,
             transition: `transform ${FLIP_MS}ms ease-in-out, background-image 450ms ease`,
-            transform: flipping ? 'rotateY(90deg)' : 'rotateY(0deg)',
+            // Nur WAEHREND des Umdrehens tatsaechlich in einem 3D-Kontext
+            // (rotateY) — im Ruhezustand 'none' statt 'rotateY(0deg)'.
+            // Dauerhaft aktiver 3D-Transform + das backdrop-filter im
+            // sticky Header darueber (siehe <header> oben) ist ein
+            // bekanntes WebKit/Blink-Repaint-Problem: der Text-Layer
+            // bleibt nach einem Seitenwechsel manchmal leer stehen,
+            // obwohl Rahmen/Hintergrund korrekt neu zeichnen — genau das
+            // gemeldete Bild. 'none' im Ruhezustand nimmt den Browser aus
+            // diesem staendigen 3D-Kontext raus.
+            transform: flipping ? 'rotateY(90deg)' : 'none',
           }}
         >
           <Wear wear={wear} light={isA ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.32)'} />
@@ -194,7 +267,11 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
               </span>
             </div>
 
-            {/* Beschriftungsfeld mit Linien — hier steht der Name der Runde */}
+            {/* Beschriftungsfeld mit Linien — hier steht der Name der Runde.
+                Klappt komplett ein, wenn man scrollt (siehe fieldH) — das ist
+                gewollt, der eigentliche Bug war eine stehengebliebene
+                Scrollposition der vorherigen Seite, nicht dass hier ueberhaupt
+                etwas einklappt (siehe Reset weiter oben). */}
             <div
               className="overflow-hidden px-3"
               style={{ height: fieldH, transition: 'height 200ms ease', opacity: 1 - collapse * 1.5 }}
@@ -225,7 +302,14 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
               boxShadow: `0 1px 0 rgba(255,255,255,.09), 0 2px 6px rgba(0,0,0,.5) inset`,
             }}
           >
-            <Reel r={rLeft} tape={isA ? type.tape : plastic.shell} hub={isA ? type.hub : plastic.shellHi} />
+            <button
+              type="button"
+              onClick={scrollToStart}
+              aria-label={isA ? 'Zurueck an den Bandanfang' : 'Zum Anfang des Gesprächs'}
+              className="shrink-0 rounded-full transition-transform active:scale-90"
+            >
+              <Reel r={rLeft} tape={isA ? type.tape : plastic.shell} hub={isA ? type.hub : plastic.shellHi} />
+            </button>
             {/* Seitenkennung im Kasten, wie aufgedruckt */}
             <span
               className="font-disp grid size-8 shrink-0 place-items-center rounded-[2px] text-[1.15rem] font-bold leading-none"
@@ -237,7 +321,14 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
             >
               {side.toUpperCase()}
             </span>
-            <Reel r={rRight} tape={isA ? type.tape : plastic.shell} hub={isA ? type.hub : plastic.shellHi} />
+            <button
+              type="button"
+              onClick={scrollToEnd}
+              aria-label={isA ? 'Vor zum aktuellsten Stand' : 'Zum Ende des Gesprächs'}
+              className="shrink-0 rounded-full transition-transform active:scale-90"
+            >
+              <Reel r={rRight} tape={isA ? type.tape : plastic.shell} hub={isA ? type.hub : plastic.shellHi} />
+            </button>
           </div>
 
           {/* ---- Kerben am unteren Rand ----------------------------------- */}
@@ -254,7 +345,7 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
               ↻ umdrehen
             </span>
           </div>
-        </button>
+        </div>
       </div>
     </header>
   );

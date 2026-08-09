@@ -37,7 +37,11 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
   }
 
   return (
-    <article className="rise rounded-xl p-3" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
+    <article
+      id={`post-${item.id}`}
+      className="rise rounded-xl p-3"
+      style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+    >
       <div className="flex items-center gap-2">
         <Avatar name={item.author} side={side} />
         <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>

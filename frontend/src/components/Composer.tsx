@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { createPost, fetchMixtapes, mediaUrl, uploadMedia, NOTE_STYLES, type Kind, type NoteStyle } from '@/lib/api';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
@@ -13,21 +13,62 @@ interface Props {
   onPosted: () => void;
 }
 
-const CHOICES: { kind: Kind; label: string; hint: string }[] = [
-  { kind: 'tape', label: 'Mixtape', hint: 'Eines deiner Mixtapes teilen' },
-  { kind: 'voice', label: 'O-Ton', hint: '90 Sekunden Stimme' },
-  { kind: 'photo', label: 'Schnappschuss', hint: 'nur jetzt, kein Upload' },
-  { kind: 'video', label: 'Clip', hint: 'max. 10 Sekunden' },
-  { kind: 'text', label: 'Zettel', hint: 'ein paar Zeilen' },
+const CHOICES: { kind: Kind; label: string; description: string }[] = [
+  { kind: 'tape', label: 'Mixtape', description: 'Eines deiner versiegelten Mixtapes mit der ganzen Runde teilen.' },
+  { kind: 'voice', label: 'O-Ton', description: 'Bis zu 90 Sekunden deine Stimme — nur auf Seite B, fürs laufende Gespräch.' },
+  { kind: 'photo', label: 'Schnappschuss', description: 'Ein Foto direkt mit der Kamera. Kein Hochladen aus der Galerie — nur der Moment gerade jetzt.' },
+  { kind: 'video', label: 'Clip', description: 'Ein kurzes Video, maximal 10 Sekunden.' },
+  { kind: 'text', label: 'Zettel', description: 'Ein paar geschriebene Zeilen — nur auf Seite A, im bleibenden Archiv.' },
 ];
+
+/** Handgezeichnete Icons je Beitragsart, gleicher Strichstil wie die untere
+ *  Leiste (siehe NavButton.tsx/BottomBar.tsx) — das Mixtape-Icon ist wörtlich
+ *  dasselbe wie in BottomBar.tsx, nicht neu erfunden. */
+const ICONS: Record<Kind, ReactNode> = {
+  tape: (
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+      <rect x="0.65" y="0.65" width="14.7" height="10.7" rx="1.5" />
+      <circle cx="4.5" cy="6" r="1.6" />
+      <circle cx="11.5" cy="6" r="1.6" />
+      <path d="M6.3 6h3.4" />
+    </svg>
+  ),
+  voice: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+      <line x1="2" y1="6" x2="2" y2="10" />
+      <line x1="5.5" y1="3" x2="5.5" y2="13" />
+      <line x1="9" y1="1" x2="9" y2="15" />
+      <line x1="12.5" y1="4" x2="12.5" y2="12" />
+    </svg>
+  ),
+  photo: (
+    <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+      <path d="M1 4.2h2.6l1-1.6h4.8l1 1.6H15v8.4H1z" />
+      <circle cx="8" cy="8.4" r="2.6" />
+    </svg>
+  ),
+  video: (
+    <svg width="17" height="13" viewBox="0 0 17 13" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+      <rect x="0.65" y="2.4" width="9.5" height="8.2" rx="1.2" />
+      <path d="M10.15 5.4l5.2-2.6v8.4l-5.2-2.6z" />
+    </svg>
+  ),
+  text: (
+    <svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+      <path d="M1 0.7h8.4L13 4.3v11H1z" />
+      <path d="M9.4 0.7v3.6H13" />
+      <path d="M3.4 7.4h7.2M3.4 10h5.2" />
+    </svg>
+  ),
+};
 
 /**
  * Ein einziger REC-Knopf statt vieler Schaltflaechen.
  *
  * Alles landet auf demselben Band — was genau, entscheidet man erst danach.
- * Die Auswahl kommt als kleiner Kranz aus Feldern direkt um den Knopf herum,
- * nicht als eigene Seite — antippen fuehlt sich dadurch nach einem Ausklappen
- * an, nicht nach einem Wechsel.
+ * Antippen fuehrt auf eine eigene Seite, die jeden Modus kurz erklaert (nicht
+ * nur den Namen zeigt) — bei fuenf Auswahlmoeglichkeiten reicht ein kleines
+ * Ausklapp-Feld nicht mehr aus, um verstaendlich zu sein.
  */
 export default function Composer({ onPosted }: Props) {
   const me = useApp((s) => s.me);
@@ -84,23 +125,17 @@ export default function Composer({ onPosted }: Props) {
   // O-Ton umgekehrt nur auf Seite B (laufendes Gespraech) — auf Seite A
   // waere eine Sprachnachricht ein Fremdkoerper im kuratierten Archiv.
   const choices = CHOICES.filter((c) => (side === 'b' ? c.kind !== 'text' : c.kind !== 'voice'));
-  const fanOpen = step === 'choose';
+  const pageOpen = step === 'choose';
 
   return (
     <div className="relative">
-      {/* Sehr leichte Abdunkelung nur zum Wegtippen — bewusst kein Vollbild,
-          damit sich das Oeffnen nicht wie ein Seitenwechsel anfuehlt. */}
-      {fanOpen && (
-        <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,.28)' }} onClick={() => setStep(null)} />
-      )}
-
       <button
         type="button"
         aria-label="Aufnehmen"
-        aria-expanded={fanOpen}
+        aria-expanded={pageOpen}
         onClick={() => {
           setError(null);
-          setStep(fanOpen ? null : 'choose');
+          setStep(pageOpen ? null : 'choose');
         }}
         className="relative z-50 grid size-8 place-items-center rounded-full transition-transform active:scale-95"
         style={{
@@ -108,8 +143,7 @@ export default function Composer({ onPosted }: Props) {
           boxShadow: '0 0.25rem 0.6rem rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.12) inset',
         }}
       >
-        {/* Plus statt REC-Punkt — dreht sich beim Oeffnen zum X, damit klar
-            ist, dass derselbe Knopf den Fan auch wieder schliesst. */}
+        {/* Plus statt REC-Punkt, dreht sich beim Oeffnen zum X. */}
         <svg
           width="14"
           height="14"
@@ -119,44 +153,42 @@ export default function Composer({ onPosted }: Props) {
           strokeWidth="1.8"
           strokeLinecap="round"
           aria-hidden="true"
-          style={{ transform: fanOpen ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}
+          style={{ transform: pageOpen ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}
         >
           <path d="M7 1v12M1 7h12" />
         </svg>
       </button>
 
-      {/* Die Optionen klappen unter dem Knopf auf. Immer im DOM, damit rein und
-          raus weich uebergeht — geschlossen sind sie nur geschrumpft,
-          durchsichtig und unklickbar. Oeffnet nach unten links statt nach oben
-          zentriert wie frueher — der Knopf sitzt jetzt oben links unter dem
-          Kassetten-Kopf, ein nach oben oeffnendes Fenster wuerde dort hinausragen. */}
-      <div
-        className="pointer-events-none absolute top-[calc(100%+0.9rem)] left-0 z-50 flex w-60 flex-wrap gap-2"
-        aria-hidden={!fanOpen}
-      >
-        {choices.map((c, i) => (
-          <button
-            key={c.kind}
-            type="button"
-            tabIndex={fanOpen ? 0 : -1}
-            onClick={() => setStep(c.kind)}
-            className="rounded-xl px-2.5 py-2 text-center"
-            style={{
-              background: 'var(--card)',
-              border: '1px solid var(--line)',
-              minWidth: '4.6rem',
-              pointerEvents: fanOpen ? 'auto' : 'none',
-              opacity: fanOpen ? 1 : 0,
-              transform: fanOpen ? 'scale(1) translateY(0)' : 'scale(0.3) translateY(-0.7rem)',
-              transition: `transform 240ms cubic-bezier(.2,1.4,.4,1) ${fanOpen ? i * 25 : 0}ms, opacity 160ms ease ${fanOpen ? i * 25 : 0}ms`,
-            }}
-          >
-            <span className="font-disp block text-[0.74rem] font-bold uppercase tracking-[0.05em]" style={{ color: 'var(--ink)' }}>
-              {c.label}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* Eigene Seite statt kleinem Fenster — erklaert auch, welcher Modus
+          was ist, statt nur die 5 Namen hinzuwerfen. */}
+      <Sheet open={pageOpen} onClose={() => setStep(null)} variant="full" title="Aufnehmen">
+        <div className="flex flex-col gap-2">
+          {choices.map((c) => (
+            <button
+              key={c.kind}
+              type="button"
+              onClick={() => setStep(c.kind)}
+              className="flex items-start gap-3 rounded-xl p-3 text-left"
+              style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+            >
+              <span
+                className="grid size-9 shrink-0 place-items-center rounded-full"
+                style={{ background: 'rgba(0,0,0,.18)', color: 'var(--accent)' }}
+              >
+                {ICONS[c.kind]}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="font-disp block text-sm font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--ink)' }}>
+                  {c.label}
+                </span>
+                <span className="font-mono block text-[0.66rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+                  {c.description}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </Sheet>
 
       {/* Eines der eigenen Mixtapes teilen */}
       <Sheet open={step === 'tape'} onClose={() => setStep(null)} variant="full" title={`Mixtape teilen · ${SIDE_LABEL[side]}`}>

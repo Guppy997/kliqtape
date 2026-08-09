@@ -35,12 +35,21 @@ interface AppState {
   /** Wann eine Kassette zuletzt eingelegt war — lokal, nur für die
    *  "Neuigkeiten"-Anzeige, kein Serverzustand. */
   cassetteSeenAt: Record<string, number>;
+  /** Neuester gesehener Beitrags-Zeitstempel PRO SEITE (Schlüssel
+   *  `${cassetteId}:${side}`) — getrennt von cassetteSeenAt (das ist gröber,
+   *  pro Kassette, nur für die Neuigkeiten-Lampe). Bestimmt, wohin beim
+   *  nächsten Betreten dieser Seite gesprungen wird: zum ersten ungesehenen
+   *  Beitrag, oder ans Ende, wenn nichts Neues da ist (siehe App.tsx). */
+  sideSeenAt: Record<string, number>;
   /** Name und Token gehoeren zusammen — ein Aufruf statt zwei getrennte
    *  Sets, damit nie eins ohne das andere gesetzt wird. */
   setIdentity: (me: string, token: string) => void;
   setSide: (side: Side) => void;
   setStartSide: (side: Side) => void;
   setCassette: (id: string | null) => void;
+  /** Hebt den Gesehen-Stand fuer eine Seite an — nie zurueck, falls ein
+   *  aelterer Aufruf spaeter noch nachkommt (siehe App.tsx). */
+  markSideSeen: (cassetteId: string, side: Side, at: number) => void;
   /** Lokal abmelden — der Zugangscode bleibt serverseitig gueltig, ein
    *  erneutes Beanspruchen desselben Namens auf diesem Geraet fragt danach. */
   logout: () => void;
@@ -55,6 +64,7 @@ export const useApp = create<AppState>()(
       startSide: 'a',
       cassetteId: null,
       cassetteSeenAt: {},
+      sideSeenAt: {},
       setIdentity: (me, token) => set({ me: me.trim().slice(0, 40), token }),
       setSide: (side) => set({ side }),
       setStartSide: (startSide) => set({ startSide }),
@@ -66,6 +76,12 @@ export const useApp = create<AppState>()(
           side: 'a',
           cassetteSeenAt: cassetteId ? { ...s.cassetteSeenAt, [cassetteId]: Date.now() } : s.cassetteSeenAt,
         })),
+      markSideSeen: (cassetteId, side, at) =>
+        set((s) => {
+          const key = `${cassetteId}:${side}`;
+          if (at <= (s.sideSeenAt[key] ?? 0)) return s;
+          return { sideSeenAt: { ...s.sideSeenAt, [key]: at } };
+        }),
       logout: () => set({ me: '', token: null, cassetteId: null }),
     }),
     { name: 'kliqtape' },

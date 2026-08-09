@@ -175,6 +175,20 @@ button {
   animation: rise 0.4s ease backwards;
 }
 
+/* Story-Fortschrittsbalken (StoryView.tsx) — laeuft inline mit einer pro
+   Aufnahme berechneten Dauer, deshalb hier nur die Keyframes, kein fester
+   Klassenname. Bewusst NICHT in der reduced-motion-Regel unten deaktiviert:
+   das Ende dieser Animation loest den automatischen Sprung zur naechsten
+   Story aus (onAnimationEnd) — ohne sie liefe die Story sonst nie weiter. */
+@keyframes story-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .spin,
   .rise,

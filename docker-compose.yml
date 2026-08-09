@@ -10,6 +10,7 @@ services:
       DATA_DIR: /data
       MEDIA_DIR: /media
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-25}
+      ADMIN_NAME: ${ADMIN_NAME:-}
     volumes:
       - kliqtape-data:/data
       - kliqtape-media:/media

@@ -13,6 +13,7 @@ import {
 } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
+import { useViewMode } from '@/store/viewStore';
 import { assignPairs, lookFor, PAIR_COUNT } from '@/lib/cassetteLook';
 import Avatar, { useProfiles } from './Avatar';
 import NavButton from './NavButton';
@@ -101,6 +102,7 @@ export default function CassetteDeck() {
   // offen ist — nie mehrere gleichzeitig (siehe navStore.ts).
   const navActive = useBottomNav((s) => s.active);
   const setActiveNav = useBottomNav((s) => s.setActive);
+  const setViewMode = useViewMode((s) => s.setViewMode);
   const open = navActive === 'eject';
   const [manage, setManage] = useState<string | null>(null);
   // Nach "Einlegen" haelt das die ID des frisch angelegten Bands, solange
@@ -234,6 +236,72 @@ export default function CassetteDeck() {
         ) : (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
+              {/* Immer da, unabhaengig davon ob schon Storys existieren —
+                  bewusst NICHT wie eine normale Kassette gefaerbt (die
+                  Bandsorten-Palette ist absichtlich gedeckt/vintage), sondern
+                  eine eigene, schimmernde Optik — soll auf den ersten Blick
+                  als "das ist was anderes" auffallen. */}
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('story');
+                  setActiveNav(null);
+                }}
+                className="flex items-center gap-3 rounded-xl p-2.5 text-left"
+                style={{
+                  background: 'var(--card)',
+                  border: '1px solid color-mix(in srgb, #E0568C 45%, var(--line))',
+                  boxShadow: '0 0 0.9rem rgba(224,86,140,.16)',
+                }}
+              >
+                <StoryCassetteIcon />
+                <span className="min-w-0 flex-1">
+                  <span className="font-hand block truncate text-[1.05rem]" style={{ color: '#E0568C' }}>
+                    Story
+                  </span>
+                  <span
+                    className="font-mono block truncate text-[0.58rem] uppercase tracking-[0.1em]"
+                    style={{ color: 'var(--dim)' }}
+                  >
+                    Foto &amp; Video · 24 Stunden sichtbar
+                  </span>
+                </span>
+              </button>
+
+              {/* Der offizielle Kanal — ebenfalls immer da, unabhaengig von
+                  eigenen Kassetten. Eigene Optik ueber das echte Wortmarke-
+                  Logo statt erfundener Farben, damit sofort klar ist: das
+                  ist die App selbst, nicht irgendeine besondere Gruppe. */}
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('news');
+                  setActiveNav(null);
+                }}
+                className="flex items-center gap-3 rounded-xl p-2.5 text-left"
+                style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+              >
+                <KliqtapeCassetteIcon />
+                <span className="min-w-0 flex-1">
+                  <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
+                    Kliqtape
+                  </span>
+                  <span
+                    className="font-mono block truncate text-[0.58rem] uppercase tracking-[0.1em]"
+                    style={{ color: 'var(--dim)' }}
+                  >
+                    News, Insights &amp; unterstütze das Projekt
+                  </span>
+                </span>
+              </button>
+
+              <h3
+                className="font-disp mt-1 text-xs font-bold uppercase tracking-[0.14em]"
+                style={{ color: 'var(--dim)' }}
+              >
+                Gruppen
+              </h3>
+
               {cassettes.length === 0 && (
                 <p className="font-hand py-6 text-center text-lg" style={{ color: 'var(--dim)' }}>
                   Noch kein Band im Fach.
@@ -547,6 +615,58 @@ export default function CassetteDeck() {
       </div>
     );
   }
+}
+
+/** Eigene, schimmernde Optik fuer die Story-Zeile — bewusst NICHT aus der
+ *  Bandsorten-Palette (lookFor/PAIRS), die ist absichtlich gedeckt/vintage.
+ *  Gold-Pink-Lila-Verlauf + kleine Glanzpunkte statt Marmor-Sprenkel, damit
+ *  sofort klar ist: das ist keine Kassette wie die anderen. */
+function StoryCassetteIcon() {
+  return (
+    <svg width="46" height="32" viewBox="0 0 46 32" aria-hidden="true" className="shrink-0">
+      <defs>
+        <linearGradient id="story-shell" x1="0" y1="0" x2="46" y2="32" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#F5C86B" />
+          <stop offset="45%" stopColor="#E0568C" />
+          <stop offset="100%" stopColor="#7C5CE0" />
+        </linearGradient>
+        <linearGradient id="story-label" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FFF6E9" />
+          <stop offset="100%" stopColor="#FBD9C0" />
+        </linearGradient>
+      </defs>
+      <rect width="46" height="32" rx="3" fill="url(#story-shell)" />
+      <circle cx="6" cy="5" r="0.8" fill="#fff" opacity="0.9" />
+      <circle cx="40" cy="27" r="0.7" fill="#fff" opacity="0.8" />
+      <circle cx="41.5" cy="6" r="0.5" fill="#fff" opacity="0.7" />
+      <rect x="4" y="6" width="38" height="16" rx="1.5" fill="url(#story-label)" />
+      <circle cx="16" cy="14" r="4.5" fill="#F5C86B" />
+      <circle cx="30" cy="14" r="4.5" fill="#E0568C" />
+      <circle cx="16" cy="14" r="1.6" fill="url(#story-label)" />
+      <circle cx="30" cy="14" r="1.6" fill="url(#story-label)" />
+      <rect x="4" y="25" width="38" height="2" rx="1" fill="#fff" opacity="0.85" />
+    </svg>
+  );
+}
+
+/** Eigene Optik fuer die Kliqtape-Zeile, im Stil des Wortmarke-Logos
+ *  (Lockup.tsx): dort ist "Kliq" voll eingefaerbt, "tape" nur Kontur — genau
+ *  dieselbe Zweiteilung wandert hier auf die Spulen: linke Spule voll
+ *  (wie "Kliq"), rechte Spule nur Umriss (wie "tape"). Bewusst monochrom mit
+ *  denselben Theme-Variablen wie das echte Logo, keine erfundene Farbe. */
+function KliqtapeCassetteIcon() {
+  return (
+    <svg width="46" height="32" viewBox="0 0 46 32" aria-hidden="true" className="shrink-0">
+      <rect width="46" height="32" rx="3" fill="var(--ink)" />
+      <rect x="4" y="6" width="38" height="16" rx="1.5" fill="var(--screen)" />
+      {/* linke Spule — voll, wie "Kliq" */}
+      <circle cx="16" cy="14" r="4.5" fill="var(--ink)" />
+      <circle cx="16" cy="14" r="1.6" fill="var(--screen)" />
+      {/* rechte Spule — nur Kontur, wie "tape" */}
+      <circle cx="30" cy="14" r="4.5" fill="none" stroke="var(--ink)" strokeWidth="1.4" />
+      <rect x="4" y="25" width="38" height="2" rx="1" fill="var(--ink)" />
+    </svg>
+  );
 }
 
 /** Miniaturband — zeigt echte Bandsorte, Spuren und Streifen. Auch vom

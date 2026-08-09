@@ -359,7 +359,7 @@ export default function Settings() {
               </button>
               {showLog && <VersionLog />}
               <p className="font-mono text-[0.58rem]" style={{ color: 'var(--dim)' }}>
-                AGPL-3.0 · self-hosted · kein Tracking, keine Werbung, kein Algorithmus
+                AGPL-3.0 · kein Tracking, keine Werbung, kein Algorithmus
               </p>
             </section>
 

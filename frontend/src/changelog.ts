@@ -10,6 +10,111 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.23.1',
+    date: '2026-08-09',
+    changes: [
+      '"self-hosted" aus den Einstellungen und dem Kliqtape-Kanal entfernt — Kliqtape wird zentral gehostet, nicht von Nutzer:innen selbst',
+    ],
+  },
+  {
+    version: '0.23.0',
+    date: '2026-08-09',
+    changes: [
+      'Kliqtape-Kanal zeigt jetzt einen echten Förderstand (Kontostand + Ziel-Notiz), von Admin bearbeitbar',
+      'Kassettenfach: Kliqtape-Zeile erwähnt jetzt auch "unterstütze das Projekt"',
+    ],
+  },
+  {
+    version: '0.22.2',
+    date: '2026-08-09',
+    changes: [
+      'Kliqtape-Kanal zeigt jetzt einen Hinweis "Unterstütze unser Projekt" — noch ohne Link, der folgt, sobald eine Spenden-Plattform steht',
+    ],
+  },
+  {
+    version: '0.22.1',
+    date: '2026-08-09',
+    changes: [
+      'Die Kliqtape-Zeile im Kassettenfach hat jetzt einen eigenen Kassetten-Look im Stil des Logos: linke Spule voll eingefärbt wie "Kliq", rechte Spule nur als Kontur wie "tape"',
+    ],
+  },
+  {
+    version: '0.22.0',
+    date: '2026-08-09',
+    changes: [
+      'Neu: der Kliqtape-Kanal — News und Insights vom Projekt, dauerhaft und für alle sichtbar, egal in welcher Gruppe. Zu finden im Kassettenfach, unter der Story-Zeile.',
+      'Schreiben darf dort nur ein einzelner, per Server-Konfiguration festgelegter Kanal-Account — für alle anderen ist es eine reine Leseansicht.',
+    ],
+  },
+  {
+    version: '0.21.2',
+    date: '2026-08-09',
+    changes: [
+      'Die Story-Zeile im Kassettenfach hat jetzt eine eigene, schimmernde Optik statt der gedeckten Bandsorten-Farben — auf den ersten Blick als eigener Bereich erkennbar',
+      'Neue Überschrift "Gruppen" trennt die Story-Zeile jetzt sichtbar von der Liste der eigenen Runden',
+    ],
+  },
+  {
+    version: '0.21.1',
+    date: '2026-08-09',
+    changes: [
+      'Bug behoben: Erstellen-Knopf, Filter, Regal und Profil waren nur ganz oben erreichbar — sobald man runtergescrollt hatte, verschwanden sie mit dem Rest der Seite. Sie bleiben jetzt zusammen mit dem (weiterhin einklappenden) Kassetten-Kopf oben sichtbar, auf beiden Seiten.',
+    ],
+  },
+  {
+    version: '0.21.0',
+    date: '2026-08-09',
+    changes: [
+      'Der "+"-Knopf führt jetzt auf eine eigene Seite, die alle fünf Aufnahme-Arten erklärt (Mixtape, O-Ton, Schnappschuss, Clip, Zettel), statt nur ein kleines Auswahlfeld zu zeigen',
+      'Neu: Storys — eigener Bereich im Kassettenfach, oberhalb der Gruppenliste. Foto/Video, sichtbar für alle, mit denen man in irgendeiner Kassette zusammen ist, verschwinden nach 24 Stunden von selbst',
+    ],
+  },
+  {
+    version: '0.20.3',
+    date: '2026-08-07',
+    changes: [
+      'Bug behoben (vermutlich): Text im Kassetten-Kopf blieb nach einem Seitenwechsel manchmal unsichtbar stehen, obwohl Rahmen und Hintergrund korrekt da waren — der Kopf steckte im Ruhezustand dauerhaft in einem 3D-Drehkontext (fürs Umdrehen gedacht), was zusammen mit dem Weichzeichner im Hintergrund zu einem bekannten Darstellungsfehler führen kann. Der 3D-Kontext ist jetzt nur noch während der eigentlichen Dreh-Animation aktiv.',
+    ],
+  },
+  {
+    version: '0.20.2',
+    date: '2026-08-07',
+    changes: [
+      'Eigentliche Ursache behoben: beim Wechsel zum Gruppenchat blieb die Scrollposition der vorherigen Seite stehen, wurde kurz danach faelschlich als "schon tief gescrollt" gelesen und klappte den Kassetten-Kopf komplett ein. Kopf setzt sich jetzt bei jedem Wechsel sauber zurueck, auch beim Chat.',
+      'Vorherige Teillösung zurückgenommen: der Kassetten-Kopf klappt jetzt wieder ganz normal komplett ein (inkl. Gruppenname), wie es sein sollte — das war nie das eigentliche Problem.',
+    ],
+  },
+  {
+    version: '0.20.1',
+    date: '2026-08-07',
+    changes: [
+      'Bug behoben: der Name der Runde verschwand komplett, sobald der Kassetten-Kopf beim Scrollen einklappte — er bleibt jetzt immer sichtbar, nur die Datum/Tape-Zeile darunter klappt noch ein',
+    ],
+  },
+  {
+    version: '0.20.0',
+    date: '2026-08-07',
+    changes: [
+      'Beim Umdrehen oder Wechseln der Kassette landet man jetzt direkt beim ersten Beitrag, den man noch nicht gesehen hat — nicht mehr immer ganz am Bandanfang. Gibt es nichts Neues, geht es ans aktuelle Ende.',
+      'Der Gesehen-Stand wird pro Seite getrennt gemerkt (Seite A und B einer Kassette getrennt voneinander) und zieht auch nach, während man gerade dort ist.',
+    ],
+  },
+  {
+    version: '0.19.8',
+    date: '2026-08-07',
+    changes: [
+      'Bug behoben: der Kassetten-Kopf klappte auf Seite B sofort ein, weil der Gruppenchat beim Öffnen selbst ans Ende springt — er bleibt jetzt erst groß und klappt nur durch eigenes Scrollen ein, wie auf Seite A',
+      'Die Spulen im Kassetten-Kopf sind jetzt eigene Tasten: linke Spule spult an den Bandanfang zurück, rechte Spule zum aktuellsten Stand — der Rest der Kassette dreht weiterhin beim Antippen die Seite um',
+    ],
+  },
+  {
+    version: '0.19.7',
+    date: '2026-08-07',
+    changes: [
+      'Bug behoben: Geräte, deren Name schon vor dem Zugangscode-System lokal gespeichert war, landeten direkt in der App statt beim Anmelden — jede Aktion schlug dann still mit einem Berechtigungsfehler fehl. Fehlt der Zugangscode, springt die App jetzt wieder zur Anmeldung (Name schon ausgefüllt, nur noch bestätigen).',
+    ],
+  },
+  {
     version: '0.19.6',
     date: '2026-08-07',
     changes: [

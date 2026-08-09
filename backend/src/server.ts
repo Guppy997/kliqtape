@@ -3,11 +3,16 @@ import rateLimit from 'express-rate-limit';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { mkdirSync, createReadStream, writeFileSync, statSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { db, type PostRow, type Side, type Kind } from './db.js';
+import { db, type PostRow, type Side, type Kind, type StoryKind, type NewsKind } from './db.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const MEDIA_DIR = process.env.MEDIA_DIR ?? './media';
 const MAX_UPLOAD_MB = Number(process.env.MAX_UPLOAD_MB ?? 25);
+// Wer den Kliqtape-Kanal bespielen darf (siehe /api/news weiter unten) — ein
+// beanspruchter Name wie jeder andere, nur dieser eine darf dort posten.
+// Leer per Default: ohne gesetzten Namen kann niemand posten, der Kanal ist
+// dann nur eine leere, aber fuer alle sichtbare Kassette.
+const ADMIN_NAME = process.env.ADMIN_NAME ?? '';
 
 mkdirSync(MEDIA_DIR, { recursive: true });
 
@@ -53,6 +58,10 @@ const SIDES: Side[] = ['a', 'b'];
 const KINDS: Kind[] = ['text', 'photo', 'video', 'voice', 'tape'];
 /** Diese Arten brauchen eine hochgeladene Datei. */
 const MEDIA_KINDS: Kind[] = ['photo', 'video', 'voice'];
+/** Storys sind bewusst enger als posts — nur der schnelle Foto/Video-Moment. */
+const STORY_KINDS: StoryKind[] = ['photo', 'video'];
+const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
+const NEWS_KINDS: NewsKind[] = ['text', 'photo', 'video'];
 /** Wie ein Zettel "befestigt" ist — nur fuer kind === 'text' relevant. */
 const NOTE_STYLES = ['tape', 'pin', 'staple', 'clip', 'fold'] as const;
 type NoteStyle = (typeof NOTE_STYLES)[number];
@@ -856,6 +865,261 @@ app.get('/api/posts/:id/reactions', (req, res) => {
 });
 
 /* -------------------------------------------------------------------------
+ * Storys — kassettenuebergreifend, nur Foto/Video, verschwinden nach 24h.
+ *
+ * Anders als posts nicht an eine einzelne Kassette gebunden, sondern
+ * sichtbar fuer jeden, mit dem man in IRGENDEINER Kassette zusammen ist
+ * (networkOf). Kein Cron fuer den Ablauf — die App hat bewusst keinen
+ * Hintergrund-Job: sweepExpiredStories() raeumt abgelaufene Zeilen samt
+ * Mediendatei einfach bei jedem Story-Zugriff mit auf.
+ * ---------------------------------------------------------------------- */
+
+/** Alle Namen, mit denen `person` in irgendeiner Kassette zusammen ist —
+ *  schliesst `person` selbst ein, da man Mitglied der eigenen Kassetten ist. */
+function networkOf(person: string): string[] {
+  const rows = db
+    .prepare(
+      `SELECT DISTINCT cm2.member
+         FROM cassette_members cm1
+         JOIN cassette_members cm2 ON cm2.cassette_id = cm1.cassette_id
+        WHERE cm1.member = ?`,
+    )
+    .all(person) as { member: string }[];
+  return rows.map((r) => r.member);
+}
+
+/** Entfernt abgelaufene Storys samt Mediendatei. Gibt den benutzten
+ *  Zeitpunkt zurueck, damit der nachfolgende SELECT in derselben Anfrage
+ *  denselben "jetzt"-Wert verwendet statt eine zweite Uhrzeit zu lesen. */
+function sweepExpiredStories(): number {
+  const now = Date.now();
+  const expired = db.prepare(`SELECT id, media_id FROM stories WHERE expires_at <= ?`).all(now) as
+    { id: string; media_id: string }[];
+  if (expired.length > 0) {
+    db.transaction(() => {
+      db.prepare(`DELETE FROM stories WHERE expires_at <= ?`).run(now);
+      for (const row of expired) dropMedia(row.media_id);
+    })();
+  }
+  return now;
+}
+
+app.get('/api/stories', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+
+  const now = sweepExpiredStories();
+  const network = networkOf(me);
+  if (network.length === 0) return res.json([]);
+
+  const placeholders = network.map(() => '?').join(',');
+  const rows = db
+    .prepare(
+      `SELECT s.id, s.author, s.kind, s.media_id, s.created_at, s.expires_at, m.duration_ms
+         FROM stories s
+         LEFT JOIN media m ON m.id = s.media_id
+        WHERE s.author IN (${placeholders}) AND s.expires_at > ?
+        ORDER BY s.created_at DESC`,
+    )
+    .all(...network, now) as {
+    id: string;
+    author: string;
+    kind: StoryKind;
+    media_id: string;
+    created_at: number;
+    expires_at: number;
+    duration_ms: number | null;
+  }[];
+
+  // Nach Autor gruppiert, neuester Autor zuerst (deren neueste Story
+  // bestimmt die Reihenfolge) — Frontend zeigt eine Reihe pro Person.
+  const byAuthor = new Map<string, typeof rows>();
+  for (const r of rows) {
+    const list = byAuthor.get(r.author) ?? [];
+    list.push(r);
+    byAuthor.set(r.author, list);
+  }
+
+  const groups = [...byAuthor.entries()].map(([author, items]) => ({
+    author,
+    stories: items.map((r) => ({
+      id: r.id,
+      kind: r.kind,
+      mediaId: r.media_id,
+      durationMs: r.duration_ms,
+      createdAt: r.created_at,
+      expiresAt: r.expires_at,
+    })),
+  }));
+
+  res.json(groups);
+});
+
+app.post('/api/stories', (req, res) => {
+  sweepExpiredStories();
+  const { author, kind, mediaId } = req.body ?? {};
+
+  if (typeof author !== 'string' || author.trim().length === 0) {
+    throw new HttpError(400, 'Name fehlt');
+  }
+  requireIdentity(req, author.trim());
+  if (!STORY_KINDS.includes(kind)) throw new HttpError(400, 'Storys sind nur Foto oder Video');
+  if (!mediaId) throw new HttpError(400, 'Aufnahme fehlt');
+  if (!db.prepare(`SELECT 1 FROM media WHERE id = ?`).get(mediaId)) {
+    throw new HttpError(400, 'Medium unbekannt');
+  }
+
+  const id = randomUUID();
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO stories (id, author, kind, media_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(id, author.trim().slice(0, 40), kind, mediaId, now, now + STORY_LIFETIME_MS);
+
+  res.status(201).json({ id, expiresAt: now + STORY_LIFETIME_MS });
+});
+
+app.delete('/api/stories/:id', (req, res) => {
+  sweepExpiredStories();
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+
+  const row = db.prepare(`SELECT author, media_id FROM stories WHERE id = ?`).get(req.params.id) as
+    | { author: string; media_id: string }
+    | undefined;
+  if (!row) throw new HttpError(404, 'Story nicht gefunden');
+  // Anders als bei posts (dort fehlt diese Pruefung bisher komplett) hier
+  // bewusst eine echte Besitzpruefung — bei einer kassettenuebergreifend
+  // sichtbaren Story ist das Risiko fremden Loeschens groesser.
+  if (row.author !== me) throw new HttpError(403, 'Nicht deine Story');
+
+  db.transaction(() => {
+    db.prepare(`DELETE FROM stories WHERE id = ?`).run(req.params.id);
+    dropMedia(row.media_id);
+  })();
+
+  res.status(204).end();
+});
+
+/* -------------------------------------------------------------------------
+ * Kliqtape-Kanal — News/Insights von den Betreiber:innen, dauerhaft und fuer
+ * wirklich alle sichtbar. Schreiben darf nur ADMIN_NAME (siehe oben, ueber
+ * .env konfiguriert) — ein normal beanspruchter Name wie jeder andere, nur
+ * dass genau dieser eine hier posten darf. Lesen darf jede angemeldete
+ * Person, unabhaengig von Kassetten-Mitgliedschaft.
+ * ---------------------------------------------------------------------- */
+
+app.get('/api/news', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+
+  const rows = db
+    .prepare(
+      `SELECT n.id, n.author, n.kind, n.body, n.media_id, n.created_at, m.duration_ms
+         FROM news_posts n
+         LEFT JOIN media m ON m.id = n.media_id
+        ORDER BY n.created_at DESC`,
+    )
+    .all() as {
+    id: string;
+    author: string;
+    kind: NewsKind;
+    body: string;
+    media_id: string | null;
+    created_at: number;
+    duration_ms: number | null;
+  }[];
+
+  const funding = db.prepare(`SELECT balance, note, updated_at FROM project_funding WHERE id = 1`).get() as
+    | { balance: string; note: string; updated_at: number }
+    | undefined;
+
+  res.json({
+    canPost: Boolean(ADMIN_NAME) && me === ADMIN_NAME,
+    funding: {
+      balance: funding?.balance ?? '',
+      note: funding?.note ?? '',
+      updatedAt: funding?.updated_at ?? 0,
+    },
+    posts: rows.map((r) => ({
+      id: r.id,
+      author: r.author,
+      kind: r.kind,
+      body: r.body,
+      mediaId: r.media_id,
+      durationMs: r.duration_ms,
+      createdAt: r.created_at,
+    })),
+  });
+});
+
+// Getrennt von POST /api/news: der Foerderstand ist kein Beitrag im Feed,
+// sondern ein einzelner, ueberschreibbarer Wert (siehe project_funding).
+app.put('/api/news/funding', (req, res) => {
+  const me = String(req.body?.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+  if (!ADMIN_NAME || me !== ADMIN_NAME) {
+    throw new HttpError(403, 'Nur der Kliqtape-Kanal-Account darf hier aendern');
+  }
+
+  const balance = String(req.body?.balance ?? '').trim().slice(0, 40);
+  const note = String(req.body?.note ?? '').trim().slice(0, 300);
+
+  db.prepare(
+    `INSERT INTO project_funding (id, balance, note, updated_at) VALUES (1, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET balance = excluded.balance, note = excluded.note, updated_at = excluded.updated_at`,
+  ).run(balance, note, Date.now());
+
+  res.status(204).end();
+});
+
+app.post('/api/news', (req, res) => {
+  const { author, kind, body = '', mediaId = null } = req.body ?? {};
+  if (typeof author !== 'string' || author.trim().length === 0) {
+    throw new HttpError(400, 'Name fehlt');
+  }
+  requireIdentity(req, author.trim());
+  if (!ADMIN_NAME || author.trim() !== ADMIN_NAME) {
+    throw new HttpError(403, 'Nur der Kliqtape-Kanal-Account darf hier posten');
+  }
+  if (!NEWS_KINDS.includes(kind)) throw new HttpError(400, 'Unbekannte Art');
+  if (kind === 'text' && String(body).trim().length === 0) throw new HttpError(400, 'Leerer Text');
+  if (kind !== 'text' && !mediaId) throw new HttpError(400, 'Aufnahme fehlt');
+  if (mediaId && !db.prepare(`SELECT 1 FROM media WHERE id = ?`).get(mediaId)) {
+    throw new HttpError(400, 'Medium unbekannt');
+  }
+
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO news_posts (id, author, kind, body, media_id, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(id, author.trim().slice(0, 40), kind, String(body).slice(0, 1000), mediaId, Date.now());
+
+  res.status(201).json({ id });
+});
+
+app.delete('/api/news/:id', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+  if (!ADMIN_NAME || me !== ADMIN_NAME) {
+    throw new HttpError(403, 'Nur der Kliqtape-Kanal-Account darf hier löschen');
+  }
+
+  const row = db.prepare(`SELECT media_id FROM news_posts WHERE id = ?`).get(req.params.id) as
+    | { media_id: string | null }
+    | undefined;
+  if (!row) throw new HttpError(404, 'Beitrag nicht gefunden');
+
+  db.prepare(`DELETE FROM news_posts WHERE id = ?`).run(req.params.id);
+  if (row.media_id) dropMedia(row.media_id);
+
+  res.status(204).end();
+});
+
+/* -------------------------------------------------------------------------
  * Hot Line — eine offene Leitung zwischen zwei Personen
  *
  * Dauerhaft, wie Seite B: eine Leitung sammelt den ganzen Verlauf, nichts
@@ -1282,11 +1546,15 @@ app.delete('/api/me', (req, res) => {
       ...(db.prepare(`SELECT media_id AS id FROM posts WHERE author = ? AND media_id IS NOT NULL`).all(me) as { id: string }[]),
       ...(db.prepare(`SELECT cover_id AS id FROM mixtapes WHERE from_name = ? AND cover_id IS NOT NULL`).all(me) as { id: string }[]),
       ...(db.prepare(`SELECT avatar_id AS id FROM profiles WHERE name = ? AND avatar_id IS NOT NULL`).all(me) as { id: string }[]),
+      ...(db.prepare(`SELECT media_id AS id FROM stories WHERE author = ?`).all(me) as { id: string }[]),
+      ...(db.prepare(`SELECT media_id AS id FROM news_posts WHERE author = ? AND media_id IS NOT NULL`).all(me) as { id: string }[]),
     ].map((r) => r.id);
 
     const posts = db.prepare(`DELETE FROM posts WHERE author = ?`).run(me).changes;
     const tapes = db.prepare(`DELETE FROM mixtapes WHERE from_name = ?`).run(me).changes;
     db.prepare(`DELETE FROM reactions WHERE author = ?`).run(me);
+    db.prepare(`DELETE FROM stories WHERE author = ?`).run(me);
+    db.prepare(`DELETE FROM news_posts WHERE author = ?`).run(me);
     // Eine Leitung gehoert zwei Personen — loescht eine ihr Konto, verschwindet
     // die ganze Leitung mit, nicht nur die eigenen Nachrichten darin.
     db.prepare(`DELETE FROM hotline_threads WHERE person_a = ? OR person_b = ?`).run(me, me);

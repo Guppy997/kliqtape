@@ -1,6 +1,6 @@
 {
   "name": "kliqtape-backend",
-  "version": "0.19.6",
+  "version": "0.23.1",
   "private": true,
   "type": "module",
   "scripts": {

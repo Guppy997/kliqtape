@@ -315,6 +315,99 @@ export function deletePost(postId: string): Promise<void> {
 
 export const mediaUrl = (id: string) => `/api/media/${id}`;
 
+/* --- Storys ------------------------------------------------------------
+ * Kassettenuebergreifend, nur Foto/Video, verschwinden nach 24h — siehe
+ * server.ts fuer die Sichtbarkeits-Regel (jeder, mit dem man in
+ * irgendeiner Kassette zusammen ist).
+ * ------------------------------------------------------------------------ */
+
+export type StoryKind = 'photo' | 'video';
+
+export interface Story {
+  id: string;
+  kind: StoryKind;
+  mediaId: string;
+  durationMs: number | null;
+  createdAt: number;
+  expiresAt: number;
+}
+
+export interface StoryGroup {
+  author: string;
+  stories: Story[];
+}
+
+export function fetchStories(me: string): Promise<StoryGroup[]> {
+  return apiFetch(`/api/stories?me=${encodeURIComponent(me)}`).then(unwrap<StoryGroup[]>);
+}
+
+export function createStory(input: { author: string; kind: StoryKind; mediaId: string }): Promise<{ id: string; expiresAt: number }> {
+  return apiFetch('/api/stories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  }).then(unwrap<{ id: string; expiresAt: number }>);
+}
+
+export function deleteStory(id: string, me: string): Promise<void> {
+  return apiFetch(`/api/stories/${id}?me=${encodeURIComponent(me)}`, { method: 'DELETE' }).then(unwrap<void>);
+}
+
+/* --- Kliqtape-Kanal ------------------------------------------------------
+ * News/Insights von den Betreiber:innen — dauerhaft, fuer alle sichtbar,
+ * schreiben darf serverseitig nur ADMIN_NAME. `canPost` sagt dem Frontend,
+ * ob die aktuell angemeldete Person das ist, ohne den Servernamen selbst zu
+ * kennen.
+ * ------------------------------------------------------------------------ */
+
+export type NewsKind = 'text' | 'photo' | 'video';
+
+export interface NewsPost {
+  id: string;
+  author: string;
+  kind: NewsKind;
+  body: string;
+  mediaId: string | null;
+  durationMs: number | null;
+  createdAt: number;
+}
+
+export interface ProjectFunding {
+  balance: string;
+  note: string;
+  updatedAt: number;
+}
+
+export interface NewsFeed {
+  canPost: boolean;
+  funding: ProjectFunding;
+  posts: NewsPost[];
+}
+
+export function fetchNews(me: string): Promise<NewsFeed> {
+  return apiFetch(`/api/news?me=${encodeURIComponent(me)}`).then(unwrap<NewsFeed>);
+}
+
+export function updateProjectFunding(input: { me: string; balance: string; note: string }): Promise<void> {
+  return apiFetch('/api/news/funding', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  }).then(unwrap<void>);
+}
+
+export function createNewsPost(input: { author: string; kind: NewsKind; body?: string; mediaId?: string | null }): Promise<{ id: string }> {
+  return apiFetch('/api/news', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  }).then(unwrap<{ id: string }>);
+}
+
+export function deleteNewsPost(id: string, me: string): Promise<void> {
+  return apiFetch(`/api/news/${id}?me=${encodeURIComponent(me)}`, { method: 'DELETE' }).then(unwrap<void>);
+}
+
 /* --- Hot Line --------------------------------------------------------------
  * Eine offene Leitung zwischen zwei Personen, dauerhaft — die erste
  * Nachricht eroeffnet sie, danach ein echter Verlauf ohne Verfall.
