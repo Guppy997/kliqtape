@@ -205,6 +205,10 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
   const band = isA ? type.stripe : plastic.shell;
   const bandInk = isA ? type.stripeInk : plastic.ink;
   const windowBg = isA ? type.shellDark : plastic.inner;
+  // Rahmenkante um Etikett und Sichtfenster. Beide Gehaeusewelten sind dunkel,
+  // also immer eine helle Lichtkante — eine dunkle Kontur ginge im Gehaeuse
+  // unter.
+  const frame = isA ? 'rgba(255,255,255,.18)' : `${plastic.shellHi}88`;
 
   // Kein eigenes sticky/Hintergrund mehr hier — App.tsx umschliesst diesen
   // Kopf jetzt zusammen mit der Erstellen/Filter/Regal/Profil-Zeile in EINEM
@@ -248,15 +252,18 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
           <Wear wear={wear} light={isA ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.32)'} />
           <Screws tint={isA ? 'rgba(0,0,0,.35)' : `${plastic.inner}88`} />
 
-          {/* ---- Aufgeklebtes Etikett ------------------------------------ */}
+          {/* ---- Aufgeklebtes Etikett ------------------------------------
+              Sichtbarer Rahmen wie am Vorbild-Foto. Auf dem dunklen Gehaeuse
+              muss die Kante HELL sein (Lichtkante der Kunststoffform) — eine
+              dunkle Kontur wie beim hellen Gehaeuse waere hier schlicht
+              unsichtbar, schwarz auf schwarz. */}
           <div
-            className="relative overflow-hidden rounded-[2px]"
+            className="relative overflow-hidden rounded-[3px]"
             style={{
               transform: `rotate(${wear.tilt}deg)`,
               background: `linear-gradient(180deg, ${paper}, ${paperDeep})`,
-              boxShadow: isA
-                ? '0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.12)'
-                : `0 1px 3px rgba(0,0,0,.5), 0 0 0 1px ${plastic.shellHi}44`,
+              border: `1px solid ${frame}`,
+              boxShadow: '0 1px 3px rgba(0,0,0,.5)',
             }}
           >
             {/* Farbband oben, wie der bedruckte Kopf einer echten J-Card */}
@@ -306,11 +313,15 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
             </div>
           </div>
 
-          {/* ---- Sichtfenster mit den Spulen ------------------------------ */}
+          {/* ---- Sichtfenster mit den Spulen ------------------------------
+              Derselbe sichtbare Rahmen wie am Etikett — beide zusammen
+              lesen sich als EIN gerahmter Bereich, wie beim Vorbild,
+              statt als getrennte Bauteile. */}
           <div
             className="relative mt-2.5 flex items-center justify-around rounded-[3px] px-4 py-1"
             style={{
               background: windowBg,
+              border: `1px solid ${frame}`,
               boxShadow: `0 1px 0 rgba(255,255,255,.09), 0 2px 6px rgba(0,0,0,.5) inset`,
             }}
           >
@@ -343,20 +354,22 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
             </button>
           </div>
 
-          {/* ---- Kerben am unteren Rand ----------------------------------- */}
-          <div className="relative mt-2 flex items-center gap-2">
-            <span className="flex flex-1 gap-1.5">
-              <i className="h-1 flex-1 rounded-[1px]" style={{ background: isA ? type.stripe : plastic.glow, opacity: 0.85 }} />
-              <i className="h-1 flex-1 rounded-[1px]" style={{ background: isA ? type.shellHi : plastic.shellHi, opacity: 0.45 }} />
-              <i className="h-1 flex-1 rounded-[1px]" style={{ background: isA ? type.shellHi : plastic.shellHi, opacity: 0.45 }} />
-            </span>
-            <span
-              className="font-mono shrink-0 text-[0.52rem] uppercase tracking-[0.14em]"
-              style={{ color: isA ? '#8C8272' : `${plastic.ink}99` }}
-            >
-              ↻ umdrehen
-            </span>
-          </div>
+          {/* Nur noch ein kleines Zeichen statt Text+Balken — im normalen
+              Fluss zwischen Fenster und Fuss platziert (nicht absolut ueber
+              der vollen Gehaeusehoehe), damit es nicht mit dem jetzt viel
+              groesseren Fuss zusammenstoesst. */}
+          <p className="relative mt-1 text-right text-[0.95rem] leading-none" aria-hidden="true">
+            <span style={{ color: isA ? '#8C8272' : `${plastic.ink}b0` }}>↻</span>
+          </p>
+
+          {/* ---- Fuss mit Andockloechern -----------------------------------
+              Das charakteristische Detail am unteren Rand einer echten
+              Kassette (Bandeinzugsmechanik greift hier ein). */}
+          <Foot
+            tint={isA ? type.shell : plastic.shell}
+            hi={isA ? type.shellHi : plastic.shellHi}
+            dark={isA ? type.shellDark : plastic.inner}
+          />
         </div>
       </div>
     </header>
@@ -407,6 +420,53 @@ function Screws({ tint }: { tint: string }) {
         />
       ))}
     </span>
+  );
+}
+
+/** Der nach unten breiter werdende Fuss mit den vier Andockloechern, ueber
+ *  die eine echte Bandeinzugsmechanik greifen wuerde — zwei runde aussen,
+ *  zwei schmale innen, wie am Vorbild-Foto.
+ *
+ *  Die negativen Aussenabstaende heben die Innenabstaende des Gehaeuses
+ *  (px-3 pb-2.5) wieder auf: der Fuss sitzt dadurch BUENDIG auf der Unterkante
+ *  der Kassette, so wie beim echten Vorbild — vorher schwebte er mit Luft
+ *  ringsum mittendrin. Die abgerundete Ecke des Gehaeuses beschneidet ihn
+ *  unten sauber mit (overflow-hidden am Elternteil).
+ *
+ *  Das Trapez folgt den gemessenen Proportionen vom Foto: oben 16%-85%,
+ *  unten etwas breiter 12%-90%. */
+function Foot({ tint, hi, dark }: { tint: string; hi: string; dark: string }) {
+  return (
+    <div
+      className="relative -mx-3 -mb-2.5 mt-2"
+      style={{
+        height: '2.3rem',
+        clipPath: 'polygon(16% 0%, 85% 0%, 90% 100%, 12% 100%)',
+        // Lichtkante oben, Schatten unten — laesst den Fuss auch auf einem
+        // dunklen Gehaeuse als eigenes, vorstehendes Bauteil lesen statt als
+        // schwarze Flaeche auf schwarzer Flaeche.
+        background: `linear-gradient(180deg, ${hi} 0%, ${tint} 42%, ${dark} 100%)`,
+      }}
+      aria-hidden="true"
+    >
+      <span className="absolute inset-x-0 top-[55%] flex items-center justify-between px-[19%]">
+        <Hole round />
+        <Hole />
+        <Hole />
+        <Hole round />
+      </span>
+    </div>
+  );
+}
+
+/** Ein Andockloch: dunkle Vertiefung mit feiner Lichtkante an der Unterkante,
+ *  damit es auch auf dunklem Kunststoff als Loch und nicht als Fleck liest. */
+function Hole({ round }: { round?: boolean }) {
+  return (
+    <i
+      className={`block ${round ? 'size-[0.52rem] rounded-full' : 'h-[0.44rem] w-[0.28rem] rounded-[1px]'}`}
+      style={{ background: 'rgba(0,0,0,.72)', boxShadow: '0 0.5px 0 rgba(255,255,255,.18)' }}
+    />
   );
 }
 

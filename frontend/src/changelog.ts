@@ -10,6 +10,46 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.25.0',
+    date: '2026-08-09',
+    changes: [
+      'Gehäuse von Seite A wieder schwarz statt grau',
+      'Fuß mit den Andocklöchern sitzt jetzt bündig auf der Unterkante der Kassette, statt mittendrin zu schweben — Form nach den Proportionen einer echten Kassette',
+    ],
+  },
+  {
+    version: '0.24.6',
+    date: '2026-08-09',
+    changes: [
+      'Gehäuse von Seite A wieder etwas dunkler — war zu grau geworden',
+      'Fuß mit den Andocklöchern deutlich größer, näher an den echten Proportionen',
+      '"umdrehen"-Hinweis ist jetzt nur noch ein kleines Zeichen statt Text',
+    ],
+  },
+  {
+    version: '0.24.5',
+    date: '2026-08-09',
+    changes: [
+      'Hintergrund nochmal spürbar dunkler',
+      'Neues Detail: der typische Fuß mit den vier Andocklöchern am unteren Rand der Kassette',
+    ],
+  },
+  {
+    version: '0.24.4',
+    date: '2026-08-09',
+    changes: [
+      'Hintergrund wieder dunkler — war durch das hellere Kassetten-Gehäuse ungewollt mit aufgehellt worden',
+      'Etikett und Sichtfenster haben jetzt einen echten, sichtbaren Rahmen (wie bei einer echten Kassette) statt der bunten Balken am unteren Rand',
+    ],
+  },
+  {
+    version: '0.24.3',
+    date: '2026-08-09',
+    changes: [
+      'Seite A: Gehäuse jetzt helles Grau statt fast Schwarz — näher an einer echten Kassette (z. B. Philips C-60), Gebrauchsspuren/Kerben entsprechend angepasst, hebt sich dadurch nochmal klarer vom Hintergrund ab',
+    ],
+  },
+  {
     version: '0.24.2',
     date: '2026-08-09',
     changes: [
