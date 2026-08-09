@@ -50,12 +50,10 @@ export default function BottomBar({ onHome }: Props) {
   return (
     <div
       ref={barRef}
-      className="fixed inset-x-0 bottom-0 z-[45] px-3 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2"
-      style={{ background: 'var(--card)', borderTop: '1px solid var(--line)' }}
+      className="glass fixed inset-x-0 bottom-0 z-[45] px-3 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2"
     >
       <div className="mx-auto grid max-w-xl grid-cols-4 place-items-center gap-1.5">
         <CassetteDeck />
-        <HotlineComposer />
         <NavButton
           icon={
             // Kassette statt Haussymbol — passt zum Rest der App, ein Haus
@@ -71,6 +69,7 @@ export default function BottomBar({ onHome }: Props) {
           active={isHome}
           onClick={onHome}
         />
+        <HotlineComposer />
         <AnsweringMachine />
       </div>
     </div>

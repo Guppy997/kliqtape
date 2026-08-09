@@ -107,8 +107,8 @@ export default function Settings() {
           setError(null);
           setOpen(true);
         }}
-        className="flex shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5"
-        style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
+        className="glass-chip flex shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5"
+        style={{ color: 'var(--dim)' }}
       >
         <Avatar name={me} side={side} size={1.2} />
         <span className="font-mono text-[0.6rem] uppercase tracking-[0.1em]">Profil</span>

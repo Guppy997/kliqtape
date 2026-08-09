@@ -265,10 +265,7 @@ function Deck() {
           immer sichtbar, weil beide gemeinsam in normalem Fluss innerhalb
           dieses EINEN sticky-Containers stehen — kein Abgleich zweier
           getrennter sticky-Hoehen noetig. */}
-      <div
-        className="sticky top-0 z-30"
-        style={{ background: 'color-mix(in srgb, var(--screen) 90%, transparent)', backdropFilter: 'blur(6px)' }}
-      >
+      <div className="glass sticky top-0 z-30">
         <CassetteHeader
           cassetteId={cassetteId}
           pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
@@ -298,11 +295,8 @@ function Deck() {
                 type="button"
                 onClick={() => setFilterOpen((v) => !v)}
                 aria-expanded={filterOpen}
-                className="shrink-0 rounded-full px-2 py-1 text-[0.58rem]"
-                style={{
-                  border: '1px solid var(--line)',
-                  color: filter === 'all' ? 'var(--dim)' : 'var(--accent)',
-                }}
+                className="glass-chip shrink-0 rounded-full px-2 py-1 text-[0.58rem]"
+                style={{ color: filter === 'all' ? 'var(--dim)' : 'var(--accent)' }}
               >
                 {filter === 'all' ? 'Filter' : FILTERS.find((f) => f.key === filter)?.label} {filterOpen ? '▴' : '▾'}
               </button>
@@ -316,10 +310,7 @@ function Deck() {
           {/* Kleines Fenster, das direkt unter der Zeile aufklappt — kein
               eigener Bildschirm fuer eine so kurze Auswahl. */}
           {filterOpen && (
-            <div
-              className="flex flex-wrap gap-1.5 rounded-lg p-2"
-              style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
-            >
+            <div className="glass-chip flex flex-wrap gap-1.5 rounded-lg p-2">
               {FILTERS.map((f) => {
                 const n = f.key === 'all' ? data.length : data.filter((p) => p.kind === f.key).length;
                 if (n === 0 && f.key !== 'all') return null;

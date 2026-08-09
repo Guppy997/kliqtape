@@ -121,8 +121,8 @@ export default function Shelf({ me }: { me: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="font-mono flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.58rem] uppercase tracking-[0.1em]"
-        style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
+        className="glass-chip font-mono flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.58rem] uppercase tracking-[0.1em]"
+        style={{ color: 'var(--dim)' }}
       >
         <svg width="11" height="9" viewBox="0 0 11 9" fill="currentColor" aria-hidden="true">
           <rect x="0" y="0" width="11" height="9" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1" />

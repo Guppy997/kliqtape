@@ -86,11 +86,10 @@ export default function Sheet({ open, onClose, title, variant = 'sheet', reserve
         className={
           full
             ? 'flex h-full w-full max-w-xl flex-col overflow-y-auto px-4 pt-[max(1rem,env(safe-area-inset-top))]'
-            : 'max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-2xl p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]'
+            : 'glass max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-2xl p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]'
         }
         style={{
-          background: 'var(--screen)',
-          borderTop: full ? 'none' : '1px solid var(--line)',
+          background: full ? 'var(--screen)' : undefined,
           paddingBottom: full
             ? navAware
               ? 'calc(var(--bottombar-h, 6rem) + 1rem)'

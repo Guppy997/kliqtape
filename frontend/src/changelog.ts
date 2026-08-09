@@ -10,6 +10,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.24.2',
+    date: '2026-08-09',
+    changes: [
+      'Glas-Look weniger durchscheinend — besserer Kontrast für Text/Icons in Kopf- und unterer Leiste',
+      'Kassette hebt sich jetzt deutlicher vom Hintergrund ab — größerer Schlagschatten + Glow in der eigenen Akzentfarbe, auch im Kassettenfach',
+    ],
+  },
+  {
+    version: '0.24.1',
+    date: '2026-08-09',
+    changes: [
+      'Untere Leiste: Home und Hot Line haben die Plätze getauscht',
+      'Benachrichtigung zeigt Leitungen jetzt als eine Zeile ("12 ungelesene Nachrichten") statt jede einzeln — ein Tipp springt direkt zu Hot Line',
+    ],
+  },
+  {
+    version: '0.24.0',
+    date: '2026-08-09',
+    changes: [
+      'Neuer Glas-Look für Kopf-Leiste, untere Leiste und Filter-Panel (angelehnt an aktuelle Liquid-Glass-Optik)',
+      'Kassetten-Spulen und Gehäuse wirken jetzt plastischer — mehr Licht/Schatten-Tiefe im Sichtfenster',
+    ],
+  },
+  {
     version: '0.23.1',
     date: '2026-08-09',
     changes: [

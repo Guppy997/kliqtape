@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addMember,
@@ -326,7 +326,7 @@ export default function CassetteDeck() {
                     }}
                     className="flex min-w-0 flex-1 items-center gap-3 text-left"
                   >
-                    <MiniCassette id={c.id} pairIndex={looks.get(c.id)} active={c.id === cassetteId} side={side} />
+                    <MiniCassette id={c.id} pairIndex={looks.get(c.id)} active={c.id === cassetteId} side={side} pop />
                     <span className="min-w-0 flex-1">
                       <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
                         {c.name}
@@ -671,8 +671,9 @@ function KliqtapeCassetteIcon() {
 
 /** Miniaturband — zeigt echte Bandsorte, Spuren und Streifen. Auch vom
  *  Tape-Regal genutzt (Shelf.tsx), daher exportiert. */
-export function MiniCassette({ id, pairIndex, active, side }:
-  { id: string; pairIndex?: number; active: boolean; side: 'a' | 'b' }) {
+export function MiniCassette({ id, pairIndex, active, side, pop }:
+  { id: string; pairIndex?: number; active: boolean; side: 'a' | 'b'; pop?: boolean }) {
+  const uid = useId();
   const { type, case: plastic, wear } = lookFor(id, pairIndex);
   const onB = active && side === 'b';
 
@@ -680,10 +681,34 @@ export function MiniCassette({ id, pairIndex, active, side }:
   const paper = onB ? plastic.inner : type.label;
   const tape = onB ? plastic.shellHi : type.tape;
   const stripe = onB ? plastic.glow : type.stripe;
+  const shellGrad = `mini-shell-${uid}`;
+  const reelGrad = `mini-reel-${uid}`;
 
   return (
     <svg width="46" height="32" viewBox="0 0 46 32" aria-hidden="true" className="shrink-0"
-         style={{ opacity: active ? 1 : 0.72 }}>
+         style={{
+           opacity: active ? 1 : 0.72,
+           // Nur in der eigentlichen Fach-Liste (nicht im Farb-Auswahlraster,
+           // das waere mit vielen kleinen Glueh-Schatten nebeneinander zu
+           // unruhig) — echter Schlagschatten + Akzentfarb-Glow, damit die
+           // Kassette sich vom Hintergrund abhebt statt drin zu verschwimmen.
+           filter: pop ? `drop-shadow(0 0.2rem 0.4rem rgba(0,0,0,.5)) drop-shadow(0 0 0.35rem ${stripe}70)` : undefined,
+         }}>
+      <defs>
+        {/* Gleiche Lichtrichtung wie beim grossen Kassetten-Kopf — oben
+            links hell, unten rechts dunkler, macht aus der flachen Flaeche
+            ein leicht gewoelbtes Gehaeuse. */}
+        <radialGradient id={shellGrad} cx="24%" cy="10%" r="95%">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.22" />
+          <stop offset="45%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.22" />
+        </radialGradient>
+        <radialGradient id={reelGrad} cx="36%" cy="30%" r="78%">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.5" />
+          <stop offset="40%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.4" />
+        </radialGradient>
+      </defs>
       <rect width="46" height="32" rx="3" fill={shell} />
       {/* Marmor-/Konfetti-Sprenkel, nur bei gemusterten Sorten (plastic.fleck)
           und nur auf Seite B — sitzen unter dem Etikett, das Etikett-Rechteck
@@ -692,9 +717,12 @@ export function MiniCassette({ id, pairIndex, active, side }:
         <circle key={i} cx={x * 0.46} cy={y * 0.32} r={Math.max(1, r * 0.9)}
                 fill={plastic.fleck![i % plastic.fleck!.length]} opacity={0.88} />
       ))}
+      <rect width="46" height="32" rx="3" fill={`url(#${shellGrad})`} />
       <rect x="4" y="6" width="38" height="16" rx="1.5" fill={paper} />
       <circle cx="16" cy="14" r="4.5" fill={tape} />
       <circle cx="30" cy="14" r="4.5" fill={tape} />
+      <circle cx="16" cy="14" r="4.5" fill={`url(#${reelGrad})`} />
+      <circle cx="30" cy="14" r="4.5" fill={`url(#${reelGrad})`} />
       <circle cx="16" cy="14" r="1.6" fill={paper} />
       <circle cx="30" cy="14" r="1.6" fill={paper} />
       {/* dieselben Gebrauchsspuren wie am grossen Band */}

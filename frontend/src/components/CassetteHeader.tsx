@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useApp, SIDE_LABEL, type Side } from '@/store/appStore';
 import { lookFor, type CassetteLook } from '@/lib/cassetteLook';
 import Lockup from './Lockup';
@@ -161,10 +161,17 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
   const shellStyle = isA
     ? {
         backgroundImage:
+          // Diagonaler Glanzstreifen ganz oben drauf — die zusaetzliche
+          // Lichtkante, die aus glattem Verlauf "glaenzendes Plastik" macht.
+          `radial-gradient(140% 55% at 20% -8%, rgba(255,255,255,.16), rgba(255,255,255,0) 45%),` +
           `repeating-linear-gradient(180deg, rgba(255,255,255,.035) 0 1px, rgba(0,0,0,0) 1px 5px),` +
           `linear-gradient(178deg, ${type.shellHi} 0%, ${type.shell} 26%, ${type.shellDark} 100%)`,
+        // Grosser, weicher Schlagschatten + ein duenner Rand/Glow in der
+        // eigenen Akzentfarbe der Kassette (type.stripe) — damit sie sich
+        // vom Hintergrund abhebt, unabhaengig davon, wie dunkel der gerade
+        // ist (reines "dunkel auf dunkel" reicht sonst nicht als Kontrast).
         boxShadow:
-          '0 0.5rem 1.2rem rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.14) inset, 0 -1px 0 rgba(0,0,0,.6) inset',
+          `0 0.5rem 1.2rem rgba(0,0,0,.5), 0 1.4rem 2.8rem rgba(0,0,0,.55), 0 0 0 1px ${type.stripe}70, 0 0 1.6rem ${type.stripe}2e, 0 1px 0 rgba(255,255,255,.14) inset, 0 -1px 0 rgba(0,0,0,.6) inset`,
       }
     : {
         backgroundImage:
@@ -179,11 +186,16 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
                 })
                 .join(',') + ','
             : '') +
+          `radial-gradient(140% 55% at 20% -8%, rgba(255,255,255,.2), rgba(255,255,255,0) 45%),` +
           `repeating-linear-gradient(180deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,0) 1px 5px),` +
           `radial-gradient(120% 80% at 18% 6%, rgba(255,255,255,.45), rgba(255,255,255,0) 46%),` +
           `radial-gradient(90% 70% at 84% 96%, ${plastic.pcb}55, ${plastic.pcb}00 55%),` +
           `linear-gradient(172deg, ${plastic.shellHi}99 0%, ${plastic.shell} 40%, ${plastic.inner} 100%)`,
-        boxShadow: `0 0.5rem 1.4rem ${plastic.inner}aa, 0 0 0 1px ${plastic.shellHi}88 inset, 0 0.9rem 1.6rem ${plastic.inner}99 inset`,
+        // Gleiche Idee wie bei Seite A: grosser Schlagschatten + Rand/Glow
+        // in plastic.glow (der Leucht-Akzentfarbe dieser Sorte) fuers Abheben
+        // vom Hintergrund.
+        boxShadow:
+          `0 0.5rem 1.4rem ${plastic.inner}aa, 0 1.4rem 2.8rem rgba(0,0,0,.5), 0 0 0 1px ${plastic.glow}80, 0 0 1.8rem ${plastic.glow}3d, 0 0 0 1px ${plastic.shellHi}88 inset, 0 0.9rem 1.6rem ${plastic.inner}99 inset`,
       };
 
   const paper = isA ? type.label : `${plastic.inner}dd`;
@@ -398,12 +410,34 @@ function Screws({ tint }: { tint: string }) {
   );
 }
 
+/** Reine Fuellungen, kein <filter> — der Radius aendert sich staendig beim
+ *  Scrollen, ein SVG-Filter wuerde dabei bei jedem Frame neu gerechnet.
+ *  Die Tiefe kommt stattdessen aus zwei radialen Verlaufs-Ebenen: Licht oben
+ *  links (passend zum Gehaeuse-Glanz), dunkler Rand aussen — wirkt wie ein
+ *  echter, gewoelbter Bandwickel statt einer flachen Flaeche. */
 function Reel({ r, tape, hub }: { r: number; tape: string; hub: string }) {
+  const uid = useId();
+  const tapeGrad = `reel-tape-${uid}`;
+  const hubGrad = `reel-hub-${uid}`;
   return (
     <svg width="62" height="62" viewBox="0 0 62 62" aria-hidden="true" className="shrink-0">
+      <defs>
+        <radialGradient id={tapeGrad} cx="36%" cy="30%" r="78%">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.4" />
+          <stop offset="38%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.35" />
+        </radialGradient>
+        <radialGradient id={hubGrad} cx="34%" cy="28%" r="72%">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.65" />
+          <stop offset="50%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.45" />
+        </radialGradient>
+      </defs>
       {/* Bandwickel — der Radius ist der Fuellstand */}
       <circle cx="31" cy="31" r={r} fill={tape} />
+      <circle cx="31" cy="31" r={r} fill={`url(#${tapeGrad})`} />
       <circle cx="31" cy="31" r="9" fill={hub} />
+      <circle cx="31" cy="31" r="9" fill={`url(#${hubGrad})`} />
       <g className="spin" style={{ transformOrigin: '31px 31px' }}>
         {[0, 60, 120, 180, 240, 300].map((deg) => (
           <rect key={deg} x="30.2" y="23" width="1.8" height="5" fill={tape} opacity="0.8"
