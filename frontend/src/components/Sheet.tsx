@@ -15,10 +15,15 @@ interface Props {
    *  Gespraech geht (ChatThread), schaltet der jeweilige Aufrufer das wieder
    *  ab, genau wie beim Gruppenchat auf Seite B. */
   reserveBottomNav?: boolean;
+  /** Blendet das Schliessen-Kreuz aus. Fuer die Hauptseiten gedacht, die man
+   *  ohnehin ueber die untere Leiste wechselt (Fach, Hot Line, Neuigkeiten) —
+   *  dort waere ein X neben der Leiste ein zweiter Weg fuer dieselbe Sache.
+   *  Unterseiten behalten das X bzw. ihren eigenen Zurueck-Pfeil. */
+  hideClose?: boolean;
   children: ReactNode;
 }
 
-export default function Sheet({ open, onClose, title, variant = 'sheet', reserveBottomNav, children }: Props) {
+export default function Sheet({ open, onClose, title, variant = 'sheet', reserveBottomNav, hideClose, children }: Props) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -44,15 +49,17 @@ export default function Sheet({ open, onClose, title, variant = 'sheet', reserve
       <p className="font-mono min-w-0 flex-1 text-[0.66rem] uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
         {title ?? ''}
       </p>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Schließen"
-        className="grid size-9 shrink-0 place-items-center rounded-full text-base"
-        style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-      >
-        ✕
-      </button>
+      {!hideClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Schließen"
+          className="grid size-9 shrink-0 place-items-center rounded-full text-base"
+          style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+        >
+          ✕
+        </button>
+      )}
     </div>
   );
 

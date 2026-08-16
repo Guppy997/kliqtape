@@ -39,7 +39,10 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
   return (
     <article
       id={`post-${item.id}`}
-      className="rise rounded-xl p-3"
+      // scroll-mt: App.tsx springt beim Ankommen zum ersten ungesehenen
+      // Beitrag. Ohne diesen Abstand landet der genau unter der klebenden
+      // Bedienzeile und ist halb verdeckt.
+      className="rise scroll-mt-[calc(3.5rem+env(safe-area-inset-top))] rounded-xl p-3"
       style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
     >
       <div className="flex items-center gap-2">

@@ -309,8 +309,8 @@ export function fetchTonfetzen(postId: string, me: string): Promise<Tonfetzen[]>
   return apiFetch(`/api/posts/${postId}/reactions?me=${encodeURIComponent(me)}`).then(unwrap<Tonfetzen[]>);
 }
 
-export function deletePost(postId: string): Promise<void> {
-  return apiFetch(`/api/posts/${postId}`, { method: 'DELETE' }).then(unwrap<void>);
+export function deletePost(postId: string, me: string): Promise<void> {
+  return apiFetch(`/api/posts/${postId}?me=${encodeURIComponent(me)}`, { method: 'DELETE' }).then(unwrap<void>);
 }
 
 export const mediaUrl = (id: string) => `/api/media/${id}`;
@@ -529,38 +529,49 @@ export function createMixtape(from: string, to: string, title: string): Promise<
   }).then(unwrap<Mixtape>);
 }
 
+/* Alle veraendernden Tape-Aufrufe schicken `me` mit — der Server prueft
+   damit, dass wirklich der Absender am Werk ist (requireTapeOwner). */
+
 export function patchMixtape(
   id: string,
+  me: string,
   patch: { title?: string; note?: string; coverId?: string | null },
 ): Promise<Mixtape> {
   return apiFetch(`/api/mixtapes/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
+    body: JSON.stringify({ ...patch, me }),
   }).then(unwrap<Mixtape>);
 }
 
 export function addTrack(
   id: string,
+  me: string,
   track: { title: string; artist: string; url: string },
 ): Promise<Mixtape> {
   return apiFetch(`/api/mixtapes/${id}/tracks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(track),
+    body: JSON.stringify({ ...track, me }),
   }).then(unwrap<Mixtape>);
 }
 
-export function removeTrack(id: string, trackId: string): Promise<Mixtape> {
-  return apiFetch(`/api/mixtapes/${id}/tracks/${trackId}`, { method: 'DELETE' }).then(unwrap<Mixtape>);
+export function removeTrack(id: string, trackId: string, me: string): Promise<Mixtape> {
+  return apiFetch(`/api/mixtapes/${id}/tracks/${trackId}?me=${encodeURIComponent(me)}`, {
+    method: 'DELETE',
+  }).then(unwrap<Mixtape>);
 }
 
-export function sealMixtape(id: string): Promise<Mixtape> {
-  return apiFetch(`/api/mixtapes/${id}/seal`, { method: 'POST' }).then(unwrap<Mixtape>);
+export function sealMixtape(id: string, me: string): Promise<Mixtape> {
+  return apiFetch(`/api/mixtapes/${id}/seal`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me }),
+  }).then(unwrap<Mixtape>);
 }
 
-export function deleteMixtape(id: string): Promise<void> {
-  return apiFetch(`/api/mixtapes/${id}`, { method: 'DELETE' }).then(unwrap<void>);
+export function deleteMixtape(id: string, me: string): Promise<void> {
+  return apiFetch(`/api/mixtapes/${id}?me=${encodeURIComponent(me)}`, { method: 'DELETE' }).then(unwrap<void>);
 }
 
 /** Plattform am Hostnamen erkennen — rein lokal, kein Aufruf nach draußen. */

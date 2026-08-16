@@ -1,10 +1,12 @@
 # Kliqtape
 
 > Ein Regal voller Kassetten. Jede steht für eine Runde von Leuten.
-> Du legst eine ein — **Seite A** ist das, was bleibt. **Seite B** wird nach
-> 24 Stunden überspielt. Chronologisch, ohne Algorithmus, ohne Werbung, ohne Zahlen.
+> Du legst eine ein — **Seite A** ist das Archiv, **Seite B** das laufende Gespräch.
+> Chronologisch, ohne Algorithmus, ohne Werbung, ohne Zahlen.
 
-**Stand:** 2026-08-02 · lauffähiger Prototyp, noch ohne Anmeldung und Verschlüsselung
+**Stand:** 2026-08-10 · lauffähiger Web-Prototyp mit Zugangscode-Identität, noch ohne
+Verschlüsselung · Zielplattform ist eine React-Native-App, zentral gehostet auf Hetzner
+(siehe Abschnitt 16)
 **Design-Richtung:** [Entwurf 01](https://claude.ai/code/artifact/256c8199-6b83-4916-b1e9-a30f88ea53c4)
 **Repo:** https://github.com/Guppy997/kliqtape (privat)
 
@@ -23,16 +25,19 @@ Deshalb ist eine **Kassette** eine Gruppe von Leuten. Du legst die Kassette der 
 du gerade redest. Wechselst du die Runde, wechselst du das Band.
 
 Jede Kassette hat zwei Seiten, und die unterscheiden sich nicht nach *Publikum*, sondern nach
-**Haltbarkeit**:
+**Charakter**:
 
 | | **Seite A** | **Seite B** |
 |---|---|---|
-| Was da hingehört | was bleiben soll: Bilder, Infos, Absprachen | was flüchtig ist: Gespräch, Zwischenstand, Gedanke |
-| Lebensdauer | dauerhaft | **24 Stunden, dann überspielt** |
-| Sortierung | chronologisch, filterbar nach Art | chronologisch |
-| Charakter | Archiv der Runde | offene Leitung |
+| Was da hingehört | was bleiben soll: Bilder, Infos, Absprachen | was im Fluss ist: Gespräch, Zwischenstand, Gedanke |
+| Form | einzelne Beiträge als Karten | durchgehender Gruppenchat |
+| Sortierung | chronologisch, filterbar nach Art, nach Tagen gebündelt | chronologisch |
+| Charakter | Archiv der Runde | laufendes Gespräch |
 
-Auf einer echten Kassette war die B-Seite die, die man überspielt hat. Genau das passiert hier.
+> **Geändert gegenüber dem Ursprungsentwurf:** Seite B sollte ursprünglich nach 24 Stunden
+> überspielt werden. Das wurde verworfen — ein Gruppenchat, der sich selbst löscht, hat sich
+> im Gebrauch als Verlust angefühlt, nicht als Befreiung. Das Verfalls-Modell steckt
+> stattdessen in den **Storys** (24 Stunden) und ist dort auch das richtige Format.
 
 ### Warum das leichter ist als die übliche Lösung
 
@@ -60,10 +65,10 @@ und keine Follower-Zahlen abschaffen — es würde ihr Geschäftsmodell zerstör
 
 > **Das soziale Netz, das dich wieder gehen lässt.**
 
-- **Seite B ist endlich.** Sie leert sich von selbst. Kein Archiv, kein Nachlesen, kein Druck.
+- **Der Feed ist endlich.** Chronologisch, mit einem Ende. Kein unendliches Scrollen, kein Druck.
 - **Keine öffentlichen Zahlen.** Keine Follower, keine Likes. Du siehst *wer* reagiert hat.
 - **Kleine Runden.** Eine Kassette fasst so viele Leute, wie man wirklich kennt.
-- **Datenminimierung als Architektur.** Später Login per Passkey — keine E-Mail, kein Passwort.
+- **Datenminimierung als Architektur.** Konto ohne E-Mail und ohne Passwort (siehe Abschnitt 16).
 - **Nachprüfbare Ehrlichkeit.** Im Profil steht eine Tabelle „Was der Server sieht", und sie sagt
   immer die Wahrheit — auch dann, wenn die Antwort unangenehm ist.
 
@@ -113,15 +118,11 @@ Eine offene Leitung zwischen **zwei Personen**, unabhängig von jeder Kassette. 
 Walkman-Knopf unten neben REC. Normalfall ist ein echter Verlauf — die erste Nachricht eröffnet
 die Leitung, danach ein echtes Hin und Her. **Nur Text**, höchstens 240 Zeichen pro Nachricht.
 
-**Rollierendes 24-Stunden-Fenster:** jede Nachricht hält die Leitung offen, aber nur die letzten
-24 Stunden bleiben sichtbar. Es gibt keine feste Frist auf der Leitung selbst — sie „lebt",
-solange sie mindestens eine Nachricht hat, die jünger als 24 Stunden ist. Schreibt niemand mehr,
-fallen die letzten Nachrichten einzeln raus, bis die Leitung leer ist und verschwindet.
-
-Das löst zwei Probleme auf einmal: aktives Schreiben hält die Leitung offen (kein Gespräch
-bricht mitten drin ab), aber es sammelt sich nie ein permanenter Verlauf an — auch bei Freunden,
-die täglich schreiben, bleiben immer nur die letzten 24 Stunden sichtbar. Der Hot-Line-Knopf
-selbst blinkt bei Ungelesenem.
+**Der Verlauf bleibt dauerhaft.** Ursprünglich war ein rollierendes 24-Stunden-Fenster geplant
+(nur die letzten 24 Stunden sichtbar, danach fallen Nachrichten einzeln raus) — das wurde
+zusammen mit dem Verfall auf Seite B verworfen, aus demselben Grund: ein Gespräch, das sich
+hinter einem wegradiert, erzeugt Druck statt Leichtigkeit. Der Hot-Line-Knopf zeigt Ungelesenes
+als Zahl.
 
 **Neuigkeiten-Anzeige** (die alte „Anrufbeantworter"-Lampe, unten links): eine blinkende LED,
 kein Zähler. Fasst zwei getrennte Rubriken zusammen — offene Leitungen mit Ungelesenem, und
@@ -139,9 +140,20 @@ so in der App, und es bleibt so, bis es nicht mehr stimmt.
 Name in einem Eingabefeld — jeder kann „Mira" eintippen. An so etwas lässt sich kein Schlüssel
 binden. Die Reihenfolge muss sein:
 
-1. **Passkey-Anmeldung** — echte Identität, an die ein Schlüssel gehört
+1. **Echte Identität** — Konto mit eindeutiger ID (siehe Abschnitt 16), an die ein Schlüssel gehört
 2. **Mitgliedschaften** — wer ist wirklich in dieser Runde
-3. **Dann E2EE** — Inhalt mit Zufallsschlüssel, der Schlüssel pro Mitglied einzeln verpackt
+3. **Dann E2EE**
+
+**Festgelegt: verschlüsselt wird mit dem Signal-Protokoll.** Kein Eigenbau. Das Protokoll ist
+seit Jahren öffentlich auditiert, löst Gruppen-Schlüsselverteilung, Forward Secrecy und
+Post-Compromise-Security bereits — genau die Teile, an denen selbstgebaute Krypto scheitert.
+Umsetzung über die offiziellen Bibliotheken (`libsignal`), nicht nachprogrammiert.
+
+**Zu klären, wenn es soweit ist:** `libsignal` ist auf native Clients ausgelegt — das ist ein
+weiteres Argument für die geplante React-Native-App und gegen den Web-Client als Endziel.
+Ausserdem: Was passiert mit Seite A? Moderation illegaler Inhalte setzt voraus, dass der Server
+mitlesen kann (siehe Abschnitt 12). Wahrscheinliche Auflösung: **Seite B verschlüsselt,
+Seite A bewusst nicht** — und genau so kommuniziert.
 
 **Grenzen, die auch danach bleiben:** Metadaten (wer wann mit wem), Screenshots, und dass
 entfernte Mitglieder alte Schlüssel behalten. Gehört offen kommuniziert.
@@ -161,6 +173,12 @@ kliqtape/
 Jede fremde Verbindung wäre ein Datenleck.
 
 **Lizenz AGPL-3.0** — wer Kliqtape betreibt, muss seinen Quellcode offenlegen.
+
+**Betriebsmodell: zentral gehostet auf Hetzner, kein Self-Hosting-Produkt.** Nutzer:innen
+betreiben nichts selbst, sie melden sich an. Der Docker-Compose-Stack hier ist die
+Entwicklungs-/Beta-Umgebung, nicht die Produktion. Die Zielplattform ist eine
+**React-Native-App**; der jetzige Web-Client ist ein funktionierender Prototyp, keine
+Endarchitektur.
 
 ## 10. Datenmodell
 
@@ -185,12 +203,16 @@ media(id, mime, bytes, duration_ms, created_at)
 
 ## 11. Roadmap
 
-**Erledigt:** Kassetten als Gruppen · beide Seiten mit 24-Stunden-Verfall auf B · Mixtapes bauen,
-verschenken, teilen · O-Ton mit Bandquietschen · Kamera und Galerie · Hot Line mit
-Anrufbeantworter · Profil mit Export und Löschung · Testdaten-Skript
+**Erledigt:** Kassetten als Gruppen · Seite A als Archiv, Seite B als dauerhafter Gruppenchat ·
+Mixtapes bauen, verschenken, teilen · O-Ton mit Bandquietschen · Kamera und Galerie · Hot Line mit
+Anrufbeantworter · Profil mit Export und Löschung · Testdaten-Skript · Storys (24 h) ·
+Kliqtape-Kanal mit Förderstand · Zugangscode-Identität
 
-**Als Nächstes:** Passkey-Anmeldung · Einladungen · Push-Benachrichtigungen · E2EE für Seite B ·
-Onboarding für neue Nutzer
+> Der ursprünglich geplante 24-Stunden-Verfall auf Seite B wurde **verworfen** — Seite B ist ein
+> dauerhafter Gruppenchat. Das Verfalls-Modell lebt stattdessen in den Storys weiter.
+
+**Als Nächstes:** Konto-/Namensmodell (Abschnitt 16) · Einladungen · Push-Benachrichtigungen ·
+E2EE für Seite B über das Signal-Protokoll · Onboarding für neue Nutzer
 
 **Bewusst nicht geplant:** Föderation, Suche über fremde Inhalte, öffentliche Profile,
 Reichweiten-Funktionen jeder Art.
@@ -237,5 +259,107 @@ Markenanmeldung Verwechslungsgefahr in Klasse 9/38/42 bei DPMA und EUIPO prüfen
 ## 15. Offene Entscheidungen
 
 1. **Wie groß darf eine Kassette werden?** Hartes Limit oder Empfehlung.
-2. **Verfall auf Seite B: 24 Stunden fest** oder pro Kassette einstellbar.
-3. **Bandsorten** frei wählbar statt nur gepaart mit der Gehäusefarbe.
+2. **Bandsorten** frei wählbar statt nur gepaart mit der Gehäusefarbe.
+3. **Verfallsdauer der Storys** — 24 Stunden fest oder einstellbar.
+
+## 16. Offene Punkte vor dem öffentlichen Start
+
+Stand 2026-08-10, aus einer Durchsicht des gesamten Codes. Alles hier ist **bewusst
+vermerkt statt sofort umgesetzt** — die Punkte gehören in die Planung der
+React-Native-App, nicht mehr in den Web-Prototyp.
+
+### 16.1 Sicherheitsprüfung — Pflicht vor dem Launch
+
+Die Durchsicht hat eine ganze Klasse von Lücken gefunden: **veränderende Routen ohne
+Berechtigungsprüfung.** Nachgewiesen gegen eine Test-Datenbank, nicht nur vermutet.
+
+**Behoben (2026-08-10):**
+
+| Route | Lücke |
+|---|---|
+| `DELETE /api/posts/:id` | Löschte fremde Beiträge **ohne jeden Zugangscode**. Jedes Gruppenmitglied sieht im Feed die IDs aller Beiträge — damit konnte jeder die Beiträge aller anderen löschen, samt Mediendatei. Jetzt: nur der Autor. |
+| `DELETE /api/mixtapes/:id` | Löschte fremde Mixtapes ohne Zugangscode — auch versiegelte Geschenke, unwiederbringlich. |
+| `PATCH /api/mixtapes/:id` | Fremde Tapes umschreiben (Titel, Widmung, Cover). |
+| `POST /api/mixtapes/:id/tracks` | Titel auf fremde Tapes legen. |
+| `DELETE /api/mixtapes/:id/tracks/:trackId` | Titel von fremden Tapes entfernen. |
+| `POST /api/mixtapes/:id/seal` | Fremde Entwürfe versiegeln und damit zwangsweise verschenken. |
+
+Alle fünf Mixtape-Routen laufen jetzt über den gemeinsamen Helfer `requireTapeOwner()`
+(`backend/src/server.ts`), damit nicht beim nächsten neuen Endpunkt wieder einer vergessen
+wird.
+
+**Lehre daraus, für die App wichtig:** Die Ursache war nicht Unachtsamkeit an einer
+Stelle, sondern dass es **keine Tests für Berechtigungslogik gibt**. Beim Neubau gehört zu
+jeder verändernden Route ein Test „Fremder darf das nicht". Bevor die App an echte Nutzer
+geht, sollte eine vollständige Durchsicht **aller** Endpunkte auf Authentifizierung und
+Eigentumsprüfung stehen.
+
+### 16.2 Konto- und Namensmodell (festgelegt)
+
+Das heutige Modell — der Name **ist** die Identität, first come first served — ist der
+gefährlichste Rest für einen öffentlichen Dienst: Mitglieder werden als *Namens-String* zu
+Kassetten hinzugefügt, auch wenn den Namen noch niemand beansprucht hat. Wer den Namen
+später zuerst beansprucht, erbt den Zugriff auf die Gruppenhistorie.
+
+**Geplantes Modell:**
+
+- **Anzeigename** — frei geschrieben, mehrfach vergebbar, jederzeit änderbar (echter Name)
+- **Eindeutige ID** — vom System vergeben, unveränderlich, die eigentliche Identität
+- **Benutzername** — selbst gewählt, eindeutig, änderbar; die menschenlesbare Adresse
+
+Hinzufügen dann **über Benutzername oder über die eindeutige ID**, nie über den
+Anzeigenamen. Alle Mitgliedschaften, Beiträge und Schlüssel hängen an der ID, nicht am
+Namen — dadurch ist Umbenennen gefahrlos und Namens-Übernahme unmöglich.
+
+**Zusätzlich:** Profil-Link zum Teilen. Man lässt sich einen Link generieren
+(z. B. `kliqtape.de/@benutzername` oder ein Token-Link), über den andere einen direkt
+hinzufügen können — der übliche Weg, wie Leute sich heute vernetzen.
+
+### 16.3 Datenbank und Mandantenfähigkeit
+
+Heute: **eine SQLite-Datei, ein Prozess, ein globaler `ADMIN_NAME`** — passend für die
+Beta, nicht für einen zentralen Dienst mit vielen unabhängigen Freundeskreisen. Zu
+entscheiden vor dem Launch:
+
+- SQLite behalten (einfach, schnell, aber ein Schreiber und ein Server) **oder**
+  PostgreSQL (mehrere Instanzen, echte Nebenläufigkeit, Standard bei Hetzner)
+- Empfehlung: **PostgreSQL**, sobald es öffentlich wird. Der Umstieg ist umso teurer, je
+  später er kommt — das Schema ist heute noch klein.
+- Alle Abfragen sind bereits parametrisiert (`better-sqlite3` prepared statements), also
+  kein SQL-Injection-Risiko; das bleibt beim Umstieg beizubehalten.
+
+### 16.4 Backup-Strategie — fehlt komplett
+
+Es gibt **keine**. Weder im `docker-compose.yml` noch dokumentiert. Bei einem Dienst,
+dessen Versprechen „deine Erinnerungen bleiben" ist, wäre ein verlorenes Volume das
+Projektende. Nötig:
+
+- Regelmässiger konsistenter DB-Schnappschuss (bei SQLite `.backup`, nicht Datei kopieren —
+  WAL!) plus Sicherung des Medien-Verzeichnisses
+- Off-Site, verschlüsselt, mit **getestetem Rückspielen** — ein Backup, das nie
+  zurückgespielt wurde, ist keins
+- Aufbewahrungsdauer festlegen (kollidiert sonst mit dem Löschkonzept aus Abschnitt 12)
+
+### 16.5 Medien sind unauthentifiziert abrufbar
+
+`GET /api/media/:id` prüft **nichts**. Die IDs sind zufällige UUIDs, also praktisch nicht
+erratbar — die Dateien sind damit „unlisted", aber nicht geschützt. Wer eine ID kennt oder
+mitbekommt (geteilter Link, Export, Protokolldatei), kommt dauerhaft dran, auch ohne
+Mitglied zu sein. Für eine App mit Privatsphäre als Kernversprechen sollte der Abruf an
+die Mitgliedschaft gebunden werden — oder an kurzlebige signierte Links.
+
+### 16.6 Rechtliches vor der öffentlichen Registrierung
+
+Die Liste steht in Abschnitt 12 und wird mit dem Wechsel von „Freundeskreis über
+Tailscale" zu „öffentlicher Dienst auf Hetzner" **verbindlich**, nicht mehr optional.
+Kurzfassung: Impressum mit ladungsfähiger Anschrift · Datenschutzerklärung ·
+AV-Vertrag mit Hetzner · Verzeichnis von Verarbeitungstätigkeiten · TOM-Dokumentation ·
+DSA-Pflichten (Meldeverfahren, Moderationsregeln, Kontaktstelle) · Mindestalter.
+Dazu die Produktseite davon: **Melden und Blockieren** gibt es in der App noch nicht.
+
+### 16.7 Qualitätssicherung
+
+Kommt laut Planung noch, hier nur als Merkposten: es gibt derzeit **keine Tests, keine CI
+und kein funktionierendes Linting** — beide `package.json` deklarieren ein `lint`-Skript,
+aber es fehlt eine `eslint.config.js`, der Aufruf bricht ab. Bei der Neuentwicklung von
+Anfang an einrichten (siehe 16.1, warum das konkret weh getan hat).

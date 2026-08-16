@@ -48,14 +48,22 @@ export default function TapeEditor({ id, onClose }: Props) {
   const fail = (e: Error) => setError(e.message);
 
   const save = useMutation({
-    mutationFn: (p: { title?: string; note?: string; coverId?: string | null }) => patchMixtape(id, p),
+    mutationFn: (p: { title?: string; note?: string; coverId?: string | null }) => patchMixtape(id, me, p),
     onSuccess: refresh,
     onError: fail,
   });
-  const add = useMutation({ mutationFn: addTrack.bind(null, id), onSuccess: refresh, onError: fail });
-  const drop = useMutation({ mutationFn: removeTrack.bind(null, id), onSuccess: refresh, onError: fail });
+  const add = useMutation({
+    mutationFn: (track: { title: string; artist: string; url: string }) => addTrack(id, me, track),
+    onSuccess: refresh,
+    onError: fail,
+  });
+  const drop = useMutation({
+    mutationFn: (trackId: string) => removeTrack(id, trackId, me),
+    onSuccess: refresh,
+    onError: fail,
+  });
   const seal = useMutation({
-    mutationFn: () => sealMixtape(id),
+    mutationFn: () => sealMixtape(id, me),
     onSuccess: (t) => {
       refresh(t);
       onClose();
@@ -63,7 +71,7 @@ export default function TapeEditor({ id, onClose }: Props) {
     onError: fail,
   });
   const scrap = useMutation({
-    mutationFn: () => deleteMixtape(id),
+    mutationFn: () => deleteMixtape(id, me),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['mixtapes', me] });
       onClose();

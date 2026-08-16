@@ -794,11 +794,22 @@ app.post('/api/posts', (req, res) => {
   res.status(201).json({ id });
 });
 
+// Loeschen darf nur, wer den Beitrag selbst geschrieben hat. Vorher stand
+// hier GAR KEINE Pruefung: jedes Mitglied sieht im Feed die IDs aller
+// Beitraege und konnte damit die Beitraege aller anderen loeschen — sogar
+// ganz ohne Zugangscode. Die Oberflaeche zeigt den Loeschen-Knopf ohnehin
+// nur am eigenen Beitrag (PostCard.tsx, `mine`), die Regel hier bildet also
+// nur nach, was die App sowieso meint.
 app.delete('/api/posts/:id', (req, res) => {
-  const row = db.prepare(`SELECT media_id FROM posts WHERE id = ?`).get(req.params.id) as
-    | { media_id: string | null }
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+
+  const row = db.prepare(`SELECT author, media_id FROM posts WHERE id = ?`).get(req.params.id) as
+    | { author: string; media_id: string | null }
     | undefined;
   if (!row) throw new HttpError(404, 'Post nicht gefunden');
+  if (row.author !== me) throw new HttpError(403, 'Das ist nicht dein Beitrag');
 
   db.prepare(`DELETE FROM posts WHERE id = ?`).run(req.params.id);
 
@@ -1352,6 +1363,25 @@ function loadTape(id: string): TapeRow {
   return row;
 }
 
+/**
+ * Laedt ein Tape und stellt sicher, dass der Aufrufer wirklich der Absender
+ * ist — Aendern, Titel ergaenzen, Versiegeln und Loeschen gehen nur am
+ * eigenen Tape.
+ *
+ * Vorher hatten ALLE veraendernden Mixtape-Routen gar keine Pruefung: mit
+ * einer bekannten Tape-ID konnte jede beliebige Person (sogar voellig ohne
+ * Zugangscode) ein fremdes Geschenk umschreiben oder loeschen. Nachgewiesen
+ * gegen eine Test-Datenbank, siehe Sicherheits-Notiz in docs/CONCEPT.md.
+ */
+function requireTapeOwner(req: Request, id: string): TapeRow {
+  const me = String(req.query.me ?? req.body?.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+  const tape = loadTape(id);
+  if (tape.from_name !== me) throw new HttpError(403, 'Das ist nicht dein Mixtape');
+  return tape;
+}
+
 function tracksOf(tapeId: string): TrackRow[] {
   return db
     .prepare(`SELECT id, position, title, artist, url FROM mixtape_tracks WHERE mixtape_id = ? ORDER BY position`)
@@ -1418,7 +1448,7 @@ app.post('/api/mixtapes', (req, res) => {
 });
 
 app.patch('/api/mixtapes/:id', (req, res) => {
-  const tape = loadTape(req.params.id);
+  const tape = requireTapeOwner(req, req.params.id);
   if (tape.sealed_at) throw new HttpError(409, 'Versiegelte Tapes lassen sich nicht mehr ändern');
 
   const title = req.body?.title != null ? String(req.body.title).slice(0, 60) : tape.title;
@@ -1447,7 +1477,7 @@ app.patch('/api/mixtapes/:id', (req, res) => {
 });
 
 app.post('/api/mixtapes/:id/tracks', (req, res) => {
-  const tape = loadTape(req.params.id);
+  const tape = requireTapeOwner(req, req.params.id);
   if (tape.sealed_at) throw new HttpError(409, 'Tape ist versiegelt');
 
   const title = String(req.body?.title ?? '').trim().slice(0, 90);
@@ -1468,7 +1498,7 @@ app.post('/api/mixtapes/:id/tracks', (req, res) => {
 });
 
 app.delete('/api/mixtapes/:id/tracks/:trackId', (req, res) => {
-  const tape = loadTape(req.params.id);
+  const tape = requireTapeOwner(req, req.params.id);
   if (tape.sealed_at) throw new HttpError(409, 'Tape ist versiegelt');
 
   db.prepare(`DELETE FROM mixtape_tracks WHERE id = ? AND mixtape_id = ?`).run(
@@ -1485,7 +1515,7 @@ app.delete('/api/mixtapes/:id/tracks/:trackId', (req, res) => {
 });
 
 app.post('/api/mixtapes/:id/seal', (req, res) => {
-  const tape = loadTape(req.params.id);
+  const tape = requireTapeOwner(req, req.params.id);
   if (tape.sealed_at) throw new HttpError(409, 'Schon überreicht');
   if (tracksOf(tape.id).length === 0) throw new HttpError(400, 'Ein leeres Tape verschenkt man nicht');
   if (!tape.title.trim()) throw new HttpError(400, 'Das Tape braucht einen Titel');
@@ -1495,7 +1525,7 @@ app.post('/api/mixtapes/:id/seal', (req, res) => {
 });
 
 app.delete('/api/mixtapes/:id', (req, res) => {
-  const tape = loadTape(req.params.id);
+  const tape = requireTapeOwner(req, req.params.id);
   db.prepare(`DELETE FROM mixtapes WHERE id = ?`).run(tape.id);
   if (tape.cover_id) dropMedia(tape.cover_id);
   res.status(204).end();

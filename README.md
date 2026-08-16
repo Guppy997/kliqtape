@@ -7,14 +7,19 @@ und die zu vermischen funktioniert nicht.
 Jede Kassette hat zwei Seiten:
 
 - **Seite A — bleibt.** Das Archiv der Runde: Bilder, Absprachen, Infos. Filterbar nach Art.
-- **Seite B — wird überspielt.** Alles verschwindet nach 24 Stunden von selbst.
+- **Seite B — läuft weiter.** Der Gruppenchat der Runde, dauerhaft.
 
 Tippen auf die Kassette dreht sie um. Chronologisch, ohne Algorithmus, ohne Werbung,
 ohne Zahlen.
 
-**Hosting-Kontext:** Läuft self-hosted auf dem eigenen Server / Raspberry Pi via Docker.
-Kein Vercel, kein Netlify, keine externe Cloud. Zugriff im Tailnet über einen
-Tailscale-Sidecar mit eigenem Hostnamen.
+**Hosting-Modell:** Kliqtape wird als **zentral betriebener Dienst auf Hetzner** gelauncht
+und von dort aus skaliert — wie ein normaler Social-Media-Server. Es ist ausdrücklich
+**kein Self-Hosting-Produkt**: Nutzer:innen legen keinen eigenen Server an, sie melden sich
+einfach an. Zielgruppe sind alle, nicht nur Leute, die selbst hosten würden.
+
+Das `docker-compose.yml` in diesem Repo ist die **Entwicklungs- und Beta-Umgebung**
+(inklusive optionalem Tailscale-Sidecar für den Zugriff im eigenen Tailnet), nicht das
+geplante Produktions-Setup.
 
 ---
 

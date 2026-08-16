@@ -52,7 +52,8 @@ export default function AnsweringMachine() {
         onClick={() => setActiveNav('notify')}
       />
 
-      <Sheet open={open} onClose={() => setActiveNav(null)} variant="full" reserveBottomNav title="Neuigkeiten">
+      {/* Hauptseite: wird ueber die untere Leiste gewechselt, deshalb ohne X. */}
+      <Sheet open={open} onClose={() => setActiveNav(null)} variant="full" reserveBottomNav hideClose title="Neuigkeiten">
         <div className="flex flex-col gap-6">
           {notifCount === 0 && (
             <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>

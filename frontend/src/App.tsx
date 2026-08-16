@@ -6,7 +6,7 @@ import { useBottomNav } from '@/store/navStore';
 import { useViewMode } from '@/store/viewStore';
 import { berlinDateLabel, tapeIndexOf } from '@/lib/berlinDay';
 import CassetteHeader from '@/components/CassetteHeader';
-import { useCassettes, useLookIndex } from '@/components/CassetteDeck';
+import { MiniCassette, useCassettes, useLookIndex } from '@/components/CassetteDeck';
 import { lookFor } from '@/lib/cassetteLook';
 import ChatThread from '@/components/ChatThread';
 import Composer from '@/components/Composer';
@@ -114,6 +114,23 @@ function Deck() {
   const setActiveNav = useBottomNav((s) => s.setActive);
   const viewMode = useViewMode((s) => s.viewMode);
   const setViewMode = useViewMode((s) => s.setViewMode);
+  /** Klappt die Kassette unter der Bedienzeile aus. Beim Ankommen offen. */
+  const [deckOpen, setDeckOpen] = useState(true);
+
+  // Zuklappen bei ECHTER Nutzereingabe, nicht bei jedem Scroll-Ereignis:
+  // beim Ankommen scrollt die App selbst (nach oben, zum ersten ungesehenen
+  // Beitrag, im Chat ans Ende) — ein Scroll-Listener wuerde die Kassette
+  // dadurch sofort wieder zuklappen. wheel/touchmove loesen nur echte
+  // Eingaben aus, damit braucht es weder Schwellwerte noch Zeitfenster.
+  useEffect(() => {
+    const close = () => setDeckOpen(false);
+    window.addEventListener('wheel', close, { passive: true });
+    window.addEventListener('touchmove', close, { passive: true });
+    return () => {
+      window.removeEventListener('wheel', close);
+      window.removeEventListener('touchmove', close);
+    };
+  }, []);
 
   // Home-Knopf in der BottomBar: zurueck zur Startansicht der eingelegten
   // Kassette, egal von wo (Seite B, aktiver Filter, weit runtergescrollt —
@@ -153,7 +170,7 @@ function Deck() {
 
   const invalidate = () => void qc.invalidateQueries({ queryKey: ['feed', cassetteId, side, me] });
 
-  const remove = useMutation({ mutationFn: (id: string) => deletePost(id), onSuccess: invalidate });
+  const remove = useMutation({ mutationFn: (id: string) => deletePost(id, me), onSuccess: invalidate });
 
   // Tapes gibt es nur auf Seite A — die kassettenweiten Namen/Favoriten
   // fuer die Kalendertage, ueber die der Feed gruppiert wird.
@@ -230,6 +247,8 @@ function Deck() {
     if (!cassetteId) return;
     const key = `${cassetteId}:${side}`;
     arrival.current = { key, lastSeen: useApp.getState().sideSeenAt[key] ?? 0, jumped: false };
+    // Beim Wechsel der Seite oder der Kassette soll man das Band sehen.
+    setDeckOpen(true);
   }, [cassetteId, side]);
 
   useLayoutEffect(() => {
@@ -243,8 +262,14 @@ function Deck() {
     if (!a.jumped) {
       a.jumped = true;
       const target = data.find((p) => p.created_at > a.lastSeen);
-      if (target) document.getElementById(`post-${target.id}`)?.scrollIntoView({ block: 'start' });
-      else if (data.length > 0) window.scrollTo({ top: document.documentElement.scrollHeight });
+      // Ist der erste ungesehene Beitrag ohnehin der erste des Bandes, gibt es
+      // nichts nachzuholen — dann oben bleiben, damit die Kassette im Bild ist.
+      // (Frueher egal, weil der Kopf oben klebte; jetzt scrollt er weg.)
+      if (target && target !== data[0]) {
+        document.getElementById(`post-${target.id}`)?.scrollIntoView({ block: 'start' });
+      } else if (!target && data.length > 0) {
+        window.scrollTo({ top: document.documentElement.scrollHeight });
+      }
     }
 
     // Fortlaufend nachziehen, auch nach dem ersten Sprung: was waehrend des
@@ -256,30 +281,49 @@ function Deck() {
 
   return (
     <>
-      {/* Kassetten-Kopf UND die Zeile mit Erstellen/Filter/Regal/Profil
-          teilen sich jetzt EINEN sticky-Block, statt dass nur der Kopf oben
-          klebt und die Zeile mit dem normalen Inhalt wegscrollt — genau das
-          war der gemeldete Bug: "+"/Filter/Regal/Profil waren nur ganz oben
-          erreichbar. Der Kopf darf weiterhin einklappen (siehe
-          CassetteHeader.tsx), die Zeile darunter bleibt davon unabhaengig
-          immer sichtbar, weil beide gemeinsam in normalem Fluss innerhalb
-          dieses EINEN sticky-Containers stehen — kein Abgleich zweier
-          getrennter sticky-Hoehen noetig. */}
-      <div className="glass sticky top-0 z-30">
-        <CassetteHeader
-          cassetteId={cassetteId}
-          pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
-          label={current?.name ?? 'Kein Band'}
-          count={data.length}
-          currentTape={currentTape}
-        />
+      {/* NUR noch die Bedienzeile klebt oben — der Kassetten-Kopf steht
+          darunter im normalen Fluss und scrollt einfach weg. Damit gibt es
+          keinen halb eingeklappten Zwischenzustand mehr: die Kassette ist
+          entweder ganz da oder ganz weg. Genau diese Zwischenstufe war die
+          Quelle der Kopf-Fehler (Hoehen-Interpolation, Settling-Fenster,
+          Neuzeichnungs-Problem). Zurueck geholt wird sie ueber das kleine
+          Kassetten-Symbol links in dieser Zeile.
 
+          pt mit safe-area-inset-top: index.html setzt viewport-fit=cover, die
+          Seite liegt also UNTER Notch/Kamera-Ausschnitt. Ohne dieses Polster
+          laeuft die Zeile bei iPhone und Android dort hinein. */}
+      <div
+        className="glass sticky top-0 z-30 pt-[max(0.5rem,env(safe-area-inset-top))]"
+        // Solange die Kassette ausgeklappt ist, faellt die Trennlinie nach
+        // unten weg — Leiste und Panel sind dann eine durchgehende Flaeche.
+        style={{ borderBottomColor: deckOpen ? 'transparent' : undefined }}
+      >
         <div className="mx-auto flex max-w-xl flex-col gap-1.5 px-3 pb-2">
           <div
             className="font-mono flex items-center justify-between gap-1.5 text-[0.64rem] uppercase tracking-[0.11em]"
             style={{ color: 'var(--dim)' }}
           >
             <span className="flex min-w-0 items-center gap-1.5">
+              {/* Holt die weggescrollte Kassette zurueck. Sitzt bewusst ganz
+                  links, damit die Stelle gleich bleibt, egal ob der
+                  Erstellen-Knopf daneben gerade da ist (im Chat ist er weg). */}
+              {cassetteId && (
+                <button
+                  type="button"
+                  onClick={() => setDeckOpen((v) => !v)}
+                  aria-label={deckOpen ? 'Kassette einklappen' : 'Kassette zeigen'}
+                  aria-expanded={deckOpen}
+                  title={current?.name ?? 'Kassette'}
+                  className="shrink-0 transition-transform active:scale-95"
+                >
+                  <MiniCassette
+                    id={cassetteId}
+                    pairIndex={looks.get(cassetteId)}
+                    active
+                    side={side}
+                  />
+                </button>
+              )}
               {/* Seite B ungefiltert ist reiner Chat (siehe isCassetteChat unten) —
                   dort soll nichts mit dem Schreiben konkurrieren. Ausserdem nur
                   in der Home-Uebersicht (kein Sheet aus der unteren Leiste
@@ -335,6 +379,36 @@ function Deck() {
               })}
             </div>
           )}
+        </div>
+
+        {/* Die Kassette klappt aus der Leiste heraus und legt sich UEBER den
+            Inhalt (absolut positioniert), statt ihn nach unten zu schieben —
+            dadurch bleibt die Leseposition erhalten, egal wo im Verlauf man
+            gerade ist. Die Hoehe wird ueber grid-template-rows 0fr/1fr
+            animiert; das braucht keine gemessene Pixelhoehe und funktioniert
+            deshalb auch, wenn sich der Inhalt der Kassette aendert. */}
+        <div
+          // ease-out schob fast die ganze Bewegung an den Anfang — es wirkte
+          // dadurch weggeschnappt, obwohl die Dauer schon laenger war. Diese
+          // Kurve startet sanft und laeuft weich aus.
+          className="absolute inset-x-0 top-full grid transition-[grid-template-rows,opacity] duration-[420ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+          style={{ gridTemplateRows: deckOpen ? '1fr' : '0fr', opacity: deckOpen ? 1 : 0 }}
+          // inert statt aria-hidden: eingeklappt sind Spulen und Umdreh-Flaeche
+          // zwar unsichtbar, blieben aber per Tastatur erreichbar.
+          inert={!deckOpen}
+        >
+          {/* Dieselbe Glas-Flaeche wie die Leiste darueber, nur ohne obere
+              Kante — dadurch wirkt das Panel wie deren Fortsetzung und nicht
+              wie ein zweites, fremdes Blatt. */}
+          <div className="glass overflow-hidden" style={{ borderTop: 'none' }}>
+            <CassetteHeader
+              cassetteId={cassetteId}
+              pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
+              label={current?.name ?? 'Kein Band'}
+              count={data.length}
+              currentTape={currentTape}
+            />
+          </div>
         </div>
       </div>
 

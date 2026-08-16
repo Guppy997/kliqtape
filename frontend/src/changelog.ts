@@ -10,6 +10,101 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.32.0',
+    date: '2026-08-16',
+    changes: [
+      'Glas-Look ist raus: die Leisten decken jetzt sauber ab, durchlaufender Text schimmert nicht mehr durch',
+      'Auf Seite B war die obere Leiste bisher fast durchsichtig — dort ist der Unterschied am größten',
+    ],
+  },
+  {
+    version: '0.31.1',
+    date: '2026-08-16',
+    changes: [
+      'Die Kassette klappt jetzt ruhiger ein und aus statt wegzuschnappen',
+      'Sie sitzt optisch auf derselben Fläche wie die obere Leiste — beim Ausklappen fällt die Trennlinie dazwischen weg',
+    ],
+  },
+  {
+    version: '0.31.0',
+    date: '2026-08-16',
+    changes: [
+      'Die Kassette klappt jetzt aus der oberen Leiste nach unten — genau dort, wo man gerade im Verlauf steht, ohne die Position zu verlieren',
+      'Beim Wechsel der Seite oder der Kassette ist sie automatisch aufgeklappt, beim Scrollen klappt sie wieder ein',
+    ],
+  },
+  {
+    version: '0.30.0',
+    date: '2026-08-16',
+    changes: [
+      'Die App beginnt jetzt unterhalb von Notch bzw. Kamera-Aussparung — vorher lief die obere Zeile dort hinein',
+      'Erstellen/Filter/Regal/Profil sind nach ganz oben gewandert und bleiben dort stehen',
+      'Die Kassette scrollt jetzt einfach weg statt halb einzuklappen — der Inhalt bekommt den Platz. Über das kleine Kassettensymbol oben links holt man sie zurück',
+    ],
+  },
+  {
+    version: '0.29.0',
+    date: '2026-08-16',
+    changes: [
+      'Story hat keinen leuchtenden Rahmen mehr — der sah aus wie „ausgewählt". Leuchten tut jetzt nur die eingelegte Gruppe',
+      'Die eingelegte Gruppe steht im Fach immer ganz oben, darunter die übrigen nach letzter Aktivität',
+    ],
+  },
+  {
+    version: '0.28.2',
+    date: '2026-08-16',
+    changes: [
+      'Kassettenfach: das Plus sitzt jetzt neben der Gruppensuche statt in der Überschrift',
+      'Hot Line: das Plus nimmt die Farbe der eingelegten Kassette an',
+    ],
+  },
+  {
+    version: '0.28.1',
+    date: '2026-08-16',
+    changes: [
+      'Kassettenfach: Suchleiste über den eigenen Gruppen',
+    ],
+  },
+  {
+    version: '0.28.0',
+    date: '2026-08-16',
+    changes: [
+      'Hot Line hat jetzt oben eine Suche über die laufenden Leitungen',
+      'Daneben ein Plus: neue Leitung auf eigener Seite, mit Suche über die Kontakte',
+    ],
+  },
+  {
+    version: '0.27.1',
+    date: '2026-08-16',
+    changes: [
+      'Kein Schließen-Kreuz mehr auf den Hauptseiten (Fach, Hot Line, Neuigkeiten) — die wechselt man ohnehin über die untere Leiste. Unterseiten behalten es.',
+    ],
+  },
+  {
+    version: '0.27.0',
+    date: '2026-08-10',
+    changes: [
+      'Neue Gruppe wird jetzt über ein Plus oben bei „Gruppen" angelegt — der gedrängte Block am Seitenende ist weg',
+      'Das Anlegen passiert auf einer eigenen Seite: Name und Bandsorte zusammen in einem Schritt, statt die Farbe erst danach zu fragen',
+    ],
+  },
+  {
+    version: '0.26.0',
+    date: '2026-08-10',
+    changes: [
+      'Sicherheitslücke geschlossen: Beiträge konnten von jedem gelöscht werden, der die ID kannte — jetzt nur noch von der Person, die sie geschrieben hat',
+      'Dasselbe bei Mixtapes: Ändern, Titel hinzufügen, Versiegeln und Löschen gehen jetzt nur noch am eigenen Tape',
+    ],
+  },
+  {
+    version: '0.25.1',
+    date: '2026-08-09',
+    changes: [
+      'Die kleinen Kassetten im Fach, im Regal und in der Farbauswahl sehen jetzt aus wie die große im Spieler — Etikett mit Farbband, Sichtfenster und Fuß mit Andocklöchern statt des alten bunten Balkens',
+      'Story- und Kliqtape-Kassette folgen demselben Aufbau, behalten aber ihre eigene Optik',
+    ],
+  },
+  {
     version: '0.25.0',
     date: '2026-08-09',
     changes: [

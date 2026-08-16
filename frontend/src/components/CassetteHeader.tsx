@@ -18,8 +18,6 @@ interface Props {
 
 const R_MAX = 26;
 const R_MIN = 10;
-const FIELD_MAX = 72;
-const FIELD_MIN = 0;
 const FLIP_MS = 180;
 
 /**
@@ -33,90 +31,56 @@ const FLIP_MS = 180;
  * die Seite — man sieht den Inhalt nie umklappen. Die Runde bleibt dieselbe:
  * A und B gehoeren zur selben Kassette und haben denselben Farbton.
  *
- * Beim Scrollen faehrt das Beschriftungsfeld ein, das Fenster bleibt: die
- * Spulen laufen weiter mit, links duenner, rechts dicker.
+ * Der Kopf klebt NICHT mehr oben — er steht im normalen Fluss und scrollt
+ * weg. Es gibt deshalb keinen halb eingeklappten Zwischenzustand mehr: die
+ * Kassette ist ganz da oder ganz weg, zurueck geholt ueber das kleine
+ * Kassetten-Symbol in der oberen Leiste (App.tsx). Das hat die frueheren
+ * Hoehen-Interpolationen samt "Settling"-Fenster ueberfluessig gemacht.
+ *
+ * Geblieben ist die Spulen-Anzeige: links wird duenner, rechts dicker, je
+ * weiter man im Band ist.
  */
 export default function CassetteHeader({ cassetteId, pairIndex, label, count, currentTape }: Props) {
   const side = useApp((s) => s.side);
   const setSide = useApp((s) => s.setSide);
 
-  const [collapse, setCollapse] = useState(0);
   const [progress, setProgress] = useState(0);
   const [flipping, setFlipping] = useState(false);
   const timer = useRef<number | null>(null);
-  // Waehrend "settling" ignoriert die Scroll-Verfolgung die tatsaechliche
-  // Position — siehe Effekt weiter unten.
-  const settling = useRef(false);
 
-  // Scroll-Verfolgung UND das kurze "Settling"-Fenster nach einem Wechsel
-  // sind bewusst EIN Effekt: das Ende des Fensters muss den Klapp-Zustand
-  // aktiv nachholen (sonst bliebe der Kopf aufgeklappt "stehen", falls
-  // seitdem kein weiterer Scroll/Resize mehr passiert ist, obwohl die
-  // tatsaechliche Position laengst woanders liegt — App.tsx springt beim
-  // Ankommen ja direkt zum ersten ungesehenen Beitrag bzw. ans Bandende).
+  // Nur noch der Fuellstand der Spulen haengt am Scrollen. Ungenauigkeiten
+  // waehrend nachladender Inhalte sind hier folgenlos — anders als frueher,
+  // wo derselbe Wert ueber die Hoehe des Kopfes entschieden hat.
   useEffect(() => {
     let raf = 0;
-    let settleTimer: number | null = null;
-
     const update = () => {
-      if (settling.current) return;
       const max = document.documentElement.scrollHeight - window.innerHeight;
-      const y = window.scrollY;
-      setCollapse(Math.min(1, y / 150));
-      setProgress(max > 60 ? Math.min(1, y / max) : 0);
+      setProgress(max > 60 ? Math.min(1, window.scrollY / max) : 0);
     };
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(update);
     };
-    // Kurz nach einem Seiten-/Kassettenwechsel (bzw. solange die Seite noch
-    // waechst, weil Inhalt nachlaedt — z.B. Chat, der selbst ans Ende
-    // springt) bleibt der Kopf aufgeklappt. Erst wenn eine Weile nichts mehr
-    // wächst, greift wieder normales Scroll-Verhalten — und zwar sofort mit
-    // der dann tatsaechlichen Position, nicht erst beim naechsten Scroll.
-    const arm = () => {
-      settling.current = true;
-      if (settleTimer) window.clearTimeout(settleTimer);
-      settleTimer = window.setTimeout(() => {
-        settling.current = false;
-        update();
-      }, 200);
-    };
 
-    arm();
     update();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
-    const ro = new ResizeObserver(() => {
-      setCollapse(0);
-      arm();
-    });
-    ro.observe(document.documentElement);
 
     return () => {
       cancelAnimationFrame(raf);
-      if (settleTimer) window.clearTimeout(settleTimer);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
-      ro.disconnect();
     };
   }, [side, count, cassetteId]);
 
-  // Seiten-/Kassettenwechsel soll IMMER aufgeklappt und oben starten — sonst
-  // bliebe das Beschriftungsfeld bei einem lang gewachsenen Band fuer immer
-  // eingeklappt, sobald man einmal tief gescrollt hatte. Wichtig: das gilt
-  // AUCH fuer den Gruppenchat (Seite B ungefiltert) — dort bestimmt zwar
-  // ChatThread selbst noch das endgueltige Scrollziel (ans Gespraechsende),
-  // aber OHNE diesen Reset bliebe bis dahin die alte Scrollposition der
-  // vorherigen Seite stehen. Das "Settling"-Fenster unten liest dann kurz
-  // danach eine viel zu grosse Position und klappt sofort alles ein, obwohl
-  // man gerade erst angekommen ist. App.tsx (Deck) ueberschreibt dieses
-  // Ziel danach noch mit dem eigentlich richtigen (erster ungesehener
-  // Beitrag bzw. Bandende) — aber eben nur fuer die Karten-Ansicht, nicht
-  // fuer den Chat.
+  // Seiten-/Kassettenwechsel startet oben, damit die Kassette sichtbar ist.
+  // Fuer den Gruppenchat ist das ausserdem noetig, weil sonst die alte
+  // Scrollposition der vorherigen Seite stehen bliebe, bis ChatThread selbst
+  // ans Gespraechsende springt. App.tsx (Deck) ueberschreibt das Ziel danach
+  // noch mit dem eigentlich richtigen (erster ungesehener Beitrag bzw.
+  // Bandende) — aber nur fuer die Karten-Ansicht, nicht fuer den Chat.
   useLayoutEffect(() => {
     window.scrollTo({ top: 0 });
-    setCollapse(0);
     setProgress(0);
   }, [side, cassetteId]);
 
@@ -155,7 +119,6 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
 
   const rLeft = R_MAX - (R_MAX - R_MIN) * progress;
   const rRight = R_MIN + (R_MAX - R_MIN) * progress;
-  const fieldH = FIELD_MAX - (FIELD_MAX - FIELD_MIN) * collapse;
 
   // Gehaeuse: gefaerbtes Plastik, fein gerippt wie eine echte Schale.
   const shellStyle = isA
@@ -287,14 +250,9 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
             </div>
 
             {/* Beschriftungsfeld mit Linien — hier steht der Name der Runde.
-                Klappt komplett ein, wenn man scrollt (siehe fieldH) — das ist
-                gewollt, der eigentliche Bug war eine stehengebliebene
-                Scrollposition der vorherigen Seite, nicht dass hier ueberhaupt
-                etwas einklappt (siehe Reset weiter oben). */}
-            <div
-              className="overflow-hidden px-3"
-              style={{ height: fieldH, transition: 'height 200ms ease', opacity: 1 - collapse * 1.5 }}
-            >
+                Feste Hoehe: seit der Kopf wegscrollt statt einzuklappen,
+                gibt es hier nichts mehr zu interpolieren. */}
+            <div className="overflow-hidden px-3 pb-1">
               <div className="pt-2" style={{ borderBottom: `1px solid ${rule}` }}>
                 <span className="font-hand block truncate pb-0.5 text-[1.25rem] leading-tight" style={{ color: ink }}>
                   {label}

@@ -107,13 +107,27 @@ export default function CassetteDeck() {
   const [manage, setManage] = useState<string | null>(null);
   // Nach "Einlegen" haelt das die ID des frisch angelegten Bands, solange
   // der Farb-Schritt offen ist — danach (fertig oder uebersprungen) wieder null.
-  const [pickColor, setPickColor] = useState<string | null>(null);
+  // Eigene Seite zum Anlegen, statt eines gedraengten Formulars unter der
+  // Liste — aufgerufen ueber das Plus in der Gruppen-Ueberschrift. Name UND
+  // Bandsorte werden dort zusammen festgelegt; frueher war die Farbe ein
+  // zweiter Schritt nach dem Anlegen.
+  const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
-  const [invite, setInvite] = useState('');
+  /** Gewaehlte Bandsorte, null = automatisch zugewiesene nehmen. */
+  const [newLook, setNewLook] = useState<number | null>(null);
+  /** Suche ueber die eigenen Gruppen im Fach. */
+  const [groupQuery, setGroupQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const { data: cassettes = [] } = useCassettes();
   const looks = useLookIndex();
+  // Die eingelegte Kassette steht immer oben, der Rest bleibt in der
+  // Reihenfolge, die der Server schon liefert: nach letzter Aktivitaet
+  // (ORDER BY last_at DESC, siehe GET /api/cassettes). sort() ist stabil,
+  // die Aktivitaets-Reihenfolge bleibt also unter der ersten Zeile erhalten.
+  const shownCassettes = cassettes
+    .filter((c) => c.name.toLowerCase().includes(groupQuery.trim().toLowerCase()))
+    .sort((a, b) => (a.id === cassetteId ? -1 : b.id === cassetteId ? 1 : 0));
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['cassettes', me] });
@@ -122,23 +136,22 @@ export default function CassetteDeck() {
   const fail = (e: Error) => setError(e.message);
 
   const create = useMutation({
-    mutationFn: () => createCassette(newName.trim(), me),
+    // Anlegen und Bandsorte in einem Rutsch: die Sorte laesst sich erst nach
+    // dem Anlegen setzen (sie haengt an der Kassetten-ID), fuer die Bedienung
+    // ist es aber ein einziger Schritt.
+    mutationFn: async () => {
+      const c = await createCassette(newName.trim(), me);
+      if (newLook != null) await setCassetteColorIndex(c.id, newLook, me);
+      return c;
+    },
     onSuccess: (c) => {
       refresh();
       setNewName('');
+      setNewLook(null);
+      setCreating(false);
+      // Sonst waere das frisch angelegte Band hinter einer alten Suche versteckt.
+      setGroupQuery('');
       setCassette(c.id);
-      // Nicht sofort schliessen — erst die Farbe anbieten, kann aber
-      // uebersprungen werden (dann bleibt die automatisch gewuerfelte Sorte).
-      setPickColor(c.id);
-    },
-    onError: fail,
-  });
-
-  const chooseColor = useMutation({
-    mutationFn: (idx: number) => setCassetteColorIndex(pickColor!, idx, me),
-    onSuccess: () => {
-      refresh();
-      setPickColor(null);
       setActiveNav(null);
     },
     onError: fail,
@@ -158,7 +171,8 @@ export default function CassetteDeck() {
         onClick={() => {
           setError(null);
           setManage(null);
-          setPickColor(null);
+          setCreating(false);
+          setGroupQuery('');
           setActiveNav('eject');
         }}
       />
@@ -168,9 +182,97 @@ export default function CassetteDeck() {
         onClose={() => setActiveNav(null)}
         variant="full"
         reserveBottomNav
-        title={pickColor ? 'Farbe wählen' : 'Kassettenfach'}
+        // Hauptseite: Wechsel laeuft ueber die untere Leiste, also kein X.
+        // Die Unterseiten (Neue Gruppe, Mitglieder) haben ihren eigenen
+        // Zurueck-Pfeil zum Fach.
+        hideClose
+        title={creating ? 'Neue Gruppe' : 'Kassettenfach'}
       >
-        {manage ? (
+        {creating ? (
+          <div className="flex flex-col gap-5">
+            <button
+              type="button"
+              onClick={() => setCreating(false)}
+              className="font-mono self-start text-[0.62rem] uppercase tracking-[0.12em]"
+              style={{ color: 'var(--dim)' }}
+            >
+              ← Fach
+            </button>
+
+            <div>
+              <p className="font-hand text-lg" style={{ color: 'var(--ink)' }}>
+                Wie soll das Band heißen?
+              </p>
+              <p className="font-mono mt-1 text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+                Der Name steht später auf dem Etikett — änderbar ist er jederzeit.
+              </p>
+            </div>
+
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              maxLength={40}
+              autoFocus
+              placeholder="z. B. Freitagsrunde"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newName.trim() && !create.isPending) create.mutate();
+              }}
+              className="font-hand w-full rounded-lg px-3 py-3 text-[1.15rem] outline-none"
+              style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+            />
+
+            <div className="flex flex-col gap-2">
+              <p className="font-mono text-[0.62rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+                Bandsorte {newLook == null && '· ohne Auswahl automatisch'}
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {Array.from({ length: PAIR_COUNT }, (_, idx) => {
+                  const { case: c } = lookFor('neu', idx);
+                  const chosen = newLook === idx;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setNewLook(chosen ? null : idx)}
+                      aria-pressed={chosen}
+                      className="flex flex-col items-center gap-1.5 rounded-xl p-2"
+                      style={{
+                        background: 'var(--card)',
+                        border: `1px solid ${chosen ? 'var(--accent)' : 'var(--line)'}`,
+                      }}
+                    >
+                      {/* Immer als Seite B gezeigt — nur dort tragen die Sorten
+                          ihre Muster, und genau darum geht es hier. Die Spuren
+                          stammen von einem festen Vorschau-Band, die Farben
+                          stimmen aber exakt mit dem spaeteren Ergebnis. */}
+                      <MiniCassette id="neu" pairIndex={idx} active side="b" />
+                      <span className="font-mono text-center text-[0.52rem] uppercase tracking-[0.06em]" style={{ color: 'var(--dim)' }}>
+                        {c.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+
+            <button
+              type="button"
+              disabled={!newName.trim() || create.isPending}
+              onClick={() => create.mutate()}
+              className="font-disp w-full rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] disabled:opacity-40"
+              style={{ background: 'var(--accent)', color: '#17130E' }}
+            >
+              Einlegen
+            </button>
+
+            <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+              Du bist danach allein auf dem Band und kannst Leute dazuholen. Jedes Mitglied darf
+              weitere holen.
+            </p>
+          </div>
+        ) : manage ? (
           <Members
             cassette={cassettes.find((c) => c.id === manage)!}
             onBack={() => setManage(null)}
@@ -180,60 +282,7 @@ export default function CassetteDeck() {
               refresh();
             }}
           />
-        ) : pickColor ? (
-          <div className="flex flex-col gap-5">
-            <div>
-              <p className="font-hand text-lg" style={{ color: 'var(--ink)' }}>
-                Welche Farbe soll das Band haben?
-              </p>
-              <p className="font-mono mt-1 text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-                Ohne Auswahl bleibt die automatisch zugewiesene Sorte.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2">
-              {Array.from({ length: PAIR_COUNT }, (_, idx) => {
-                const { case: c } = lookFor(pickColor, idx);
-                const isCurrent = looks.get(pickColor) === idx;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    disabled={chooseColor.isPending}
-                    onClick={() => chooseColor.mutate(idx)}
-                    className="flex flex-col items-center gap-1.5 rounded-xl p-2 disabled:opacity-50"
-                    style={{
-                      background: 'var(--card)',
-                      border: `1px solid ${isCurrent ? 'var(--accent)' : 'var(--line)'}`,
-                    }}
-                  >
-                    {/* Immer als Seite B gezeigt (unabhaengig davon, auf
-                        welcher Seite man gerade steht) — nur dort tragen die
-                        Sorten ihre Muster, und genau darum geht es hier. */}
-                    <MiniCassette id={pickColor} pairIndex={idx} active side="b" />
-                    <span className="font-mono text-center text-[0.52rem] uppercase tracking-[0.06em]" style={{ color: 'var(--dim)' }}>
-                      {c.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
-
-            <button
-              type="button"
-              onClick={() => {
-                setPickColor(null);
-                setActiveNav(null);
-              }}
-              className="font-mono rounded-lg px-4 py-2.5 text-[0.66rem] uppercase tracking-[0.1em]"
-              style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
-            >
-              Überspringen
-            </button>
-          </div>
-        ) : (
+) : (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               {/* Immer da, unabhaengig davon ob schon Storys existieren —
@@ -248,11 +297,11 @@ export default function CassetteDeck() {
                   setActiveNav(null);
                 }}
                 className="flex items-center gap-3 rounded-xl p-2.5 text-left"
-                style={{
-                  background: 'var(--card)',
-                  border: '1px solid color-mix(in srgb, #E0568C 45%, var(--line))',
-                  boxShadow: '0 0 0.9rem rgba(224,86,140,.16)',
-                }}
+                // Bewusst derselbe neutrale Rahmen wie bei Kliqtape: der
+                // frueher rosa leuchtende Rand sah aus wie "ausgewaehlt".
+                // Leuchten tut jetzt nur noch die eingelegte Gruppe. Story
+                // faellt weiterhin ueber Icon und Farbe der Beschriftung auf.
+                style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
               >
                 <StoryCassetteIcon />
                 <span className="min-w-0 flex-1">
@@ -302,19 +351,64 @@ export default function CassetteDeck() {
                 Gruppen
               </h3>
 
+              {/* Suche und Anlegen in einer Zeile, wie bei der Hot Line.
+                  Das Suchfeld erscheint erst ab dem ersten Band — mit leerem
+                  Fach waere es Ballast. Das Plus steht immer da und dank
+                  ml-auto immer an derselben Stelle, auch ohne Suchfeld. */}
+              <div className="flex items-center gap-2">
+                {cassettes.length > 0 && (
+                  <input
+                    value={groupQuery}
+                    onChange={(e) => setGroupQuery(e.target.value)}
+                    placeholder="Gruppe suchen …"
+                    className="min-w-0 flex-1 rounded-lg px-3 py-2 text-sm outline-none"
+                    style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewName('');
+                    setError(null);
+                    setCreating(true);
+                  }}
+                  aria-label="Neue Gruppe anlegen"
+                  title="Neue Gruppe"
+                  className="ml-auto grid size-9 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
+                  style={{ background: 'var(--accent)', color: '#17130E' }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                       strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M7 1v12M1 7h12" />
+                  </svg>
+                </button>
+              </div>
+
               {cassettes.length === 0 && (
                 <p className="font-hand py-6 text-center text-lg" style={{ color: 'var(--dim)' }}>
                   Noch kein Band im Fach.
                 </p>
               )}
 
-              {cassettes.map((c) => (
+              {cassettes.length > 0 && shownCassettes.length === 0 && (
+                <p className="font-mono py-6 text-center text-[0.64rem]" style={{ color: 'var(--dim)' }}>
+                  Keine Gruppe gefunden.
+                </p>
+              )}
+
+              {shownCassettes.map((c) => (
                 <div
                   key={c.id}
                   className="flex items-center gap-2 rounded-xl p-2.5"
                   style={{
                     background: 'var(--card)',
                     border: `1px solid ${c.id === cassetteId ? 'var(--accent)' : 'var(--line)'}`,
+                    // Nur die eingelegte Kassette leuchtet — das ist jetzt das
+                    // einzige "ausgewaehlt"-Signal im Fach.
+                    boxShadow:
+                      c.id === cassetteId
+                        ? '0 0 0.9rem color-mix(in srgb, var(--accent) 28%, transparent)'
+                        : undefined,
                   }}
                 >
                   <button
@@ -357,36 +451,6 @@ export default function CassetteDeck() {
               ))}
             </div>
 
-            <div className="flex flex-col gap-2 border-t pt-5" style={{ borderColor: 'var(--line)' }}>
-              <label className="font-mono text-[0.62rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
-                Neues Band beschriften
-              </label>
-              <div className="flex gap-2">
-                <input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  maxLength={40}
-                  placeholder="z. B. Freitagsrunde"
-                  className="font-hand min-w-0 flex-1 rounded-lg px-3 py-2.5 text-[1.05rem] outline-none"
-                  style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-                />
-                <button
-                  type="button"
-                  disabled={!newName.trim() || create.isPending}
-                  onClick={() => create.mutate()}
-                  className="font-disp rounded-lg px-4 py-2.5 text-sm font-bold uppercase tracking-[0.1em] disabled:opacity-40"
-                  style={{ background: 'var(--accent)', color: '#17130E' }}
-                >
-                  Einlegen
-                </button>
-              </div>
-              <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-                Du bist danach allein auf dem Band und kannst Leute dazuholen. Jedes Mitglied darf
-                weitere holen.
-              </p>
-            </div>
-
-            {invite && <p className="text-sm" style={{ color: 'var(--accent)' }}>{invite}</p>}
             {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
           </div>
         )}
@@ -420,7 +484,6 @@ export default function CassetteDeck() {
       onSuccess: () => {
         refresh();
         setAdd('');
-        setInvite('');
       },
       onError: fail,
     });
@@ -617,10 +680,49 @@ export default function CassetteDeck() {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Gemeinsame Geometrie aller Mini-Kassetten (Fach, Story, Kliqtape).
+   Spiegelt den Aufbau des grossen Kopfes (CassetteHeader.tsx) im Kleinen:
+   Etikett mit Farbband obendrauf, darunter das Sichtfenster mit den Spulen,
+   ganz unten der Fuss mit den vier Andockloechern — buendig auf der
+   Unterkante, genau wie am echten Vorbild.
+
+   Bewusst EINE Quelle fuer die Masse: die drei Icons sahen vorher
+   unterschiedlich aus und hatten noch den alten bunten Balken am unteren
+   Rand, den es am grossen Kopf laengst nicht mehr gibt.
+   --------------------------------------------------------------------------- */
+const MINI = {
+  label: { x: 3.5, y: 3, w: 39, h: 11.5, bandH: 3.5 },
+  window: { x: 3.5, y: 16.5, w: 39, h: 8.5 },
+  reel: { left: 13, right: 33, cy: 20.75, r: 3, hub: 1.1 },
+  /** Trapez: oben 16-85%, unten etwas breiter 12-90% — wie am Vorbild-Foto. */
+  foot: 'M7.4 27 H39.1 L41.4 32 H5.5 Z',
+  holes: [10.5, 17.5, 29.5, 36.5],
+} as const;
+
+/** Der Fuss samt Andockloechern. Die feine Lichtkante an der Oberkante laesst
+ *  ihn als vorstehendes Bauteil lesen, sonst waere er Flaeche auf Flaeche. */
+function MiniFoot({ fill, hole }: { fill: string; hole: string }) {
+  return (
+    <>
+      <path d={MINI.foot} fill={fill} />
+      <path d="M7.4 27 H39.1" stroke="rgba(255,255,255,.22)" strokeWidth="0.5" fill="none" />
+      {MINI.holes.map((x, i) =>
+        i === 0 || i === 3 ? (
+          <circle key={x} cx={x} cy="29.9" r="0.85" fill={hole} />
+        ) : (
+          <rect key={x} x={x - 0.35} y="29.3" width="0.7" height="1.25" rx="0.25" fill={hole} />
+        ),
+      )}
+    </>
+  );
+}
+
 /** Eigene, schimmernde Optik fuer die Story-Zeile — bewusst NICHT aus der
  *  Bandsorten-Palette (lookFor/PAIRS), die ist absichtlich gedeckt/vintage.
  *  Gold-Pink-Lila-Verlauf + kleine Glanzpunkte statt Marmor-Sprenkel, damit
- *  sofort klar ist: das ist keine Kassette wie die anderen. */
+ *  sofort klar ist: das ist keine Kassette wie die anderen. Aufbau (Etikett,
+ *  Fenster, Fuss) ist aber derselbe wie bei allen anderen. */
 function StoryCassetteIcon() {
   return (
     <svg width="46" height="32" viewBox="0 0 46 32" aria-hidden="true" className="shrink-0">
@@ -634,17 +736,32 @@ function StoryCassetteIcon() {
           <stop offset="0%" stopColor="#FFF6E9" />
           <stop offset="100%" stopColor="#FBD9C0" />
         </linearGradient>
+        <clipPath id="story-label-clip">
+          <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} rx="1" />
+        </clipPath>
       </defs>
       <rect width="46" height="32" rx="3" fill="url(#story-shell)" />
       <circle cx="6" cy="5" r="0.8" fill="#fff" opacity="0.9" />
-      <circle cx="40" cy="27" r="0.7" fill="#fff" opacity="0.8" />
-      <circle cx="41.5" cy="6" r="0.5" fill="#fff" opacity="0.7" />
-      <rect x="4" y="6" width="38" height="16" rx="1.5" fill="url(#story-label)" />
-      <circle cx="16" cy="14" r="4.5" fill="#F5C86B" />
-      <circle cx="30" cy="14" r="4.5" fill="#E0568C" />
-      <circle cx="16" cy="14" r="1.6" fill="url(#story-label)" />
-      <circle cx="30" cy="14" r="1.6" fill="url(#story-label)" />
-      <rect x="4" y="25" width="38" height="2" rx="1" fill="#fff" opacity="0.85" />
+      <circle cx="44" cy="14" r="0.5" fill="#fff" opacity="0.7" />
+      <circle cx="2" cy="20" r="0.6" fill="#fff" opacity="0.6" />
+
+      {/* Etikett mit Farbband oben */}
+      <g clipPath="url(#story-label-clip)">
+        <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} fill="url(#story-label)" />
+        <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.bandH} fill="#E0568C" />
+      </g>
+      <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} rx="1"
+            fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="0.5" />
+
+      {/* Sichtfenster mit den Spulen */}
+      <rect x={MINI.window.x} y={MINI.window.y} width={MINI.window.w} height={MINI.window.h} rx="1"
+            fill="rgba(52,20,62,.55)" stroke="rgba(255,255,255,.35)" strokeWidth="0.5" />
+      <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.r} fill="#F5C86B" />
+      <circle cx={MINI.reel.right} cy={MINI.reel.cy} r={MINI.reel.r} fill="#E0568C" />
+      <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.hub} fill="url(#story-label)" />
+      <circle cx={MINI.reel.right} cy={MINI.reel.cy} r={MINI.reel.hub} fill="url(#story-label)" />
+
+      <MiniFoot fill="rgba(255,255,255,.24)" hole="rgba(0,0,0,.4)" />
     </svg>
   );
 }
@@ -657,14 +774,31 @@ function StoryCassetteIcon() {
 function KliqtapeCassetteIcon() {
   return (
     <svg width="46" height="32" viewBox="0 0 46 32" aria-hidden="true" className="shrink-0">
+      <defs>
+        <clipPath id="kliqtape-label-clip">
+          <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} rx="1" />
+        </clipPath>
+      </defs>
+      {/* Umgekehrt zu allen anderen: helles Gehaeuse, dunkle Flaechen — das
+          ist die Wortmarke als Kassette, kein echtes Band. */}
       <rect width="46" height="32" rx="3" fill="var(--ink)" />
-      <rect x="4" y="6" width="38" height="16" rx="1.5" fill="var(--screen)" />
+
+      <g clipPath="url(#kliqtape-label-clip)">
+        <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} fill="var(--screen)" />
+        <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.bandH}
+              fill="var(--ink)" opacity="0.35" />
+      </g>
+
+      <rect x={MINI.window.x} y={MINI.window.y} width={MINI.window.w} height={MINI.window.h} rx="1"
+            fill="var(--screen)" />
       {/* linke Spule — voll, wie "Kliq" */}
-      <circle cx="16" cy="14" r="4.5" fill="var(--ink)" />
-      <circle cx="16" cy="14" r="1.6" fill="var(--screen)" />
+      <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.r} fill="var(--ink)" />
+      <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.hub} fill="var(--screen)" />
       {/* rechte Spule — nur Kontur, wie "tape" */}
-      <circle cx="30" cy="14" r="4.5" fill="none" stroke="var(--ink)" strokeWidth="1.4" />
-      <rect x="4" y="25" width="38" height="2" rx="1" fill="var(--ink)" />
+      <circle cx={MINI.reel.right} cy={MINI.reel.cy} r={MINI.reel.r - 0.4} fill="none"
+              stroke="var(--ink)" strokeWidth="1.1" />
+
+      <MiniFoot fill="var(--ink)" hole="var(--screen)" />
     </svg>
   );
 }
@@ -681,8 +815,10 @@ export function MiniCassette({ id, pairIndex, active, side, pop }:
   const paper = onB ? plastic.inner : type.label;
   const tape = onB ? plastic.shellHi : type.tape;
   const stripe = onB ? plastic.glow : type.stripe;
+  const windowBg = onB ? plastic.inner : type.shellDark;
   const shellGrad = `mini-shell-${uid}`;
   const reelGrad = `mini-reel-${uid}`;
+  const labelClip = `mini-label-${uid}`;
 
   return (
     <svg width="46" height="32" viewBox="0 0 46 32" aria-hidden="true" className="shrink-0"
@@ -708,6 +844,9 @@ export function MiniCassette({ id, pairIndex, active, side, pop }:
           <stop offset="40%" stopColor="#fff" stopOpacity="0" />
           <stop offset="100%" stopColor="#000" stopOpacity="0.4" />
         </radialGradient>
+        <clipPath id={labelClip}>
+          <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} rx="1" />
+        </clipPath>
       </defs>
       <rect width="46" height="32" rx="3" fill={shell} />
       {/* Marmor-/Konfetti-Sprenkel, nur bei gemusterten Sorten (plastic.fleck)
@@ -718,19 +857,35 @@ export function MiniCassette({ id, pairIndex, active, side, pop }:
                 fill={plastic.fleck![i % plastic.fleck!.length]} opacity={0.88} />
       ))}
       <rect width="46" height="32" rx="3" fill={`url(#${shellGrad})`} />
-      <rect x="4" y="6" width="38" height="16" rx="1.5" fill={paper} />
-      <circle cx="16" cy="14" r="4.5" fill={tape} />
-      <circle cx="30" cy="14" r="4.5" fill={tape} />
-      <circle cx="16" cy="14" r="4.5" fill={`url(#${reelGrad})`} />
-      <circle cx="30" cy="14" r="4.5" fill={`url(#${reelGrad})`} />
-      <circle cx="16" cy="14" r="1.6" fill={paper} />
-      <circle cx="30" cy="14" r="1.6" fill={paper} />
+
+      {/* Etikett: Papier mit dem Farbband der Bandsorte obendrauf — dieselbe
+          J-Card-Aufteilung wie am grossen Kopf. Das Farbband ersetzt den
+          frueheren bunten Balken am unteren Rand als Farbtraeger, ueber den
+          man seine Kassette im Fach wiedererkennt. */}
+      <g clipPath={`url(#${labelClip})`}>
+        <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} fill={paper} />
+        <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.bandH} fill={stripe} />
+      </g>
+      <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} rx="1"
+            fill="none" stroke="rgba(255,255,255,.22)" strokeWidth="0.5" />
+
+      {/* Sichtfenster mit den Spulen */}
+      <rect x={MINI.window.x} y={MINI.window.y} width={MINI.window.w} height={MINI.window.h} rx="1"
+            fill={windowBg} stroke="rgba(255,255,255,.22)" strokeWidth="0.5" />
+      <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.r} fill={tape} />
+      <circle cx={MINI.reel.right} cy={MINI.reel.cy} r={MINI.reel.r} fill={tape} />
+      <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.r} fill={`url(#${reelGrad})`} />
+      <circle cx={MINI.reel.right} cy={MINI.reel.cy} r={MINI.reel.r} fill={`url(#${reelGrad})`} />
+      <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.hub} fill={paper} />
+      <circle cx={MINI.reel.right} cy={MINI.reel.cy} r={MINI.reel.hub} fill={paper} />
+
       {/* dieselben Gebrauchsspuren wie am grossen Band */}
       {wear.scratches.slice(0, 2).map(([x, y, len], i) => (
         <line key={i} x1={x * 0.46} y1={y * 0.32} x2={(x + len) * 0.46} y2={y * 0.32 - 1}
               stroke="rgba(255,255,255,.25)" strokeWidth="0.4" />
       ))}
-      <rect x="4" y="25" width="38" height="2" rx="1" fill={stripe} opacity={active ? 0.9 : 0.5} />
+
+      <MiniFoot fill={shell} hole="rgba(0,0,0,.6)" />
     </svg>
   );
 }
