@@ -18,7 +18,7 @@ export default defineConfig({
         short_name: 'Kliqtape',
         description: 'Zwei Seiten. Eine Kassette.',
         theme_color: '#23201C',
-        background_color: '#171512',
+        background_color: '#181615',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',

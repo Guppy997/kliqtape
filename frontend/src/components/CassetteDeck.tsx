@@ -16,6 +16,7 @@ import { useBottomNav } from '@/store/navStore';
 import { useViewMode } from '@/store/viewStore';
 import { assignPairs, lookFor, PAIR_COUNT } from '@/lib/cassetteLook';
 import Avatar, { useProfiles } from './Avatar';
+import { CassetteFacePreview } from './CassetteHeader';
 import NavButton from './NavButton';
 import Sheet from './Sheet';
 
@@ -245,7 +246,7 @@ export default function CassetteDeck() {
                           ihre Muster, und genau darum geht es hier. Die Spuren
                           stammen von einem festen Vorschau-Band, die Farben
                           stimmen aber exakt mit dem spaeteren Ergebnis. */}
-                      <MiniCassette id="neu" pairIndex={idx} active side="b" />
+                      <MiniCassette id="neu" pairIndex={idx} active side="b" label={newName.trim() || undefined} />
                       <span className="font-mono text-center text-[0.52rem] uppercase tracking-[0.06em]" style={{ color: 'var(--dim)' }}>
                         {c.name}
                       </span>
@@ -396,7 +397,16 @@ export default function CassetteDeck() {
                 </p>
               )}
 
-              {shownCassettes.map((c) => (
+              {shownCassettes.map((c) => {
+                // Nicht eingelegte Baender zeigen immer Seite A — dieselbe
+                // Regel wie vorher bei MiniCassette (onB dort war
+                // "active && side === 'b'"): nur das gerade eingelegte Band
+                // folgt der tatsaechlichen Seite, alle anderen bleiben auf
+                // ihrer Typ-Optik stehen.
+                const rowSide = c.id === cassetteId ? side : 'a';
+                const { type, case: plastic } = lookFor(c.id, looks.get(c.id));
+                const glow = rowSide === 'b' ? plastic.glow : type.stripe;
+                return (
                 <div
                   key={c.id}
                   className="flex items-center gap-2 rounded-xl p-2.5"
@@ -420,7 +430,30 @@ export default function CassetteDeck() {
                     }}
                     className="flex min-w-0 flex-1 items-center gap-3 text-left"
                   >
-                    <MiniCassette id={c.id} pairIndex={looks.get(c.id)} active={c.id === cassetteId} side={side} pop />
+                    {/* Dieselbe Zeichnung wie der grosse Kopf und das Symbol
+                        oben links (CassetteHeader.tsx) — keine dritte,
+                        vereinfachte Nachbildung mehr. Ohne echtes Tape-Datum
+                        (das haette pro Zeile eine eigene Abfrage gebraucht)
+                        faellt die Vorschau auf "Position NNN" und
+                        "Seite X — ..." zurueck, genau wie beim Kopf, bevor
+                        ein Tape geladen ist. */}
+                    <span
+                      className="shrink-0"
+                      style={{
+                        opacity: c.id === cassetteId ? 1 : 0.72,
+                        filter: `drop-shadow(0 0.2rem 0.4rem rgba(0,0,0,.5)) drop-shadow(0 0 0.35rem ${glow}70)`,
+                      }}
+                    >
+                      <CassetteFacePreview
+                        side={rowSide}
+                        cassetteId={c.id}
+                        pairIndex={looks.get(c.id)}
+                        label={c.name}
+                        count={c.sideA + c.sideB}
+                        currentTape={null}
+                        width={60}
+                      />
+                    </span>
                     <span className="min-w-0 flex-1">
                       <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
                         {c.name}
@@ -448,7 +481,8 @@ export default function CassetteDeck() {
                     </svg>
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
@@ -718,6 +752,34 @@ function MiniFoot({ fill, hole }: { fill: string; hole: string }) {
   );
 }
 
+/** Text auf dem Etikett — Bandsorte im Farbband oben, Name im Beschriftungs-
+ *  feld darunter. Bewusst NICHT auf Lesbarkeit ausgelegt (Schriftgroesse
+ *  liegt weit unter jeder Mindestgroesse) — es geht um die Textur eines
+ *  wirklich beschrifteten Etiketts, nicht um Text zum Lesen. Der ueberge-
+ *  ordnete clipPath jeder Kassette schneidet zu lange Namen sauber ab, ganz
+ *  ohne eigene Kuerzungslogik. */
+function MiniLabelText({ band, body, bandColor, bodyColor }:
+  { band?: string; body?: string; bandColor: string; bodyColor: string }) {
+  return (
+    <>
+      {band && (
+        <text x={MINI.label.x + 1.6} y={MINI.label.y + MINI.label.bandH - 0.9}
+              fontSize="2.3" fontWeight="700" letterSpacing="0.02"
+              fill={bandColor} style={{ fontFamily: 'var(--font-disp)' }}>
+          {band}
+        </text>
+      )}
+      {body && (
+        <text x={MINI.label.x + 1.6} y={MINI.label.y + MINI.label.bandH + 5.7}
+              fontSize="4.6"
+              fill={bodyColor} style={{ fontFamily: 'var(--font-hand)' }}>
+          {body}
+        </text>
+      )}
+    </>
+  );
+}
+
 /** Eigene, schimmernde Optik fuer die Story-Zeile — bewusst NICHT aus der
  *  Bandsorten-Palette (lookFor/PAIRS), die ist absichtlich gedeckt/vintage.
  *  Gold-Pink-Lila-Verlauf + kleine Glanzpunkte statt Marmor-Sprenkel, damit
@@ -749,6 +811,7 @@ function StoryCassetteIcon() {
       <g clipPath="url(#story-label-clip)">
         <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} fill="url(#story-label)" />
         <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.bandH} fill="#E0568C" />
+        <MiniLabelText band="STORY" body="24H" bandColor="#FFF6E9" bodyColor="#7A3E58" />
       </g>
       <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} rx="1"
             fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="0.5" />
@@ -787,6 +850,7 @@ function KliqtapeCassetteIcon() {
         <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} fill="var(--screen)" />
         <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.bandH}
               fill="var(--ink)" opacity="0.35" />
+        <MiniLabelText band="KLIQTAPE" body="NEWS" bandColor="var(--screen)" bodyColor="var(--ink)" />
       </g>
 
       <rect x={MINI.window.x} y={MINI.window.y} width={MINI.window.w} height={MINI.window.h} rx="1"
@@ -804,9 +868,13 @@ function KliqtapeCassetteIcon() {
 }
 
 /** Miniaturband — zeigt echte Bandsorte, Spuren und Streifen. Auch vom
- *  Tape-Regal genutzt (Shelf.tsx), daher exportiert. */
-export function MiniCassette({ id, pairIndex, active, side, pop }:
-  { id: string; pairIndex?: number; active: boolean; side: 'a' | 'b'; pop?: boolean }) {
+ *  Tape-Regal genutzt (Shelf.tsx), daher exportiert.
+ *
+ *  `label` ist der Name der Kassette (oder beim Anlegen der gerade
+ *  eingetippte Name) — steht in echt-klein auf dem Etikett, genau wie am
+ *  grossen Kopf, nur ohne Anspruch auf Lesbarkeit bei der Groesse. */
+export function MiniCassette({ id, pairIndex, active, side, pop, label }:
+  { id: string; pairIndex?: number; active: boolean; side: 'a' | 'b'; pop?: boolean; label?: string }) {
   const uid = useId();
   const { type, case: plastic, wear } = lookFor(id, pairIndex);
   const onB = active && side === 'b';
@@ -816,6 +884,9 @@ export function MiniCassette({ id, pairIndex, active, side, pop }:
   const tape = onB ? plastic.shellHi : type.tape;
   const stripe = onB ? plastic.glow : type.stripe;
   const windowBg = onB ? plastic.inner : type.shellDark;
+  const ink = onB ? plastic.ink : type.ink;
+  const bandInk = onB ? plastic.ink : type.stripeInk;
+  const sortName = onB ? plastic.name : type.name;
   const shellGrad = `mini-shell-${uid}`;
   const reelGrad = `mini-reel-${uid}`;
   const labelClip = `mini-label-${uid}`;
@@ -865,6 +936,7 @@ export function MiniCassette({ id, pairIndex, active, side, pop }:
       <g clipPath={`url(#${labelClip})`}>
         <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} fill={paper} />
         <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.bandH} fill={stripe} />
+        <MiniLabelText band={sortName} body={label} bandColor={bandInk} bodyColor={ink} />
       </g>
       <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} rx="1"
             fill="none" stroke="rgba(255,255,255,.22)" strokeWidth="0.5" />

@@ -34,11 +34,11 @@ const FLIP_MS = 180;
  * Der Kopf klebt NICHT mehr oben — er steht im normalen Fluss und scrollt
  * weg. Es gibt deshalb keinen halb eingeklappten Zwischenzustand mehr: die
  * Kassette ist ganz da oder ganz weg, zurueck geholt ueber das kleine
- * Kassetten-Symbol in der oberen Leiste (App.tsx). Das hat die frueheren
- * Hoehen-Interpolationen samt "Settling"-Fenster ueberfluessig gemacht.
+ * Kassetten-Symbol in der oberen Leiste (App.tsx, CassetteFacePreview unten).
  *
- * Geblieben ist die Spulen-Anzeige: links wird duenner, rechts dicker, je
- * weiter man im Band ist.
+ * Die eigentliche Zeichnung steckt in CassetteFace — diese Komponente hier
+ * liefert nur noch Zustand (Scroll-Fuellstand, Umdrehen-Animation) und
+ * Interaktivitaet drumherum.
  */
 export default function CassetteHeader({ cassetteId, pairIndex, label, count, currentTape }: Props) {
   const side = useApp((s) => s.side);
@@ -102,8 +102,7 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
   }
 
   // Linke Spule = Rueckspulen (aeltester Stand), rechte = Vorspulen
-  // (aktuellster Stand) — wie an einem echten Deck. Eigene Tasten statt Teil
-  // der Umdrehen-Flaeche, damit beides nebeneinander bedienbar bleibt.
+  // (aktuellster Stand) — wie an einem echten Deck.
   function scrollToStart(e: React.MouseEvent) {
     e.stopPropagation();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -113,12 +112,70 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
   }
 
+  const rLeft = R_MAX - (R_MAX - R_MIN) * progress;
+  const rRight = R_MIN + (R_MAX - R_MIN) * progress;
+
+  return (
+    <header className="px-3 pb-2 pt-3">
+      <div className="mx-auto max-w-xl" style={{ perspective: '900px' }}>
+        <CassetteFace
+          side={side}
+          cassetteId={cassetteId}
+          pairIndex={pairIndex}
+          label={label}
+          count={count}
+          currentTape={currentTape}
+          reelLeft={rLeft}
+          reelRight={rRight}
+          flipping={flipping}
+          onFlip={flip}
+          onScrollStart={scrollToStart}
+          onScrollEnd={scrollToEnd}
+        />
+      </div>
+    </header>
+  );
+}
+
+interface FaceProps {
+  side: Side;
+  cassetteId: string | null;
+  pairIndex?: number;
+  label: string;
+  count: number;
+  currentTape?: { dateLabel: string; shortName: string; fullName: string } | null;
+  reelLeft: number;
+  reelRight: number;
+  /** Nur beim grossen, interaktiven Kopf gesetzt — waehrend des Umdrehens
+   *  kurzzeitig im 3D-Kontext (siehe Kommentar am transform unten). */
+  flipping?: boolean;
+  /** Fehlen diese drei, ist die Flaeche rein dekorativ: kein role="button",
+   *  keine Spulen-Tasten, kein Cursor. Fuer die kleine Vorschau (App.tsx) —
+   *  dort uebernimmt ein umschliessendes <button> das Tippen, verschachtelte
+   *  interaktive Elemente waeren ungueltiges HTML. */
+  onFlip?: () => void;
+  onScrollStart?: (e: React.MouseEvent) => void;
+  onScrollEnd?: (e: React.MouseEvent) => void;
+}
+
+/**
+ * Die eigentliche Zeichnung der Kassette — Gehaeuse, Etikett, Sichtfenster,
+ * Fuss. Komplett zustandslos, reine Funktion ihrer Props.
+ *
+ * Bewusst als einzige Quelle fuer "wie sieht eine Kassette aus": vorher gab
+ * es hier eine zweite, vereinfachte Nachbildung fuer die kleine Vorschau
+ * (ohne Logo, ohne Tape-Nummer, ohne Datumszeile) — die beiden Versionen
+ * liefen bei jeder Detailaenderung am grossen Kopf auseinander. Jetzt nutzt
+ * die Vorschau (CassetteFacePreview) exakt dieselbe Funktion, nur skaliert.
+ */
+function CassetteFace({
+  side, cassetteId, pairIndex, label, count, currentTape,
+  reelLeft, reelRight, flipping, onFlip, onScrollStart, onScrollEnd,
+}: FaceProps) {
   const look = lookFor(cassetteId ?? '', pairIndex);
   const { type, case: plastic, wear } = look;
   const isA = side === 'a';
-
-  const rLeft = R_MAX - (R_MAX - R_MIN) * progress;
-  const rRight = R_MIN + (R_MAX - R_MIN) * progress;
+  const interactive = Boolean(onFlip);
 
   // Gehaeuse: gefaerbtes Plastik, fein gerippt wie eine echte Schale.
   const shellStyle = isA
@@ -173,164 +230,216 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
   // unter.
   const frame = isA ? 'rgba(255,255,255,.18)' : `${plastic.shellHi}88`;
 
-  // Kein eigenes sticky/Hintergrund mehr hier — App.tsx umschliesst diesen
-  // Kopf jetzt zusammen mit der Erstellen/Filter/Regal/Profil-Zeile in EINEM
-  // gemeinsamen sticky-Block, damit beide zusammen oben kleben bleiben,
-  // statt dass nur der Kopf klebt und die Zeile darunter wegscrollt.
   return (
-    <header className="px-3 pb-2 pt-3">
-      <div className="mx-auto max-w-xl" style={{ perspective: '900px' }}>
-        {/* Kein <button> mehr, sonst duerften die Spulen darin (siehe unten)
-            nicht selbst klickbar sein — verschachtelte interaktive Elemente
-            sind ungueltig. Tastatur bleibt bedienbar (role/tabIndex/onKeyDown). */}
+    <div
+      {...(interactive
+        ? {
+            role: 'button' as const,
+            tabIndex: 0,
+            onClick: onFlip,
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onFlip?.();
+              }
+            },
+            'aria-label': `Seite ${side.toUpperCase()} von ${label} — tippen für Seite ${isA ? 'B' : 'A'}`,
+            'aria-disabled': !cassetteId,
+          }
+        : { 'aria-hidden': true })}
+      className={`relative block w-full overflow-hidden rounded-xl px-3 pb-2.5 pt-3 text-left ${interactive ? 'cursor-pointer' : ''}`}
+      style={{
+        ...shellStyle,
+        opacity: cassetteId ? 1 : 0.6,
+        transition: interactive ? `transform ${FLIP_MS}ms ease-in-out, background-image 450ms ease` : undefined,
+        // Nur WAEHREND des Umdrehens tatsaechlich in einem 3D-Kontext
+        // (rotateY) — im Ruhezustand 'none' statt 'rotateY(0deg)'.
+        // Dauerhaft aktiver 3D-Transform + das backdrop-filter im
+        // sticky Header darueber ist ein bekanntes WebKit/Blink-Repaint-
+        // Problem: der Text-Layer bleibt nach einem Seitenwechsel manchmal
+        // leer stehen, obwohl Rahmen/Hintergrund korrekt neu zeichnen.
+        // 'none' im Ruhezustand nimmt den Browser aus diesem staendigen
+        // 3D-Kontext raus. Die Vorschau ist nie im 3D-Kontext.
+        transform: flipping ? 'rotateY(90deg)' : 'none',
+      }}
+    >
+      <Wear wear={wear} light={isA ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.32)'} />
+      <Screws tint={isA ? 'rgba(0,0,0,.35)' : `${plastic.inner}88`} />
+
+      {/* ---- Aufgeklebtes Etikett ------------------------------------
+          Sichtbarer Rahmen wie am Vorbild-Foto. Auf dem dunklen Gehaeuse
+          muss die Kante HELL sein (Lichtkante der Kunststoffform) — eine
+          dunkle Kontur wie beim hellen Gehaeuse waere hier schlicht
+          unsichtbar, schwarz auf schwarz. */}
+      <div
+        className="relative overflow-hidden rounded-[3px]"
+        style={{
+          transform: `rotate(${wear.tilt}deg)`,
+          background: `linear-gradient(180deg, ${paper}, ${paperDeep})`,
+          border: `1px solid ${frame}`,
+          boxShadow: '0 1px 3px rgba(0,0,0,.5)',
+        }}
+      >
+        {/* Farbband oben, wie der bedruckte Kopf einer echten J-Card */}
         <div
-          role="button"
-          tabIndex={0}
-          onClick={flip}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              flip();
-            }
-          }}
-          aria-label={`Seite ${side.toUpperCase()} von ${label} — tippen für Seite ${isA ? 'B' : 'A'}`}
-          aria-disabled={!cassetteId}
-          className="relative block w-full cursor-pointer overflow-hidden rounded-xl px-3 pb-2.5 pt-3 text-left"
-          style={{
-            ...shellStyle,
-            opacity: cassetteId ? 1 : 0.6,
-            transition: `transform ${FLIP_MS}ms ease-in-out, background-image 450ms ease`,
-            // Nur WAEHREND des Umdrehens tatsaechlich in einem 3D-Kontext
-            // (rotateY) — im Ruhezustand 'none' statt 'rotateY(0deg)'.
-            // Dauerhaft aktiver 3D-Transform + das backdrop-filter im
-            // sticky Header darueber (siehe <header> oben) ist ein
-            // bekanntes WebKit/Blink-Repaint-Problem: der Text-Layer
-            // bleibt nach einem Seitenwechsel manchmal leer stehen,
-            // obwohl Rahmen/Hintergrund korrekt neu zeichnen — genau das
-            // gemeldete Bild. 'none' im Ruhezustand nimmt den Browser aus
-            // diesem staendigen 3D-Kontext raus.
-            transform: flipping ? 'rotateY(90deg)' : 'none',
-          }}
+          className="flex items-center justify-between gap-2 px-2.5 py-1"
+          style={{ background: band, color: bandInk }}
         >
-          <Wear wear={wear} light={isA ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.32)'} />
-          <Screws tint={isA ? 'rgba(0,0,0,.35)' : `${plastic.inner}88`} />
-
-          {/* ---- Aufgeklebtes Etikett ------------------------------------
-              Sichtbarer Rahmen wie am Vorbild-Foto. Auf dem dunklen Gehaeuse
-              muss die Kante HELL sein (Lichtkante der Kunststoffform) — eine
-              dunkle Kontur wie beim hellen Gehaeuse waere hier schlicht
-              unsichtbar, schwarz auf schwarz. */}
-          <div
-            className="relative overflow-hidden rounded-[3px]"
-            style={{
-              transform: `rotate(${wear.tilt}deg)`,
-              background: `linear-gradient(180deg, ${paper}, ${paperDeep})`,
-              border: `1px solid ${frame}`,
-              boxShadow: '0 1px 3px rgba(0,0,0,.5)',
-            }}
-          >
-            {/* Farbband oben, wie der bedruckte Kopf einer echten J-Card */}
-            <div
-              className="flex items-center justify-between gap-2 px-2.5 py-1"
-              style={{ background: band, color: bandInk }}
-            >
-              <span className="flex min-w-0 items-baseline gap-2">
-                <span style={{ '--ink': bandInk } as React.CSSProperties}>
-                  <Lockup size="0.92rem" />
-                </span>
-                <span className="font-disp truncate text-[0.55rem] uppercase tracking-[0.18em] opacity-90">
-                  {isA ? type.name : plastic.name}
-                </span>
-              </span>
-              <span className="font-mono shrink-0 text-[0.5rem] uppercase tracking-[0.16em] opacity-80">
-                {/* Ecke zeigt immer nur die kurze Nummernform, nie einen
-                    umbenannten Namen — hier ist kein Platz fuers Umbrechen. */}
-                {currentTape ? currentTape.shortName : `Position ${count.toString().padStart(3, '0')}`}
-              </span>
-            </div>
-
-            {/* Beschriftungsfeld mit Linien — hier steht der Name der Runde.
-                Feste Hoehe: seit der Kopf wegscrollt statt einzuklappen,
-                gibt es hier nichts mehr zu interpolieren. */}
-            <div className="overflow-hidden px-3 pb-1">
-              <div className="pt-2" style={{ borderBottom: `1px solid ${rule}` }}>
-                <span className="font-hand block truncate pb-0.5 text-[1.25rem] leading-tight" style={{ color: ink }}>
-                  {label}
-                </span>
-              </div>
-              <div className="pt-1.5" style={{ borderBottom: `1px solid ${rule}` }}>
-                <span className="font-hand block truncate pb-0.5 text-[0.95rem] leading-tight opacity-70" style={{ color: ink }}>
-                  {/* Seite A zeigt den (ggf. umbenannten) Tape-Namen, Seite B
-                      immer nur "Gruppenchat" — Tape-Namen sind ein Konzept
-                      des Archivs, nicht des laufenden Gesprächs. */}
-                  {currentTape
-                    ? `${currentTape.dateLabel} — ${isA ? currentTape.fullName : SIDE_LABEL.b}`
-                    : `Seite ${side.toUpperCase()} — ${SIDE_LABEL[side]}`}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* ---- Sichtfenster mit den Spulen ------------------------------
-              Derselbe sichtbare Rahmen wie am Etikett — beide zusammen
-              lesen sich als EIN gerahmter Bereich, wie beim Vorbild,
-              statt als getrennte Bauteile. */}
-          <div
-            className="relative mt-2.5 flex items-center justify-around rounded-[3px] px-4 py-1"
-            style={{
-              background: windowBg,
-              border: `1px solid ${frame}`,
-              boxShadow: `0 1px 0 rgba(255,255,255,.09), 0 2px 6px rgba(0,0,0,.5) inset`,
-            }}
-          >
-            <button
-              type="button"
-              onClick={scrollToStart}
-              aria-label={isA ? 'Zurueck an den Bandanfang' : 'Zum Anfang des Gesprächs'}
-              className="shrink-0 rounded-full transition-transform active:scale-90"
-            >
-              <Reel r={rLeft} tape={isA ? type.tape : plastic.shell} hub={isA ? type.hub : plastic.shellHi} />
-            </button>
-            {/* Seitenkennung im Kasten, wie aufgedruckt */}
-            <span
-              className="font-disp grid size-8 shrink-0 place-items-center rounded-[2px] text-[1.15rem] font-bold leading-none"
-              style={{
-                color: isA ? type.stripe : '#fff',
-                border: `1px solid ${isA ? type.stripe : plastic.glow}`,
-                textShadow: isA ? 'none' : `0 0 0.6rem ${plastic.glow}`,
-              }}
-            >
-              {side.toUpperCase()}
+          <span className="flex min-w-0 items-baseline gap-2">
+            <span style={{ '--ink': bandInk } as React.CSSProperties}>
+              <Lockup size="0.92rem" />
             </span>
-            <button
-              type="button"
-              onClick={scrollToEnd}
-              aria-label={isA ? 'Vor zum aktuellsten Stand' : 'Zum Ende des Gesprächs'}
-              className="shrink-0 rounded-full transition-transform active:scale-90"
-            >
-              <Reel r={rRight} tape={isA ? type.tape : plastic.shell} hub={isA ? type.hub : plastic.shellHi} />
-            </button>
+            <span className="font-disp truncate text-[0.55rem] uppercase tracking-[0.18em] opacity-90">
+              {isA ? type.name : plastic.name}
+            </span>
+          </span>
+          <span className="font-mono shrink-0 text-[0.5rem] uppercase tracking-[0.16em] opacity-80">
+            {/* Ecke zeigt immer nur die kurze Nummernform, nie einen
+                umbenannten Namen — hier ist kein Platz fuers Umbrechen. */}
+            {currentTape ? currentTape.shortName : `Position ${count.toString().padStart(3, '0')}`}
+          </span>
+        </div>
+
+        {/* Beschriftungsfeld mit Linien — hier steht der Name der Runde. */}
+        <div className="overflow-hidden px-3 pb-1">
+          <div className="pt-2" style={{ borderBottom: `1px solid ${rule}` }}>
+            <span className="font-hand block truncate pb-0.5 text-[1.25rem] leading-tight" style={{ color: ink }}>
+              {label}
+            </span>
           </div>
-
-          {/* Nur noch ein kleines Zeichen statt Text+Balken — im normalen
-              Fluss zwischen Fenster und Fuss platziert (nicht absolut ueber
-              der vollen Gehaeusehoehe), damit es nicht mit dem jetzt viel
-              groesseren Fuss zusammenstoesst. */}
-          <p className="relative mt-1 text-right text-[0.95rem] leading-none" aria-hidden="true">
-            <span style={{ color: isA ? '#8C8272' : `${plastic.ink}b0` }}>↻</span>
-          </p>
-
-          {/* ---- Fuss mit Andockloechern -----------------------------------
-              Das charakteristische Detail am unteren Rand einer echten
-              Kassette (Bandeinzugsmechanik greift hier ein). */}
-          <Foot
-            tint={isA ? type.shell : plastic.shell}
-            hi={isA ? type.shellHi : plastic.shellHi}
-            dark={isA ? type.shellDark : plastic.inner}
-          />
+          <div className="pt-1.5" style={{ borderBottom: `1px solid ${rule}` }}>
+            <span className="font-hand block truncate pb-0.5 text-[0.95rem] leading-tight opacity-70" style={{ color: ink }}>
+              {/* Seite A zeigt den (ggf. umbenannten) Tape-Namen, Seite B
+                  immer nur "Gruppenchat" — Tape-Namen sind ein Konzept
+                  des Archivs, nicht des laufenden Gesprächs. */}
+              {currentTape
+                ? `${currentTape.dateLabel} — ${isA ? currentTape.fullName : SIDE_LABEL.b}`
+                : `Seite ${side.toUpperCase()} — ${SIDE_LABEL[side]}`}
+            </span>
+          </div>
         </div>
       </div>
-    </header>
+
+      {/* ---- Sichtfenster mit den Spulen ------------------------------
+          Derselbe sichtbare Rahmen wie am Etikett — beide zusammen
+          lesen sich als EIN gerahmter Bereich, wie beim Vorbild,
+          statt als getrennte Bauteile. */}
+      <div
+        className="relative mt-2.5 flex items-center justify-around rounded-[3px] px-4 py-1"
+        style={{
+          background: windowBg,
+          border: `1px solid ${frame}`,
+          boxShadow: `0 1px 0 rgba(255,255,255,.09), 0 2px 6px rgba(0,0,0,.5) inset`,
+        }}
+      >
+        <ReelButton onClick={onScrollStart} label={isA ? 'Zurueck an den Bandanfang' : 'Zum Anfang des Gesprächs'}>
+          <Reel r={reelLeft} tape={isA ? type.tape : plastic.shell} hub={isA ? type.hub : plastic.shellHi} />
+        </ReelButton>
+        {/* Seitenkennung im Kasten, wie aufgedruckt */}
+        <span
+          className="font-disp grid size-8 shrink-0 place-items-center rounded-[2px] text-[1.15rem] font-bold leading-none"
+          style={{
+            color: isA ? type.stripe : '#fff',
+            border: `1px solid ${isA ? type.stripe : plastic.glow}`,
+            textShadow: isA ? 'none' : `0 0 0.6rem ${plastic.glow}`,
+          }}
+        >
+          {side.toUpperCase()}
+        </span>
+        <ReelButton onClick={onScrollEnd} label={isA ? 'Vor zum aktuellsten Stand' : 'Zum Ende des Gesprächs'}>
+          <Reel r={reelRight} tape={isA ? type.tape : plastic.shell} hub={isA ? type.hub : plastic.shellHi} />
+        </ReelButton>
+      </div>
+
+      {/* Nur ein kleines Zeichen statt Text+Balken — im normalen Fluss
+          zwischen Fenster und Fuss platziert. */}
+      <p className="relative mt-1 text-right text-[0.95rem] leading-none" aria-hidden="true">
+        <span style={{ color: isA ? '#8C8272' : `${plastic.ink}b0` }}>↻</span>
+      </p>
+
+      {/* ---- Fuss mit Andockloechern -----------------------------------
+          Das charakteristische Detail am unteren Rand einer echten
+          Kassette (Bandeinzugsmechanik greift hier ein). */}
+      <Foot
+        tint={isA ? type.shell : plastic.shell}
+        hi={isA ? type.shellHi : plastic.shellHi}
+        dark={isA ? type.shellDark : plastic.inner}
+      />
+    </div>
+  );
+}
+
+/** Spulen-Taste: mit Handler ein echter <button>, sonst eine reine <span> —
+ *  eine Vorschau ohne eigene Spul-Funktion soll kein eigenes Tipp-Ziel sein,
+ *  das nur den umschliessenden Tippbereich stoeren wuerde. */
+function ReelButton({ onClick, label, children }:
+  { onClick?: (e: React.MouseEvent) => void; label: string; children: React.ReactNode }) {
+  if (!onClick) {
+    return <span className="shrink-0">{children}</span>;
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="shrink-0 rounded-full transition-transform active:scale-90"
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Referenz-Breite, bei der CassetteFace ihre Masse (Reels, Etikett, Fuss —
+ *  alles rem/px-basiert, nicht prozentual) natuerlich rendert. Fuer die
+ *  Vorschau wird bei dieser Breite gezeichnet und dann per CSS-Transform auf
+ *  die Zielgroesse herunterskaliert — deshalb ist der genaue Wert unkritisch,
+ *  er muss nur gross genug sein, dass Reels/Badge nicht zusammenstossen. */
+const FACE_REF_WIDTH = 400;
+/** Grob gemessenes Seitenverhaeltnis bei der Referenzbreite (Breite/Hoehe) —
+ *  legt nur die Groesse des Vorschau-Rahmens fest, damit kein Sprung
+ *  entsteht, waehrend das eigentliche Bild laedt. */
+const FACE_ASPECT = '400 / 258';
+
+/**
+ * Kleine, nicht-interaktive Vorschau der echten Kassette — exakt dieselbe
+ * Zeichnung wie der grosse Kopf (CassetteFace), nur herunterskaliert statt
+ * separat nachgebaut. Fuer das Kassetten-Symbol in der oberen Leiste
+ * (App.tsx): zeigt beim Einklappen des Panels, welche Kassette gerade
+ * eingelegt ist, mit echtem Etikett inklusive Logo, Bandsorte, Name und
+ * Tape-Nummer — nicht nur einer vereinfachten Nachbildung.
+ *
+ * Die Spulen stehen auf "halb voll", da eine Vorschau keine eigene
+ * Scroll-Position hat, an der sich ein Fuellstand ablesen liesse.
+ */
+export function CassetteFacePreview({ side, cassetteId, pairIndex, label, count, currentTape, width }:
+  {
+    side: Side; cassetteId: string | null; pairIndex?: number; label: string;
+    count: number; currentTape?: { dateLabel: string; shortName: string; fullName: string } | null;
+    width: number;
+  }) {
+  const scale = width / FACE_REF_WIDTH;
+  const mid = (R_MAX + R_MIN) / 2;
+  // rounded-xl waere hier ein fixer 12px-Radius, gedacht fuer die grosse,
+  // ~400px breite Kassette — auf einem 46-60px-Icon macht dieselben 12px
+  // eine auffaellig runde Ecke statt der Kante, die MiniCassette & Co. mit
+  // ihrem SVG-rx=3 (3/46 der Breite) zeigen. Deshalb hier proportional zur
+  // Breite, im selben Verhaeltnis wie dort.
+  const radius = width * (3 / 46);
+  return (
+    <div className="overflow-hidden" style={{ width, aspectRatio: FACE_ASPECT, borderRadius: radius }}>
+      <div style={{ width: FACE_REF_WIDTH, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+        <CassetteFace
+          side={side}
+          cassetteId={cassetteId}
+          pairIndex={pairIndex}
+          label={label}
+          count={count}
+          currentTape={currentTape}
+          reelLeft={mid}
+          reelRight={mid}
+        />
+      </div>
+    </div>
   );
 }
 

@@ -5,8 +5,8 @@ import { useApp, SIDE_LABEL } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
 import { useViewMode } from '@/store/viewStore';
 import { berlinDateLabel, tapeIndexOf } from '@/lib/berlinDay';
-import CassetteHeader from '@/components/CassetteHeader';
-import { MiniCassette, useCassettes, useLookIndex } from '@/components/CassetteDeck';
+import CassetteHeader, { CassetteFacePreview } from '@/components/CassetteHeader';
+import { useCassettes, useLookIndex } from '@/components/CassetteDeck';
 import { lookFor } from '@/lib/cassetteLook';
 import ChatThread from '@/components/ChatThread';
 import Composer from '@/components/Composer';
@@ -45,7 +45,7 @@ export default function App() {
     const vars: Record<string, string> =
       side === 'a'
         ? {
-            '--screen': `color-mix(in srgb, ${type.shell} 15%, #14120f)`,
+            '--screen': `color-mix(in srgb, ${type.shell} 15%, #181615)`,
             '--accent': type.stripe,
             '--card': `color-mix(in srgb, ${type.shell} 28%, #201d19)`,
             '--line': `color-mix(in srgb, ${type.shellHi} 32%, #322c25)`,
@@ -316,11 +316,17 @@ function Deck() {
                   title={current?.name ?? 'Kassette'}
                   className="shrink-0 transition-transform active:scale-95"
                 >
-                  <MiniCassette
-                    id={cassetteId}
-                    pairIndex={looks.get(cassetteId)}
-                    active
+                  {/* Dieselbe Zeichnung wie der grosse Kopf, nur herunter-
+                      skaliert (siehe CassetteHeader.tsx) — nicht mehr die
+                      vereinfachte Nachbildung ohne Logo/Tape-Nummer/Datum. */}
+                  <CassetteFacePreview
                     side={side}
+                    cassetteId={cassetteId}
+                    pairIndex={looks.get(cassetteId)}
+                    label={current?.name ?? 'Kein Band'}
+                    count={data.length}
+                    currentTape={currentTape}
+                    width={60}
                   />
                 </button>
               )}

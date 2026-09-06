@@ -99,7 +99,7 @@ export default function StoryView({ open, onClose }: Props) {
   return (
     <Sheet open={open} onClose={onClose} variant="full" title="Storys">
       {activeGroup && activeStory ? (
-        <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: '#000' }}>
+        <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: '#181615' }}>
           {/* Fortschrittsbalken, ein Segment pro Story dieser Person */}
           <div className="flex gap-1 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
             {activeGroup.stories.map((s, i) => (

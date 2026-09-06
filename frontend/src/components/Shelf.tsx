@@ -275,7 +275,7 @@ function TapeRowItem({
       }}
     >
       <button type="button" onClick={onJump} aria-label={`${cassette.name}, ${name} ansehen`} className="shrink-0">
-        <MiniCassette id={cassette.id} pairIndex={pairIndex} active={active} side="a" />
+        <MiniCassette id={cassette.id} pairIndex={pairIndex} active={active} side="a" label={cassette.name} />
       </button>
 
       <div className="min-w-0 flex-1">

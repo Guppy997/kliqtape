@@ -14,7 +14,7 @@
   --color-a-label-2: #d3c6aa;
   --color-a-tape: #5c3a21;
   --color-a-stripe: #b8462c;
-  --color-a-screen: #171512;
+  --color-a-screen: #181615;
   --color-a-card: #201d19;
   --color-a-line: #322c25;
   --color-a-dim: #9a8f7c;
@@ -42,7 +42,9 @@ body,
 
 body {
   margin: 0;
-  background: #0e0d0b;
+  /* Warm Charcoal statt Schwarz — auch dieser Grundton (Ladeblitz vor React,
+     Rand ausserhalb von max-w-xl) soll warm wirken, nicht neutral-schwarz. */
+  background: #181615;
   color: var(--color-a-label);
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

@@ -10,6 +10,49 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.32.6',
+    date: '2026-09-06',
+    changes: [
+      'Der dunkle Grundton der App ist jetzt überall derselbe warme Anthrazit statt drei leicht unterschiedlicher Schwarztöne',
+    ],
+  },
+  {
+    version: '0.32.5',
+    date: '2026-08-17',
+    changes: [
+      'Kassetten-Icon oben links und im Kassettenfach hatte eine unpassend runde Ecke — jetzt genauso kantig wie bei Story und Kliqtape',
+    ],
+  },
+  {
+    version: '0.32.4',
+    date: '2026-08-17',
+    changes: [
+      'Pinch- und Doppeltipp-Zoom sind jetzt gesperrt — versehentliches Reinzoomen sah wie ein abgeschnittenes Layout aus, ist aber keins',
+    ],
+  },
+  {
+    version: '0.32.3',
+    date: '2026-08-17',
+    changes: [
+      'Die Bänder im Kassettenfach zeigen jetzt dieselbe Zeichnung wie oben links und der große Kopf — Logo, Bandsorte und Name statt der vereinfachten Vorschau',
+    ],
+  },
+  {
+    version: '0.32.2',
+    date: '2026-08-17',
+    changes: [
+      'Kassetten-Symbol oben links ist jetzt keine Nachbildung mehr, sondern dieselbe Zeichnung wie der große Kopf, nur verkleinert — mit echtem Logo, Bandsorte, Name und Tape-Nummer',
+    ],
+  },
+  {
+    version: '0.32.1',
+    date: '2026-08-17',
+    changes: [
+      'Mini-Kassetten tragen jetzt echte Beschriftung: Bandsorte im Farbband, Name im Etikett — wie am großen Kopf, nur klein',
+      'Beim Anlegen zeigt die Farbauswahl live den gerade eingetippten Namen',
+    ],
+  },
+  {
     version: '0.32.0',
     date: '2026-08-16',
     changes: [
