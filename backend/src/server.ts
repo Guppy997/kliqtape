@@ -417,19 +417,133 @@ app.patch('/api/cassettes/:id', (req, res) => {
   res.json({ id: row.id, name: row.name, colorSeed: row.color_seed, colorIndex: row.color_index });
 });
 
-// Jedes Mitglied darf jemanden holen — wie im echten Freundeskreis.
-app.post('/api/cassettes/:id/members', (req, res) => {
+// Jedes Mitglied darf jemanden einladen — wie im echten Freundeskreis, nur
+// dass die eingeladene Person selbst zustimmen muss (siehe cassette_invites
+// in db.ts). Vorher landete member hier sofort in cassette_members, ganz
+// ohne dass die geholte Person je gefragt wurde.
+app.post('/api/cassettes/:id/invites', (req, res) => {
   const by = String(req.body?.by ?? '').trim();
-  const member = String(req.body?.member ?? '').trim().slice(0, 40);
-  if (!member) throw new HttpError(400, 'Wen denn?');
+  const invitee = String(req.body?.invitee ?? '').trim().slice(0, 40);
+  if (!invitee) throw new HttpError(400, 'Wen denn?');
   requireMember(req, req.params.id, by);
 
-  db.prepare(
-    `INSERT OR IGNORE INTO cassette_members (cassette_id, member, added_by, joined_at)
-     VALUES (?, ?, ?, ?)`,
-  ).run(req.params.id, member, by, Date.now());
+  const already = db
+    .prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`)
+    .get(req.params.id, invitee);
+  if (already) throw new HttpError(409, `${invitee} ist schon auf dem Band`);
 
-  res.status(201).json({ member, addedBy: by });
+  // INSERT OR IGNORE greift bei einer bereits offenen Einladung (UNIQUE auf
+  // cassette_id+invitee) — die neu erzeugte id waere dann eine Karteileiche,
+  // die zu keiner Zeile gehoert. .changes verrät, ob wirklich eingefuegt
+  // wurde; sonst wird die ID der schon bestehenden Einladung zurueckgegeben.
+  const id = randomUUID();
+  const result = db
+    .prepare(
+      `INSERT OR IGNORE INTO cassette_invites (id, cassette_id, invitee, invited_by, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    )
+    .run(id, req.params.id, invitee, by, Date.now());
+
+  const finalId =
+    result.changes > 0
+      ? id
+      : (
+          db
+            .prepare(`SELECT id FROM cassette_invites WHERE cassette_id = ? AND invitee = ?`)
+            .get(req.params.id, invitee) as { id: string }
+        ).id;
+
+  res.status(201).json({ id: finalId, invitee, invitedBy: by });
+});
+
+/** Wirft 404, wenn die Einladung nicht existiert. */
+function loadInvite(id: string) {
+  const row = db
+    .prepare(
+      `SELECT ci.id, ci.cassette_id, ci.invitee, ci.invited_by, ci.created_at, c.name AS cassette_name
+         FROM cassette_invites ci
+         JOIN cassettes c ON c.id = ci.cassette_id
+        WHERE ci.id = ?`,
+    )
+    .get(id) as
+    | { id: string; cassette_id: string; invitee: string; invited_by: string; created_at: number; cassette_name: string }
+    | undefined;
+  if (!row) throw new HttpError(404, 'Einladung nicht gefunden');
+  return row;
+}
+
+// Alle offenen Einladungen einer Person — landet in der Benachrichtigung,
+// nicht in einer eigenen Inbox (siehe AnsweringMachine.tsx).
+app.get('/api/invites', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+
+  const rows = db
+    .prepare(
+      `SELECT ci.id, ci.cassette_id, ci.invitee, ci.invited_by, ci.created_at, c.name AS cassette_name,
+              c.color_seed, c.color_index
+         FROM cassette_invites ci
+         JOIN cassettes c ON c.id = ci.cassette_id
+        WHERE ci.invitee = ?
+        ORDER BY ci.created_at DESC`,
+    )
+    .all(me) as {
+    id: string;
+    cassette_id: string;
+    invitee: string;
+    invited_by: string;
+    created_at: number;
+    cassette_name: string;
+    color_seed: string | null;
+    color_index: number | null;
+  }[];
+
+  res.json(
+    rows.map((r) => ({
+      id: r.id,
+      cassetteId: r.cassette_id,
+      cassetteName: r.cassette_name,
+      invitedBy: r.invited_by,
+      createdAt: r.created_at,
+      // Damit die Benachrichtigung dieselbe Bandsorte zeigen kann wie das
+      // Fach spaeter, sobald die Einladung angenommen ist — sonst wuerde die
+      // Kassette dort erst nach dem Zustimmen ihre Farbe bekommen.
+      colorSeed: r.color_seed,
+      colorIndex: r.color_index,
+    })),
+  );
+});
+
+app.post('/api/invites/:id/accept', (req, res) => {
+  const me = String(req.body?.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+
+  const invite = loadInvite(req.params.id);
+  if (invite.invitee !== me) throw new HttpError(403, 'Das ist nicht deine Einladung');
+
+  db.transaction(() => {
+    db.prepare(`DELETE FROM cassette_invites WHERE id = ?`).run(invite.id);
+    db.prepare(
+      `INSERT OR IGNORE INTO cassette_members (cassette_id, member, added_by, joined_at)
+       VALUES (?, ?, ?, ?)`,
+    ).run(invite.cassette_id, me, invite.invited_by, Date.now());
+  })();
+
+  res.json({ cassetteId: invite.cassette_id, cassetteName: invite.cassette_name });
+});
+
+app.post('/api/invites/:id/decline', (req, res) => {
+  const me = String(req.body?.me ?? '').trim();
+  if (!me) throw new HttpError(400, 'me fehlt');
+  requireIdentity(req, me);
+
+  const invite = loadInvite(req.params.id);
+  if (invite.invitee !== me) throw new HttpError(403, 'Das ist nicht deine Einladung');
+
+  db.prepare(`DELETE FROM cassette_invites WHERE id = ?`).run(invite.id);
+  res.status(204).end();
 });
 
 app.delete('/api/cassettes/:id/members/:member', (req, res) => {

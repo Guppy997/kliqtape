@@ -10,6 +10,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.33.1',
+    date: '2026-09-07',
+    changes: [
+      'Einladungen und Kassetten mit Neuem zeigen jetzt die echte Bandsorte statt eines reinen Text-/Punkt-Eintrags',
+      'Einladungen zeigen zusätzlich, wie lange sie schon offen sind',
+    ],
+  },
+  {
+    version: '0.33.0',
+    date: '2026-09-07',
+    changes: [
+      'Jemanden auf ein Band holen ist jetzt eine Einladung, keine sofortige Mitgliedschaft mehr — die eingeladene Person muss erst zustimmen',
+      'Benachrichtigung zeigt offene Einladungen mit Zustimmen/Ablehnen statt einer Hot-Line-Zahl, die der Hot-Line-Knopf eh schon selbst zeigt',
+    ],
+  },
+  {
     version: '0.32.6',
     date: '2026-09-06',
     changes: [

@@ -1,11 +1,11 @@
 import { useId, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  addMember,
   createCassette,
   deleteCassette,
   fetchCassettes,
   fetchMembers,
+  inviteMember,
   removeMember,
   renameCassette,
   setCassetteColorIndex,
@@ -269,8 +269,8 @@ export default function CassetteDeck() {
             </button>
 
             <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-              Du bist danach allein auf dem Band und kannst Leute dazuholen. Jedes Mitglied darf
-              weitere holen.
+              Du bist danach allein auf dem Band und kannst Leute einladen. Jedes Mitglied darf
+              weitere einladen.
             </p>
           </div>
         ) : manage ? (
@@ -513,12 +513,9 @@ export default function CassetteDeck() {
     const foundKnown = query ? known.filter((n) => n.toLowerCase().includes(query)) : known;
     const isNewName = query.length > 0 && !known.some((n) => n.toLowerCase() === query);
 
-    const doAdd = useMutation({
-      mutationFn: (who: string) => addMember(cassette.id, who, me),
-      onSuccess: () => {
-        refresh();
-        setAdd('');
-      },
+    const doInvite = useMutation({
+      mutationFn: (who: string) => inviteMember(cassette.id, who, me),
+      onSuccess: () => setAdd(''),
       onError: fail,
     });
     const doRemove = useMutation({
@@ -594,7 +591,7 @@ export default function CassetteDeck() {
                 </span>
                 {m.addedBy !== m.name && (
                   <span className="font-mono block text-[0.56rem]" style={{ color: 'var(--dim)' }}>
-                    geholt von {m.addedBy}
+                    eingeladen von {m.addedBy}
                   </span>
                 )}
               </span>
@@ -618,13 +615,13 @@ export default function CassetteDeck() {
 
         <section className="flex flex-col gap-2">
           <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
-            Jemanden holen
+            Jemanden einladen
           </h3>
           <input
             value={add}
             onChange={(e) => setAdd(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && add.trim() && !doAdd.isPending) doAdd.mutate(add.trim());
+              if (e.key === 'Enter' && add.trim() && !doInvite.isPending) doInvite.mutate(add.trim());
             }}
             maxLength={40}
             placeholder="Suchen oder neuen Namen eintippen"
@@ -637,8 +634,8 @@ export default function CassetteDeck() {
               <button
                 key={n}
                 type="button"
-                disabled={doAdd.isPending}
-                onClick={() => doAdd.mutate(n)}
+                disabled={doInvite.isPending}
+                onClick={() => doInvite.mutate(n)}
                 className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left disabled:opacity-50"
                 style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
               >
@@ -651,14 +648,14 @@ export default function CassetteDeck() {
             {isNewName && (
               <button
                 type="button"
-                disabled={doAdd.isPending}
-                onClick={() => doAdd.mutate(add.trim())}
+                disabled={doInvite.isPending}
+                onClick={() => doInvite.mutate(add.trim())}
                 className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left disabled:opacity-50"
                 style={{ background: 'var(--card)', border: '1px dashed var(--line)' }}
               >
                 <Avatar name={add.trim()} side={side} size={1.4} />
                 <span className="min-w-0 flex-1 truncate text-sm" style={{ color: 'var(--ink)' }}>
-                  „{add.trim()}“ neu holen
+                  „{add.trim()}“ neu einladen
                 </span>
                 <span aria-hidden="true" className="font-disp text-base font-bold" style={{ color: 'var(--accent)' }}>+</span>
               </button>
@@ -672,7 +669,8 @@ export default function CassetteDeck() {
           </div>
 
           <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-            Jedes Mitglied darf jemanden holen — wer wen geholt hat, steht oben und bleibt sichtbar.
+            Jedes Mitglied darf jemanden einladen — dabei ist die Person erst, wenn sie in ihren
+            Benachrichtigungen zustimmt.
           </p>
         </section>
 

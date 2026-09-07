@@ -160,6 +160,20 @@ db.exec(`
     created_at INTEGER NOT NULL
   );
 
+  -- Eine Einladung ist eine Kassetten-Mitgliedschaft, die erst gilt, wenn
+  -- die eingeladene Person zustimmt — anders als frueher, wo "jemanden
+  -- holen" sofort ein cassette_members-Eintrag war, ganz ohne Zustimmung
+  -- der geholten Person. Kein status-Feld: die Zeile existiert nur,
+  -- solange sie offen ist (siehe server.ts, accept/decline loeschen sie).
+  CREATE TABLE IF NOT EXISTS cassette_invites (
+    id          TEXT PRIMARY KEY,
+    cassette_id TEXT NOT NULL REFERENCES cassettes(id) ON DELETE CASCADE,
+    invitee     TEXT NOT NULL,
+    invited_by  TEXT NOT NULL,
+    created_at  INTEGER NOT NULL,
+    UNIQUE (cassette_id, invitee)
+  );
+
   -- Storys: kassettenuebergreifend sichtbar fuer jeden, mit dem man in
   -- IRGENDEINER Kassette zusammen ist (siehe server.ts, die Netzwerk-Abfrage
   -- ueber cassette_members) — anders als posts, das strikt an eine einzelne
@@ -211,6 +225,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_tape_favorites_member ON cassette_tape_favorites(cassette_id, member);
   CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories(expires_at);
   CREATE INDEX IF NOT EXISTS idx_stories_author_time ON stories(author, created_at);
+  CREATE INDEX IF NOT EXISTS idx_invites_invitee ON cassette_invites(invitee, created_at);
 `);
 
 /* ---------------------------------------------------------------------------

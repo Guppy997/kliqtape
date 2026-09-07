@@ -1,41 +1,69 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchHotlineThreads } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { acceptInvite, declineInvite, fetchInvites } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
-import { useCassetteNews } from './CassetteDeck';
-import { HOTLINE_AMBER } from './ChatThread';
+import { MiniCassette, useCassetteNews, useLookIndex } from './CassetteDeck';
 import NavButton from './NavButton';
 import Sheet from './Sheet';
+
+/** "vor 5 Min.", "vor 3 Std." — grob genuegt hier, niemand braucht die
+ *  Sekunde genau, ob eine Einladung 2 oder 3 Minuten alt ist. */
+function timeAgo(ms: number): string {
+  const min = Math.floor((Date.now() - ms) / 60_000);
+  if (min < 1) return 'gerade eben';
+  if (min < 60) return `vor ${min} Min.`;
+  const std = Math.floor(min / 60);
+  if (std < 24) return `vor ${std} Std.`;
+  const tage = Math.floor(std / 24);
+  return `vor ${tage} ${tage === 1 ? 'Tag' : 'Tagen'}`;
+}
 
 /**
  * Die Benachrichtigung — was ist neu, egal auf welchem Band.
  *
- * Reine Uebersicht, keine eigene Inbox: "Leitungen" listete frueher jede
- * Hot-Line-Unterhaltung nochmal einzeln auf — genau dieselben Daten, die
- * der Hot-Line-Knopf selbst schon als "Weiterschreiben" zeigt. Doppelt
- * gepflegt, doppelt zu lesen. Jetzt nur noch eine zusammengefasste Zeile
- * ("Leitungen — 12 ungelesene Nachrichten"), die direkt zu Hot Line
- * springt. Kassetten-Neuigkeiten bleiben einzeln aufgelistet, weil es
- * dafuer sonst nirgends eine Uebersicht gibt (das Regal zeigt alle
- * Kassetten, nicht nur die mit Neuigkeiten).
+ * Frueher stand hier auch eine zusammengefasste Hot-Line-Zeile
+ * ("Leitungen — 12 ungelesene Nachrichten") — dieselbe Zahl zeigt der
+ * Hot-Line-Knopf in der unteren Leiste aber schon selbst als Badge, doppelt
+ * gepflegt und ohne eigenen Mehrwert hier. Jetzt reine Uebersicht ueber
+ * zwei Dinge, fuer die es sonst nirgends eine gibt: offene Einladungen
+ * (muessen bestaetigt werden, bevor man wirklich auf einem Band ist — siehe
+ * cassette_invites in db.ts) und Kassetten mit ungesehenen Beitraegen.
+ *
+ * Beide Zeilenarten zeigen die echte Bandsorte der Kassette (MiniCassette,
+ * dieselbe Zeichnung wie im Fach) statt eines reinen Text-/Punkt-Eintrags —
+ * eine Benachrichtigung ohne jedes Bild ihrer Kassette sah neben dem Rest
+ * der App (die ueberall mit der eigenen Bandsorte arbeitet) kahl aus.
  */
 export default function AnsweringMachine() {
   const me = useApp((s) => s.me);
+  const side = useApp((s) => s.side);
   const setCassette = useApp((s) => s.setCassette);
   const navActive = useBottomNav((s) => s.active);
   const setActiveNav = useBottomNav((s) => s.setActive);
   const open = navActive === 'notify';
+  const qc = useQueryClient();
 
-  const { data: threads = [] } = useQuery({
-    queryKey: ['hotline-threads', me],
-    queryFn: () => fetchHotlineThreads(me),
+  const { data: invites = [] } = useQuery({
+    queryKey: ['invites', me],
+    queryFn: () => fetchInvites(me),
     enabled: Boolean(me),
     refetchInterval: 20_000,
   });
   const cassetteNews = useCassetteNews();
+  const looks = useLookIndex();
 
-  const unreadLines = threads.reduce((n, t) => n + t.unread, 0);
-  const notifCount = unreadLines + cassetteNews.length;
+  const notifCount = invites.length + cassetteNews.length;
+
+  const respond = useMutation({
+    mutationFn: async ({ id, accept }: { id: string; accept: boolean }): Promise<void> => {
+      if (accept) await acceptInvite(id, me);
+      else await declineInvite(id, me);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['invites', me] });
+      void qc.invalidateQueries({ queryKey: ['cassettes', me] });
+    },
+  });
 
   return (
     <>
@@ -61,8 +89,66 @@ export default function AnsweringMachine() {
             </p>
           )}
 
+          {invites.length > 0 && (
+            <section className="flex flex-col gap-2.5">
+              <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
+                Einladungen · {invites.length}
+              </h3>
+              {invites.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex flex-col gap-3 rounded-xl p-3"
+                  style={{ background: 'var(--card)', border: '1px solid var(--accent)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Ohne fest gewaehlte Bandsorte (colorIndex) faellt das
+                        auf denselben Hash-Automatismus zurueck wie im Fach
+                        (colorSeed, sonst die ID) — dieselbe Sorte, die die
+                        Kassette auch nach dem Zustimmen dort zeigen wird. */}
+                    <MiniCassette
+                      id={inv.colorIndex != null ? inv.cassetteId : inv.colorSeed || inv.cassetteId}
+                      pairIndex={inv.colorIndex ?? undefined}
+                      active
+                      side="a"
+                      label={inv.cassetteName}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm leading-snug" style={{ color: 'var(--ink)' }}>
+                        <span className="font-semibold">{inv.invitedBy}</span> lädt dich zu{' '}
+                        <span className="font-semibold">{inv.cassetteName}</span> ein
+                      </p>
+                      <p className="font-mono mt-0.5 text-[0.56rem] uppercase tracking-[0.08em]" style={{ color: 'var(--dim)' }}>
+                        {timeAgo(inv.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      disabled={respond.isPending}
+                      onClick={() => respond.mutate({ id: inv.id, accept: false })}
+                      className="font-mono shrink-0 px-1.5 text-[0.62rem] uppercase tracking-[0.06em] disabled:opacity-50"
+                      style={{ color: 'var(--dim)' }}
+                    >
+                      Ablehnen
+                    </button>
+                    <button
+                      type="button"
+                      disabled={respond.isPending}
+                      onClick={() => respond.mutate({ id: inv.id, accept: true })}
+                      className="font-disp shrink-0 rounded-lg px-3 py-1.5 text-[0.72rem] font-bold uppercase tracking-[0.08em] disabled:opacity-50"
+                      style={{ background: 'var(--accent)', color: '#17130E' }}
+                    >
+                      Zustimmen
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
           {cassetteNews.length > 0 && (
-            <section className="flex flex-col gap-2">
+            <section className="flex flex-col gap-2.5">
               <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
                 Kassetten · {cassetteNews.length}
               </h3>
@@ -77,42 +163,20 @@ export default function AnsweringMachine() {
                   className="rise flex items-center gap-3 rounded-xl p-3 text-left"
                   style={{ background: 'var(--card)', border: '1px solid var(--accent)' }}
                 >
-                  <span className="size-2 shrink-0 rounded-full" style={{ background: 'var(--accent)' }} />
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: 'var(--ink)' }}>
-                    {c.name}
+                  <MiniCassette id={c.id} pairIndex={looks.get(c.id)} active side={side} label={c.name} />
+                  <span className="min-w-0 flex-1">
+                    <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
+                      {c.name}
+                    </span>
+                    <span className="font-mono block text-[0.58rem] uppercase tracking-[0.08em]" style={{ color: 'var(--accent)' }}>
+                      Neuer Beitrag
+                    </span>
                   </span>
-                  <span className="font-mono shrink-0 text-[0.6rem] uppercase tracking-[0.08em]" style={{ color: 'var(--dim)' }}>
-                    neu
+                  <span className="font-mono shrink-0 text-[0.6rem]" style={{ color: 'var(--dim)' }}>
+                    →
                   </span>
                 </button>
               ))}
-            </section>
-          )}
-
-          {unreadLines > 0 && (
-            <section className="flex flex-col gap-2">
-              <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
-                Leitungen
-              </h3>
-              <button
-                type="button"
-                onClick={() => setActiveNav('hotline')}
-                className="rise flex items-center gap-3 rounded-xl p-3 text-left"
-                style={{ background: 'var(--card)', border: `1px solid ${HOTLINE_AMBER}` }}
-              >
-                <span
-                  className="font-mono shrink-0 rounded-full px-2 py-0.5 text-[0.7rem] tabular-nums"
-                  style={{ background: HOTLINE_AMBER, color: '#20180A' }}
-                >
-                  {unreadLines}
-                </span>
-                <span className="min-w-0 flex-1 text-sm font-semibold" style={{ color: 'var(--ink)' }}>
-                  {unreadLines === 1 ? 'ungelesene Nachricht' : 'ungelesene Nachrichten'}
-                </span>
-                <span className="font-mono shrink-0 text-[0.6rem]" style={{ color: 'var(--dim)' }}>
-                  →
-                </span>
-              </button>
             </section>
           )}
         </div>

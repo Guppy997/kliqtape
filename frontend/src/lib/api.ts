@@ -46,6 +46,18 @@ export interface Member {
   joinedAt: number;
 }
 
+/** Eine offene Einladung auf ein Band — muss von invitee erst angenommen
+ *  werden, bevor daraus eine echte Mitgliedschaft wird. */
+export interface Invite {
+  id: string;
+  cassetteId: string;
+  cassetteName: string;
+  invitedBy: string;
+  createdAt: number;
+  colorSeed: string | null;
+  colorIndex: number | null;
+}
+
 export function fetchCassettes(me: string): Promise<Cassette[]> {
   return apiFetch(`/api/cassettes?me=${encodeURIComponent(me)}`).then(unwrap<Cassette[]>);
 }
@@ -95,12 +107,34 @@ export function setCassetteColorIndex(
   }).then(unwrap<{ id: string; colorIndex: number | null }>);
 }
 
-export function addMember(id: string, member: string, by: string): Promise<Member> {
-  return apiFetch(`/api/cassettes/${id}/members`, {
+/** Legt eine Einladung an — die Person ist erst Mitglied, wenn sie zustimmt
+ *  (siehe fetchInvites/acceptInvite unten). */
+export function inviteMember(id: string, invitee: string, by: string): Promise<{ id: string }> {
+  return apiFetch(`/api/cassettes/${id}/invites`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ member, by }),
-  }).then(unwrap<Member>);
+    body: JSON.stringify({ invitee, by }),
+  }).then(unwrap<{ id: string }>);
+}
+
+export function fetchInvites(me: string): Promise<Invite[]> {
+  return apiFetch(`/api/invites?me=${encodeURIComponent(me)}`).then(unwrap<Invite[]>);
+}
+
+export function acceptInvite(id: string, me: string): Promise<{ cassetteId: string; cassetteName: string }> {
+  return apiFetch(`/api/invites/${id}/accept`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me }),
+  }).then(unwrap<{ cassetteId: string; cassetteName: string }>);
+}
+
+export function declineInvite(id: string, me: string): Promise<void> {
+  return apiFetch(`/api/invites/${id}/decline`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me }),
+  }).then(unwrap<void>);
 }
 
 export function removeMember(id: string, member: string, by: string): Promise<void> {
