@@ -605,7 +605,8 @@ app.delete('/api/cassettes/:id', (req, res) => {
  * Posts
  * ---------------------------------------------------------------------- */
 
-interface FeedItem extends Omit<PostRow, 'media_id' | 'tape_id' | 'cassette_id' | 'expires_at' | 'note_style'> {
+interface FeedItem
+  extends Omit<PostRow, 'media_id' | 'tape_id' | 'cassette_id' | 'expires_at' | 'note_style' | 'quoted_post_id'> {
   cassetteId: string;
   mediaId: string | null;
   durationMs: number | null;
@@ -617,6 +618,8 @@ interface FeedItem extends Omit<PostRow, 'media_id' | 'tape_id' | 'cassette_id' 
   tonfetzenCount: number;
   iSentTonfetzen: boolean;
   noteStyle: NoteStyle | null;
+  quotedPostId: string | null;
+  quotedPost: { id: string; author: string; kind: Kind; body: string; mediaId: string | null } | null;
 }
 
 app.get('/api/posts', (req, res) => {
@@ -639,10 +642,13 @@ app.get('/api/posts', (req, res) => {
     .prepare(
       `SELECT p.*, m.duration_ms AS duration_ms,
               t.title AS tape_title, t.cover_id AS tape_cover,
-              (SELECT COUNT(*) FROM mixtape_tracks mt WHERE mt.mixtape_id = t.id) AS tape_tracks
+              (SELECT COUNT(*) FROM mixtape_tracks mt WHERE mt.mixtape_id = t.id) AS tape_tracks,
+              q.author AS quoted_author, q.kind AS quoted_kind, q.body AS quoted_body,
+              q.media_id AS quoted_media_id
          FROM posts p
          LEFT JOIN media m ON m.id = p.media_id
          LEFT JOIN mixtapes t ON t.id = p.tape_id
+         LEFT JOIN posts q ON q.id = p.quoted_post_id
         WHERE p.side = ? AND p.cassette_id = ?
         ORDER BY p.created_at ASC`,
     )
@@ -651,6 +657,10 @@ app.get('/api/posts', (req, res) => {
     tape_title: string | null;
     tape_cover: string | null;
     tape_tracks: number | null;
+    quoted_author: string | null;
+    quoted_kind: Kind | null;
+    quoted_body: string | null;
+    quoted_media_id: string | null;
   })[];
 
   // Tonfetzen sind eine private Geste: wie viele Reaktionen ein Beitrag hat, sieht
@@ -707,6 +717,16 @@ app.get('/api/posts', (req, res) => {
       tonfetzenCount: row.author === me ? countByPost.get(row.id) ?? 0 : 0,
       iSentTonfetzen: mineByPost.has(row.id),
       noteStyle: (row.note_style as NoteStyle | null) ?? null,
+      quotedPostId: row.quoted_post_id,
+      quotedPost: row.quoted_post_id
+        ? {
+            id: row.quoted_post_id,
+            author: row.quoted_author ?? '',
+            kind: row.quoted_kind ?? 'text',
+            body: row.quoted_body ?? '',
+            mediaId: row.quoted_media_id,
+          }
+        : null,
     };
   });
 
@@ -848,8 +868,10 @@ app.delete('/api/cassettes/:id/tapes/:tapeIndex/favorite', (req, res) => {
 });
 
 app.post('/api/posts', (req, res) => {
-  const { cassetteId, side, author, kind, body = '', mediaId = null, tapeId = null, source = null, noteStyle = null } =
-    req.body ?? {};
+  const {
+    cassetteId, side, author, kind, body = '', mediaId = null, tapeId = null, source = null,
+    noteStyle = null, quotedPostId = null,
+  } = req.body ?? {};
 
   if (!SIDES.includes(side)) throw new HttpError(400, 'side muss a oder b sein');
   if (!KINDS.includes(kind)) throw new HttpError(400, 'Unbekannte Post-Art');
@@ -883,12 +905,26 @@ app.post('/api/posts', (req, res) => {
     if (!tape.sealed_at) throw new HttpError(400, 'Erst versiegeln, dann teilen');
   }
 
+  // Bruecke von Seite A zu Seite B: eine Chat-Nachricht darf sich auf einen
+  // Archiv-Beitrag beziehen ("dazu schreiben"). Nur in diese eine Richtung,
+  // sonst waere das eine zweite, verwirrende Bedeutung von "Zitat" auf
+  // derselben Seite, auf der der Beitrag selbst steht.
+  if (quotedPostId != null) {
+    if (side !== 'b') throw new HttpError(400, 'Beziehen kann man sich nur in Seite B auf einen Beitrag');
+    const quoted = db
+      .prepare(`SELECT cassette_id, side FROM posts WHERE id = ?`)
+      .get(quotedPostId) as { cassette_id: string | null; side: Side } | undefined;
+    if (!quoted) throw new HttpError(404, 'Beitrag nicht gefunden');
+    if (quoted.cassette_id !== cassetteId) throw new HttpError(400, 'Beitrag gehört zu einer anderen Kassette');
+    if (quoted.side !== 'a') throw new HttpError(400, 'Nur Beiträge von Seite A lassen sich aufgreifen');
+  }
+
   const id = randomUUID();
   const now = Date.now();
   db.prepare(
     `INSERT INTO posts (id, cassette_id, side, author, kind, body, media_id, tape_id, source,
-                        note_style, expires_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        note_style, quoted_post_id, expires_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     cassetteId,
@@ -900,6 +936,7 @@ app.post('/api/posts', (req, res) => {
     kind === 'tape' ? tapeId : null,
     source === 'upload' ? 'upload' : 'camera',
     kind === 'text' ? noteStyle : null,
+    quotedPostId,
     // Beide Seiten sind dauerhaft — siehe db.ts fuer die Historie dazu.
     null,
     now,

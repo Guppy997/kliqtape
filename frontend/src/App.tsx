@@ -99,6 +99,13 @@ const FILTERS: { key: Kind | 'all'; label: string }[] = [
   { key: 'video', label: KIND_LABEL.video },
   { key: 'text', label: KIND_LABEL.text },
 ];
+/** Auf Seite A ist "Zettel" ein bewusst gestalteter Beitragstyp (Tesa/Pin/
+ *  Tacker-Optik). Auf Seite B ist reiner Text aber der Normalfall jeder
+ *  Nachricht, keine besondere Kategorie — als Filter zeigt er dort einfach
+ *  den ganzen Chat, nur in der falschen (Zettel-)Optik statt als Sprechblase.
+ *  Foto/O-Ton/Mixtape/Clip bleiben, weil die auf beiden Seiten dasselbe
+ *  bedeuten: ein echter, seltener Sonderfall innerhalb des Bands. */
+const FILTERS_B = FILTERS.filter((f) => f.key !== 'text');
 
 function Deck() {
   const me = useApp((s) => s.me);
@@ -361,7 +368,7 @@ function Deck() {
               eigener Bildschirm fuer eine so kurze Auswahl. */}
           {filterOpen && (
             <div className="glass-chip flex flex-wrap gap-1.5 rounded-lg p-2">
-              {FILTERS.map((f) => {
+              {(side === 'b' ? FILTERS_B : FILTERS).map((f) => {
                 const n = f.key === 'all' ? data.length : data.filter((p) => p.kind === f.key).length;
                 if (n === 0 && f.key !== 'all') return null;
                 return (

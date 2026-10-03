@@ -10,6 +10,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.34.0',
+    date: '2026-09-08',
+    changes: [
+      'Neu: "Reagieren" auf einem Seite-A-Beitrag klappt zu Seite B und hängt ihn dort als Zitat an eine Chat-Nachricht — Archiv und Gespräch bleiben getrennt, lassen sich aber gezielt verbinden',
+    ],
+  },
+  {
+    version: '0.33.2',
+    date: '2026-09-08',
+    changes: [
+      'Der "Zettel"-Filter ist auf Seite B raus — Gruppenchat-Nachrichten sahen dabei aus wie beklebte Zettel statt wie normale Sprechblasen',
+    ],
+  },
+  {
     version: '0.33.1',
     date: '2026-09-07',
     changes: [

@@ -431,6 +431,11 @@ addColumn('hotline_messages', 'kind', "kind TEXT NOT NULL DEFAULT 'text'", 'Nach
 addColumn('hotline_messages', 'media_id', 'media_id TEXT REFERENCES media(id)', 'Foto/Video/O-Ton');
 addColumn('hotline_messages', 'tape_id', 'tape_id TEXT REFERENCES mixtapes(id)', 'geteiltes Mixtape');
 addColumn('hotline_messages', 'source', 'source TEXT', 'Kamera oder Galerie, wie bei posts');
+// Bruecke von Seite A zu Seite B: eine Chat-Nachricht kann sich auf einen
+// Archiv-Beitrag beziehen ("dazu schreiben"), ohne die beiden Seiten zu
+// vermischen — die Referenz ist rein optional und aendert nichts an dem,
+// worauf sie zeigt. NULL bei allen bisherigen Nachrichten (kein Backfill noetig).
+addColumn('posts', 'quoted_post_id', 'quoted_post_id TEXT REFERENCES posts(id)', 'Bezug auf einen Seite-A-Beitrag aus einer Seite-B-Nachricht');
 
 /**
  * Bestehende Beitraege haben noch keine Kassette. Damit nichts verlorengeht,
@@ -503,6 +508,7 @@ export interface PostRow {
   tape_id: string | null;
   source: 'camera' | 'upload' | null;
   note_style: string | null;
+  quoted_post_id: string | null;
   created_at: number;
 }
 

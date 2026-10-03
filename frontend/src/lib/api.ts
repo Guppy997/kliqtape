@@ -231,6 +231,10 @@ export interface FeedItem {
   /** Ob ich selbst schon einen Tonfetzen geschickt habe — wer genau, sieht niemand ausser der postenden Person. */
   iSentTonfetzen: boolean;
   noteStyle: NoteStyle | null;
+  /** Nur auf Seite B gesetzt — Bruecke zu einem Seite-A-Beitrag, auf den
+   *  diese Nachricht eingeht ("dazu schreiben"). */
+  quotedPostId: string | null;
+  quotedPost: { id: string; author: string; kind: Kind; body: string; mediaId: string | null } | null;
   /** Nur lokal, nie vom Server — optimistisch angehaengt, waehrend der Post
    *  noch unterwegs ist (siehe lib/chat.ts). */
   pending?: boolean;
@@ -322,6 +326,8 @@ export function createPost(input: {
   tapeId?: string | null;
   source?: 'camera' | 'upload';
   noteStyle?: NoteStyle | null;
+  /** Nur auf Seite B: bezieht sich diese Nachricht auf einen Seite-A-Beitrag. */
+  quotedPostId?: string | null;
 }): Promise<{ id: string }> {
   return apiFetch('/api/posts', {
     method: 'POST',

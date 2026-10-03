@@ -12,6 +12,7 @@ import {
   type HotlineThreadDetail,
   type Kind,
 } from './api';
+import type { QuotedPreview } from '@/store/quoteStore';
 
 /**
  * Gemeinsame Nachrichtenform fuer Hot Line (1:1) und Seite B (Gruppe) — die
@@ -29,6 +30,9 @@ export interface ChatMessage {
   tapeId: string | null;
   tape: { title: string; coverId: string | null; trackCount: number } | null;
   source: 'camera' | 'upload' | null;
+  /** Nur Seite B — Bruecke zu einem Seite-A-Beitrag, auf den diese Nachricht
+   *  eingeht. Bei Hot Line immer undefined, das Konzept gibt es dort nicht. */
+  quotedPost?: { id: string; author: string; kind: Kind; body: string; mediaId: string | null } | null;
   /** Optimistisch angehaengt, Server hat noch nicht bestaetigt. */
   pending?: boolean;
 }
@@ -38,7 +42,8 @@ export interface ChatMessage {
 export interface ChatController {
   messages: ChatMessage[];
   other: string;
-  send: (body: string) => Promise<void>;
+  /** `quote` nur auf Seite B relevant — Hot Line ignoriert es einfach. */
+  send: (body: string, quote?: QuotedPreview) => Promise<void>;
   sendVoice: (blob: Blob, durationMs: number, caption: string) => Promise<void>;
   sendMedia: (
     kind: 'photo' | 'video',
@@ -80,6 +85,7 @@ function fromPost(item: FeedItem): ChatMessage {
     tapeId: item.tapeId,
     tape: item.tape,
     source: item.source,
+    quotedPost: item.quotedPost,
     pending: item.pending,
   };
 }
@@ -259,9 +265,9 @@ export function useCassetteChat(cassetteId: string | undefined, me: string): Cha
   });
 
   const send = useMutation({
-    mutationFn: (body: string) =>
-      createPost({ cassetteId: cassetteId!, side: 'b', author: me, kind: 'text', body }),
-    onMutate: async (body: string) => {
+    mutationFn: ({ body, quote }: { body: string; quote?: QuotedPreview }) =>
+      createPost({ cassetteId: cassetteId!, side: 'b', author: me, kind: 'text', body, quotedPostId: quote?.postId }),
+    onMutate: async ({ body, quote }: { body: string; quote?: QuotedPreview }) => {
       await qc.cancelQueries({ queryKey });
       const previous = qc.getQueryData<FeedItem[]>(queryKey);
       const optimistic: FeedItem = {
@@ -282,12 +288,18 @@ export function useCassetteChat(cassetteId: string | undefined, me: string): Cha
         tonfetzenCount: 0,
         iSentTonfetzen: false,
         noteStyle: null,
+        // Direkt aus der bereits vorhandenen Vorschau gebaut, statt auf die
+        // Server-Antwort zu warten — sonst wuerde die Zitat-Karte kurz fehlen.
+        quotedPostId: quote?.postId ?? null,
+        quotedPost: quote
+          ? { id: quote.postId, author: quote.author, kind: quote.kind, body: quote.body, mediaId: quote.mediaId }
+          : null,
         pending: true,
       };
       qc.setQueryData<FeedItem[]>(queryKey, (old = []) => [...old, optimistic]);
       return { previous };
     },
-    onError: (_err, _body, ctx) => {
+    onError: (_err, _vars, ctx) => {
       if (ctx?.previous) qc.setQueryData(queryKey, ctx.previous);
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey }),
@@ -330,7 +342,7 @@ export function useCassetteChat(cassetteId: string | undefined, me: string): Cha
   return {
     messages: data.map(fromPost),
     other: '',
-    send: (body: string) => send.mutateAsync(body).then(() => {}),
+    send: (body: string, quote?: QuotedPreview) => send.mutateAsync({ body, quote }).then(() => {}),
     sendVoice: (blob: Blob, durationMs: number, caption: string) =>
       sendVoice.mutateAsync({ blob, durationMs, caption }).then(() => {}),
     sendMedia: (kind, blob, durationMs, caption, source) =>

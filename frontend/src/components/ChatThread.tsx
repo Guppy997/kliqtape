@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { berlinDayKey, berlinDayLabel, berlinTime, useCassetteChat, useHotlineChat, type ChatMessage } from '@/lib/chat';
+import { berlinDayKey, berlinDayLabel, berlinTime, previewFor, useCassetteChat, useHotlineChat, type ChatMessage } from '@/lib/chat';
 import { fetchMixtapes, mediaUrl, HOTLINE_MAX } from '@/lib/api';
 import { baseMime, pickAudioMime } from '@/lib/tapeAudio';
 import { useApp } from '@/store/appStore';
+import { useQuote } from '@/store/quoteStore';
 import Avatar from './Avatar';
 import CameraCapture from './CameraCapture';
 import DateDividerLabel from './DateDividerLabel';
@@ -42,6 +43,10 @@ interface Props {
 export default function ChatThread({ variant, threadId, startWith, onStarted, cassetteId }: Props) {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
+  // Nur auf Seite B relevant (siehe PostCard.tsx, "Reagieren") — Hot Line
+  // liest den Store zwar mit, zeigt/nutzt ihn aber nie.
+  const pendingQuote = useQuote((s) => s.pending);
+  const setPendingQuote = useQuote((s) => s.setPending);
   const bottomRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement | null>(null);
   const [text, setText] = useState('');
@@ -140,8 +145,9 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
     if (!body) return;
     setError(null);
     try {
-      await chat.send(body);
+      await chat.send(body, variant === 'cassette' ? (pendingQuote ?? undefined) : undefined);
       setText('');
+      setPendingQuote(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Senden fehlgeschlagen');
     }
@@ -261,6 +267,16 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                       opacity: m.pending ? 0.6 : 1,
                     }}
                   >
+                    {m.quotedPost && (
+                      <div
+                        className="mb-1.5 rounded-md px-2 py-1"
+                        style={{ background: 'rgba(0,0,0,.18)', borderLeft: '2px solid currentColor' }}
+                      >
+                        <span className="block truncate text-[0.68rem] opacity-80">
+                          {m.quotedPost.author}: {previewFor(m.quotedPost.kind, m.quotedPost.body)}
+                        </span>
+                      </div>
+                    )}
                     <ChatBubbleContent msg={m} />
                   </div>
                   <span
@@ -282,6 +298,30 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
   const composerInner = (
     <div className="flex flex-col gap-1.5 pt-2" style={variant === 'hotline' ? { borderTop: '1px solid var(--line)' } : undefined}>
       {error && <p className="text-xs" style={{ color: '#F0B5A5' }}>{error}</p>}
+
+      {/* Angehefteter Bezug auf einen Seite-A-Beitrag (siehe PostCard.tsx,
+          "Reagieren") — bis zum Absenden jederzeit ueber das Kreuz wieder
+          entfernbar, genau wie eine Antwort-Vorschau in jeder anderen
+          Chat-App. */}
+      {variant === 'cassette' && pendingQuote && (
+        <div
+          className="flex items-center gap-2 rounded-lg py-1.5 pl-2.5 pr-1.5"
+          style={{ background: 'var(--card)', borderLeft: '3px solid var(--accent)' }}
+        >
+          <span className="min-w-0 flex-1 truncate text-[0.76rem]" style={{ color: 'var(--dim)' }}>
+            An <span style={{ color: 'var(--ink)' }}>{pendingQuote.author}</span>: {previewFor(pendingQuote.kind, pendingQuote.body)}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPendingQuote(null)}
+            aria-label="Bezug entfernen"
+            className="shrink-0 px-1.5 text-xs"
+            style={{ color: 'var(--dim)' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="flex items-end gap-2">
         {recState === 'recording' ? (
           <>

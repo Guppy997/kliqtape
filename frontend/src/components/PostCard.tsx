@@ -11,6 +11,7 @@ import {
 import { berlinDateLabel, berlinTimeLabel } from '@/lib/berlinDay';
 import { baseMime, pickAudioMime } from '@/lib/tapeAudio';
 import { useApp, type Side } from '@/store/appStore';
+import { useQuote } from '@/store/quoteStore';
 import Avatar from './Avatar';
 import Sheet from './Sheet';
 import TapePlayer from './TapePlayer';
@@ -25,6 +26,8 @@ interface Props {
 
 export default function PostCard({ item, onReacted, onDelete }: Props) {
   const me = useApp((s) => s.me);
+  const setSide = useApp((s) => s.setSide);
+  const setPendingQuote = useQuote((s) => s.setPending);
   const [openTape, setOpenTape] = useState(false);
   const [listening, setListening] = useState(false);
   const side = item.side;
@@ -34,6 +37,15 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
     const mediaId = await uploadMedia(blob, ms);
     await sendTonfetzen(item.id, me, mediaId);
     onReacted();
+  }
+
+  // Bruecke zu Seite B: den Beitrag als Zitat anheften und rueberklappen —
+  // der Composer dort greift die Vorschau aus dem Store direkt ab, keine
+  // Nachfrage noetig. Nur auf Seite A sinnvoll, siehe server.ts (nur
+  // Seite-A-Beitraege lassen sich aufgreifen).
+  function reactInChat() {
+    setPendingQuote({ postId: item.id, author: item.author, kind: item.kind, body: item.body, mediaId: item.mediaId });
+    setSide('b');
   }
 
   return (
@@ -178,6 +190,25 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
             style={{ border: '1px solid var(--accent)', color: 'var(--accent)' }}
           >
             <span aria-hidden="true">🎙</span> {item.tonfetzenCount} Tonfetzen anhören
+          </button>
+        )}
+
+        {/* Nur auf Seite A — klappt zu Seite B und haengt den Beitrag dort
+            als Zitat an, statt ihn zu kommentieren, ohne dass es je wieder
+            auftaucht. Fuer alle da, auch fuer eigene Beitraege: "das will
+            ich im Gespraech aufgreifen" ist unabhaengig davon, wer gepostet hat. */}
+        {side === 'a' && (
+          <button
+            type="button"
+            onClick={reactInChat}
+            className="font-mono ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.62rem] uppercase tracking-widest"
+            style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                 strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M2 3.5h12v8H6.5L3 14.5V11.5H2Z" />
+            </svg>
+            Reagieren
           </button>
         )}
       </div>
