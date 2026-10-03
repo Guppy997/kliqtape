@@ -12,14 +12,19 @@ Jede Kassette hat zwei Seiten:
 Tippen auf die Kassette dreht sie um. Chronologisch, ohne Algorithmus, ohne Werbung,
 ohne Zahlen.
 
-**Hosting-Modell:** Kliqtape wird als **zentral betriebener Dienst auf Hetzner** gelauncht
-und von dort aus skaliert — wie ein normaler Social-Media-Server. Es ist ausdrücklich
-**kein Self-Hosting-Produkt**: Nutzer:innen legen keinen eigenen Server an, sie melden sich
-einfach an. Zielgruppe sind alle, nicht nur Leute, die selbst hosten würden.
+**Hosting-Modell:** Kliqtape läuft als **zentral betriebener Dienst auf Hetzner** und wird von
+dort aus skaliert — wie ein normaler Social-Media-Server. Das ist der Standard für alle:
+Nutzer:innen legen keinen eigenen Server an, sie melden sich einfach an. Zielgruppe sind
+alle, nicht nur Leute, die selbst hosten würden.
 
-Das `docker-compose.yml` in diesem Repo ist die **Entwicklungs- und Beta-Umgebung**
+**Selbstbetrieb ist trotzdem erlaubt.** Der Code steht unter AGPL-3.0, Vereine,
+Hochschulgruppen oder andere Communities dürfen also eine eigene Instanz betreiben. Ein
+dokumentiertes Paket dafür ist geplant. Kliqtape ist bewusst **nicht föderiert**: Eine eigene
+Instanz steht für sich und ist nicht mit der zentralen verbunden.
+
+Das `docker-compose.yml` in diesem Repo ist derzeit die **Entwicklungs- und Beta-Umgebung**
 (inklusive optionalem Tailscale-Sidecar für den Zugriff im eigenen Tailnet), nicht das
-geplante Produktions-Setup.
+Produktions-Setup.
 
 ---
 

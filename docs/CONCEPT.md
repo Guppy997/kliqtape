@@ -174,9 +174,11 @@ Jede fremde Verbindung wäre ein Datenleck.
 
 **Lizenz AGPL-3.0** — wer Kliqtape betreibt, muss seinen Quellcode offenlegen.
 
-**Betriebsmodell: zentral gehostet auf Hetzner, kein Self-Hosting-Produkt.** Nutzer:innen
-betreiben nichts selbst, sie melden sich an. Der Docker-Compose-Stack hier ist die
-Entwicklungs-/Beta-Umgebung, nicht die Produktion. Die Zielplattform ist eine
+**Betriebsmodell: zentral gehostet auf Hetzner als Standard, Selbstbetrieb erlaubt.**
+Nutzer:innen betreiben nichts selbst, sie melden sich an. Dank AGPL dürfen Communities aber
+eine eigene Instanz betreiben; ein dokumentiertes Paket dafür ist geplant. Eigene Instanzen
+stehen für sich, Föderation bleibt ausgeschlossen (siehe Abschnitt 11). Der Docker-Compose-Stack
+hier ist derzeit die Entwicklungs-/Beta-Umgebung, nicht die Produktion. Die Zielplattform ist eine
 **React-Native-App**; der jetzige Web-Client ist ein funktionierender Prototyp, keine
 Endarchitektur.
 
