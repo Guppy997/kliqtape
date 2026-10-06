@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.43.1',
+    date: '2026-10-07',
+    changes: [
+      'Die ausgeklappte Kassette ist kleiner — auf dem Handy nahm sie vorher fast die Hälfte des Bildschirms ein',
+    ],
+  },
+  {
     version: '0.43.0',
     date: '2026-10-06',
     changes: [
