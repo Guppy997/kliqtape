@@ -7,7 +7,11 @@ unterschiedlichen Besetzungen und fuellt beide Seiten mit Zetteln,
 Schnappschuessen, O-Toenen, Mixtapes, Reaktionen und Hot-Line-Verlaeufen — damit sich
 jede Funktion ansehen und bedienen laesst.
 
-Seite A bleibt, Seite B verfaellt nach 24 Stunden von selbst.
+Beide Seiten sind dauerhaft: Seite A ist das Archiv, Seite B der Gruppenchat.
+
+Seit es Zugangscodes gibt, beansprucht das Skript fuer jede Testperson
+einen Namen und merkt sich die Codes in scripts/.seed-tokens.json (nicht im
+Repo), damit ein spaeteres --reset dieselben Leute wieder loeschen kann.
 
 Alle Medien werden hier wirklich erzeugt: Bilder mit PIL, Ton als WAV.
 Kein Platzhalter-Muell, denn der O-Ton-Spieler dekodiert das Audio
@@ -16,6 +20,7 @@ tatsaechlich, und mit kaputten Daten waere der Player leer.
     python3 scripts/seed.py                 # anlegen
     python3 scripts/seed.py --reset         # vorher alles von diesen Leuten loeschen
     python3 scripts/seed.py --me Aaron      # Hauptnutzer (Default: Aaron)
+    python3 scripts/seed.py --me Aaron --me-token <code>   # Name schon vergeben
 
 Videos fehlen bewusst: dafuer braeuchte es ffmpeg, das hier nicht vorhanden
 ist. Clips lassen sich in der App direkt mit der Kamera aufnehmen.
@@ -27,6 +32,7 @@ import argparse
 import io
 import json
 import math
+import os
 import random
 import struct
 import sys
@@ -43,12 +49,67 @@ except ImportError:
 BASE = "http://localhost:8099"
 random.seed(1990)  # reproduzierbare Testdaten
 
+TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".seed-tokens.json")
+TOKENS: dict[str, str] = {}
+
+# Welche Felder in Body oder Query den handelnden Namen tragen — je nach
+# Route heisst er anders. Daraus ergibt sich, welcher Zugangscode mitgeht.
+ACTOR_KEYS = ("by", "author", "from", "me")
+
+
+def load_tokens() -> None:
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE) as f:
+            TOKENS.update(json.load(f).get(BASE, {}))
+
+
+def save_tokens() -> None:
+    data = {}
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE) as f:
+            data = json.load(f)
+    data[BASE] = TOKENS
+    with open(TOKEN_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def ensure_token(name: str) -> str:
+    """Zugangscode fuer name — beansprucht den Namen, falls noch frei."""
+    if name in TOKENS:
+        return TOKENS[name]
+    req = urllib.request.Request(BASE + "/api/auth/claim", method="POST",
+                                 data=json.dumps({"name": name}).encode())
+    req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as res:
+            TOKENS[name] = json.loads(res.read())["token"]
+    except urllib.error.HTTPError as e:
+        if e.code == 409:
+            raise SystemExit(f"»{name}« ist auf diesem Server schon vergeben. "
+                             f"Für den Hauptnutzer: --me-token <Zugangscode> angeben.")
+        raise
+    save_tokens()
+    return TOKENS[name]
+
+
+def actor_of(path: str, body) -> str | None:
+    if isinstance(body, dict):
+        for k in ACTOR_KEYS:
+            if body.get(k):
+                return body[k]
+    query = urllib.parse.parse_qs(urllib.parse.urlparse(path).query)
+    for k in ACTOR_KEYS:
+        if k in query:
+            return query[k][0]
+    return None
+
 
 # ---------------------------------------------------------------------------
 # HTTP
 # ---------------------------------------------------------------------------
 
-def call(method: str, path: str, body=None, raw: bytes | None = None, mime: str | None = None):
+def call(method: str, path: str, body=None, raw: bytes | None = None, mime: str | None = None,
+         as_: str | None = None):
     url = BASE + path
     if raw is not None:
         req = urllib.request.Request(url, data=raw, method=method)
@@ -58,6 +119,9 @@ def call(method: str, path: str, body=None, raw: bytes | None = None, mime: str 
         req = urllib.request.Request(url, data=data, method=method)
         if data:
             req.add_header("Content-Type", "application/json")
+    actor = as_ or actor_of(path, body)
+    if actor:
+        req.add_header("X-Auth-Token", ensure_token(actor))
     try:
         with urllib.request.urlopen(req, timeout=30) as res:
             payload = res.read()
@@ -70,10 +134,12 @@ def call(method: str, path: str, body=None, raw: bytes | None = None, mime: str 
                          f"Läuft 'docker compose up'?")
 
 
-def upload(blob: bytes, mime: str, duration_ms: int | None = None) -> str:
+def upload(blob: bytes, mime: str, duration_ms: int | None = None, as_: str | None = None) -> str:
     url = BASE + "/api/media"
     req = urllib.request.Request(url, data=blob, method="POST")
     req.add_header("Content-Type", mime)
+    # Hochladen braucht einen gueltigen Zugangscode, egal von wem.
+    req.add_header("X-Auth-Token", ensure_token(as_) if as_ else next(iter(TOKENS.values())))
     if duration_ms is not None:
         req.add_header("X-Duration-Ms", str(duration_ms))
     with urllib.request.urlopen(req, timeout=60) as res:
@@ -259,6 +325,7 @@ def main() -> None:
     ap.add_argument("--me", default="Aaron", help="Hauptnutzer, für den alles ankommt")
     ap.add_argument("--base", default=BASE, help="Adresse des Backends")
     ap.add_argument("--reset", action="store_true", help="Daten dieser Leute vorher löschen")
+    ap.add_argument("--me-token", help="Zugangscode des Hauptnutzers, falls der Name schon vergeben ist")
     args = ap.parse_args()
     BASE = args.base.rstrip("/")
 
@@ -268,9 +335,18 @@ def main() -> None:
     call("GET", "/api/health")
     print(f"Backend erreichbar: {BASE}")
 
+    load_tokens()
+    if args.me_token:
+        TOKENS[me] = args.me_token
+
     if args.reset:
+        # Nur wen wir kennen: ohne Code laesst sich niemand loeschen. Das
+        # Loeschen gibt auch den Namen frei, er wird gleich neu beansprucht.
         for person in everyone:
-            call("DELETE", "/api/me?me=" + urllib.parse.quote(person))
+            if person in TOKENS:
+                call("DELETE", "/api/me?me=" + urllib.parse.quote(person))
+                TOKENS.pop(person, None)
+        save_tokens()
         # Verwaiste Kassetten mitnehmen: wer keine Mitglieder mehr hat, wird
         # serverseitig beim Austritt entfernt — hier bleibt nichts uebrig.
         print("Alte Testdaten entfernt")
@@ -278,8 +354,8 @@ def main() -> None:
     # --- Profile ----------------------------------------------------------
     print("Profilbilder …", end="", flush=True)
     for person in everyone:
-        pid = upload(as_jpeg(avatar(person)), "image/jpeg")
-        call("PUT", "/api/profiles/" + urllib.parse.quote(person), {"avatarId": pid})
+        pid = upload(as_jpeg(avatar(person)), "image/jpeg", as_=person)
+        call("PUT", "/api/profiles/" + urllib.parse.quote(person), {"avatarId": pid}, as_=person)
         print(".", end="", flush=True)
     print(f" {len(everyone)} Leute")
 
@@ -298,7 +374,9 @@ def main() -> None:
         tapes_by_name[name] = c["id"]
         for person in members:
             if person != me:
-                call("POST", f"/api/cassettes/{c['id']}/members", {"member": person, "by": me})
+                # Mitglied wird man nur noch per Einladung + Zustimmen.
+                inv = call("POST", f"/api/cassettes/{c['id']}/invites", {"invitee": person, "by": me})
+                call("POST", f"/api/invites/{inv['id']}/accept", {"me": person})
 
     # Feste Bandsorten fuer die Demo-Kassetten: Aaron wollte "Die Kliqe" lila
     # (Atomic Purple). Ohne Override haengt das Aussehen an der zufaelligen
@@ -330,7 +408,7 @@ def main() -> None:
             posts[key] = res["id"]
         return res["id"]
 
-    # --- Alle Freunde: Seite A bleibt, Seite B verfällt --------------------
+    # --- Alle Freunde: Seite A Archiv, Seite B Gruppenchat ------------------
     print("Alle Freunde …", end="", flush=True)
     post("Alle Freunde", "a", "Mira", "text",
          "Ich hab die Wohnung. Dritter Stock, Altbau, viel zu teuer. Egal.", key="wohnung")
@@ -395,14 +473,14 @@ def main() -> None:
 
     def build_tape(sender, receiver, title, note, tracks, cover=None, seal=True):
         tape = call("POST", "/api/mixtapes", {"from": sender, "to": receiver, "title": title})
-        patch = {"note": note}
+        patch = {"note": note, "me": sender}
         if cover:
-            patch["coverId"] = upload(as_jpeg(cover), "image/jpeg")
+            patch["coverId"] = upload(as_jpeg(cover), "image/jpeg", as_=sender)
         call("PATCH", f"/api/mixtapes/{tape['id']}", patch)
         for t, a, u in tracks:
-            call("POST", f"/api/mixtapes/{tape['id']}/tracks", {"title": t, "artist": a, "url": u})
+            call("POST", f"/api/mixtapes/{tape['id']}/tracks", {"title": t, "artist": a, "url": u, "me": sender})
         if seal:
-            call("POST", f"/api/mixtapes/{tape['id']}/seal")
+            call("POST", f"/api/mixtapes/{tape['id']}/seal", {"me": sender})
         return tape["id"]
 
     # Eines geschenkt an den Hauptnutzer — liegt im Regal unter "Für dich"
@@ -438,6 +516,7 @@ def main() -> None:
     print("2 offene Leitungen mit Verlauf")
 
     print(f"\nFertig. Melde dich in der App als »{me}« an.")
+    print(f"Zugangscode für »{me}«: {TOKENS[me]}")
     print("Zum Aufräumen:  python3 scripts/seed.py --reset")
 
 
