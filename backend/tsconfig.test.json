@@ -4,7 +4,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "rootDir": "."
+    "rootDir": ".."
   },
-  "include": ["tests/**/*.ts", "vitest.config.ts"]
+  "include": ["tests/**/*.ts", "vitest.config.ts", "../frontend/src/lib/berlinDay.ts"]
 }

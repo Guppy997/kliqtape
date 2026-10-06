@@ -1,6 +1,6 @@
 /**
  * Kalendertag-Rechnung in Europe/Berlin — bewusst dupliziert zum
- * Backend-Gegenstück (server.ts), nicht als Shared-Package, weil frontend
+ * Backend-Gegenstück (backend/src/time.ts), nicht als Shared-Package, weil frontend
  * und backend getrennte tsconfig.json ohne gemeinsamen Workspace-Root haben.
  * Bei einer Aenderung an der Logik: beide Seiten pflegen.
  */
@@ -50,7 +50,7 @@ export function berlinTimeLabel(ms: number): string {
 }
 
 /* --- Entwickelter Film ------------------------------------------------------
- * Spiegel zu filmReleaseAfter() in backend/src/server.ts. Der Server liefert
+ * Spiegel zu filmReleaseAfter() in backend/src/time.ts. Der Server liefert
  * den Freigabezeitpunkt mit (GET /api/cassettes/:id/film) und ist die
  * Wahrheit; hier wird nur gerechnet, um Daten lesbar zu machen. */
 

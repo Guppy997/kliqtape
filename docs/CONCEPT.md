@@ -160,7 +160,7 @@ Belohnung, keine Stimmenzahlen** — der Server gibt nur „richtig“ oder „d
 Beiträge bleiben im Tape des Sonntags auf Seite A, der Imposter-Beitrag mit Stempel.
 
 **Technisch:** `imposter_weeks`, `imposter_entries`, `imposter_votes`; Aufgaben als feste Liste
-in `server.ts`. Beiträge sind Seite-A-Posts mit `source = 'imposter'` und `develop_at`, also
+in `backend/src/routes/imposter.ts`. Beiträge sind Seite-A-Posts mit `source = 'imposter'` und `develop_at`, also
 dieselbe Sperre wie beim Film. Mit `DEMO_TOOLS=1` kann die Gründerin den Sonntagabend
 vorziehen; die Vier-Wochen-Pause entfällt dann.
 
@@ -176,7 +176,7 @@ automatisch in jedem Album, das irgendwer exportiert.
 1. Die einzige Datenquelle ist die SQLite-View `album_posts` (freigegebene Seite-A-Beiträge
    ohne ausgenommene Personen).
 2. Das Druck-Modul `backend/src/print/album.ts` importiert weder die Datenbank noch den Server.
-   Es bekommt nur eine `AlbumSource`, die `server.ts` aus dieser View baut; Medien liefert sie
+   Es bekommt nur eine `AlbumSource`, die `routes/album.ts` aus dieser View baut; Medien liefert sie
    nur für IDs aus genau diesen Zeilen.
 3. Eine ESLint-Regel verbietet in `src/print/` den Import von `db`, `server` und
    `better-sqlite3`, ein Test prüft den Quelltext zusätzlich.
@@ -271,7 +271,8 @@ entfernte Mitglieder alte Schlüssel behalten. Gehört offen kommuniziert.
 
 ```
 kliqtape/
-├─ backend/     Node + Express + TypeScript, SQLite (better-sqlite3, WAL)
+├─ backend/     Node + Express + TypeScript, SQLite (better-sqlite3, WAL);
+│               src/routes/ ein Modul pro Bereich, src/print/ ohne DB-Zugang
 ├─ frontend/    React 19 + TypeScript + Vite, Tailwind v4, Zustand + TanStack Query, PWA
 ├─ scripts/     seed.py — Testdaten mit echten Bildern und Aufnahmen
 ├─ docs/        dieses Dokument
@@ -423,7 +424,7 @@ Berechtigungsprüfung.** Nachgewiesen gegen eine Test-Datenbank, nicht nur vermu
 | `POST /api/mixtapes/:id/seal` | Fremde Entwürfe versiegeln und damit zwangsweise verschenken. |
 
 Alle fünf Mixtape-Routen laufen jetzt über den gemeinsamen Helfer `requireTapeOwner()`
-(`backend/src/server.ts`), damit nicht beim nächsten neuen Endpunkt wieder einer vergessen
+(`backend/src/routes/mixtapes.ts`), damit nicht beim nächsten neuen Endpunkt wieder einer vergessen
 wird.
 
 **Lehre daraus, für die App wichtig:** Die Ursache war nicht Unachtsamkeit an einer
@@ -503,7 +504,10 @@ Abschnitt 1), **Blockieren** und eine Moderationsoberfläche noch nicht.
 
 ### 16.7 Qualitätssicherung
 
-**Eingerichtet (2026-10-06):** API-Tests mit vitest in `backend/tests/`. Der echte Server
+**Eingerichtet (2026-10-06):** API-Tests mit vitest in `backend/tests/`, dazu Unit-Tests für die
+Zeitlogik (`tests/time.test.ts`) inklusive beider Zeitumstellungen — und ein Test, der Backend
+(`src/time.ts`) und Frontend (`src/lib/berlinDay.ts`) gegeneinander rechnen lässt, damit die
+beiden Spiegel nicht auseinanderlaufen. Der echte Server
 startet dabei als eigener Prozess gegen eine Wegwerf-Datenbank. Pro verändernder Route gibt es
 mindestens einen Test „Fremder darf das nicht“ (siehe 16.1), jeweils mit Gegenprobe, dass die
 berechtigte Person es darf. ESLint (Flat Config) läuft in beiden Paketen. GitHub Actions prüft

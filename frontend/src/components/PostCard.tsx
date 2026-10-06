@@ -43,7 +43,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
 
   // Bruecke zu Seite B: den Beitrag als Zitat anheften und rueberklappen —
   // der Composer dort greift die Vorschau aus dem Store direkt ab, keine
-  // Nachfrage noetig. Nur auf Seite A sinnvoll, siehe server.ts (nur
+  // Nachfrage noetig. Nur auf Seite A sinnvoll, siehe backend/src/routes/posts.ts (nur
   // Seite-A-Beitraege lassen sich aufgreifen).
   function reactInChat() {
     setPendingQuote({ postId: item.id, author: item.author, kind: item.kind, body: item.body, mediaId: item.mediaId });

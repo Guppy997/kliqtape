@@ -7,7 +7,7 @@ import type { Writable } from 'node:stream';
  * Dieses Modul hat BEWUSST keinen Zugang zur Datenbank — kein Import von
  * db.ts, kein better-sqlite3 (erzwungen per Lint-Regel, eslint.config.js,
  * und per Test). Alles, was hier ankommt, liefert eine AlbumSource, die
- * server.ts ausschliesslich aus der View album_posts baut: freigegebene
+ * routes/album.ts ausschliesslich aus der View album_posts baut: freigegebene
  * Seite-A-Beitraege ohne die Leute, die "Meine Beitraege nicht in Alben"
  * eingestellt haben. Seite B und Hot Line sind von hier aus nicht erreichbar.
  */

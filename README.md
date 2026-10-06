@@ -118,10 +118,24 @@ in der App direkt mit der Kamera aufnehmen.
 
 ```
 kliqtape/
-├─ backend/     Node + Express + TypeScript, SQLite (better-sqlite3)
-├─ frontend/    React 19 + TypeScript + Vite, Tailwind v4, Zustand + TanStack Query, PWA
-├─ docs/        CONCEPT.md — Produktkonzept, Sicherheitsmodell, Roadmap
-└─ docker-compose.yml
+├─ backend/                 Node + Express + TypeScript, SQLite (better-sqlite3)
+│  ├─ src/server.ts         Einstieg: Middleware, Routen einhängen, Fehlerbehandlung
+│  ├─ src/routes/           ein Modul pro Bereich: account, cassettes, posts, tapes,
+│  │                        film, imposter, album, letters, reports, stories, news,
+│  │                        hotline, mixtapes
+│  ├─ src/access.ts         Zugangscode und Mitgliedschaft (requireIdentity, requireMember)
+│  ├─ src/media.ts          Upload/Abruf und wann ein Medium (noch) nicht herausgegeben wird
+│  ├─ src/time.ts           Tage, Tapes und Sonntagabend in Europe/Berlin
+│  ├─ src/db.ts             Schema und Migrationen
+│  ├─ src/print/            PDF für Album und Brief — ohne Datenbankzugang
+│  └─ tests/                API-Tests gegen einen echten Server, Unit-Tests für die Zeitlogik
+├─ frontend/                React 19 + TypeScript + Vite, Tailwind v4, Zustand + TanStack Query, PWA
+│  ├─ src/components/       Oberfläche, eine Datei pro Baustein
+│  ├─ src/lib/              API-Client, Zeitlogik (Spiegel von backend/src/time.ts), Zeichnen
+│  └─ src/store/            kleine Zustand-Stores für flüchtigen UI-Zustand
+├─ docs/CONCEPT.md          Produktkonzept, Sicherheitsmodell, offene Punkte
+├─ scripts/seed.py          Testdaten mit echten Bildern und Tonaufnahmen
+└─ docker-compose.yml       Entwicklungs- und Beta-Umgebung
 ```
 
 Medien (Fotos, Videos, Mixtapes) landen als Dateien im Volume `kliqtape-media`,

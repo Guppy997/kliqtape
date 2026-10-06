@@ -128,7 +128,7 @@ db.exec(`
   );
 
   -- Ein Tape ist ein Kalendertag seit Gruendung der Kassette (Europe/Berlin,
-  -- siehe server.ts) — Gruendungstag ist Tape 1. tape_index wird nicht
+  -- siehe time.ts) — Gruendungstag ist Tape 1. tape_index wird nicht
   -- gespeichert, nur aus cassettes.created_at berechnet; hier liegt nur der
   -- optionale, kassettenweite Name, sparse (Zeile existiert nur wenn jemand
   -- umbenannt hat).
@@ -152,7 +152,7 @@ db.exec(`
   );
 
   -- Minimale Identitaet: ein Token pro Name statt eines vollen Login-Systems
-  -- (siehe server.ts, requireIdentity). Der Token selbst wird nie
+  -- (siehe access.ts, requireIdentity). Der Token selbst wird nie
   -- gespeichert, nur sein Hash.
   CREATE TABLE IF NOT EXISTS person_tokens (
     name       TEXT PRIMARY KEY,
@@ -164,7 +164,7 @@ db.exec(`
   -- die eingeladene Person zustimmt — anders als frueher, wo "jemanden
   -- holen" sofort ein cassette_members-Eintrag war, ganz ohne Zustimmung
   -- der geholten Person. Kein status-Feld: die Zeile existiert nur,
-  -- solange sie offen ist (siehe server.ts, accept/decline loeschen sie).
+  -- solange sie offen ist (routes/cassettes.ts, accept/decline loeschen sie).
   CREATE TABLE IF NOT EXISTS cassette_invites (
     id          TEXT PRIMARY KEY,
     cassette_id TEXT NOT NULL REFERENCES cassettes(id) ON DELETE CASCADE,
@@ -175,13 +175,13 @@ db.exec(`
   );
 
   -- Storys: kassettenuebergreifend sichtbar fuer jeden, mit dem man in
-  -- IRGENDEINER Kassette zusammen ist (siehe server.ts, die Netzwerk-Abfrage
+  -- IRGENDEINER Kassette zusammen ist (routes/stories.ts, die Netzwerk-Abfrage
   -- ueber cassette_members) — anders als posts, das strikt an eine einzelne
   -- Runde gebunden ist. expires_at wird serverseitig beim Anlegen gesetzt
   -- (created_at + 24h), nie vom Client. Kein duration_ms hier: steht schon
   -- auf media.duration_ms, wird beim Lesen dazugejoint statt dupliziert.
   -- Kein Hintergrund-Job fuer den Ablauf (die App hat bewusst keinen Cron) —
-  -- server.ts filtert abgelaufene Zeilen beim Lesen heraus und raeumt sie
+  -- routes/stories.ts filtert abgelaufene Zeilen beim Lesen heraus und raeumt sie
   -- gelegentlich beim Zugriff mit auf (sweepExpiredStories).
   CREATE TABLE IF NOT EXISTS stories (
     id         TEXT PRIMARY KEY,
@@ -196,7 +196,7 @@ db.exec(`
   -- fuer WIRKLICH ALLE sichtbar (keine Kassetten-Mitgliedschaft noetig,
   -- anders als posts, und auch nicht auf das eigene Netzwerk beschraenkt wie
   -- stories). Schreiben darf nur, wessen Name in ADMIN_NAME steht (siehe
-  -- server.ts) — author wird trotzdem gespeichert, rein zur Nachvollziehbarkeit.
+  -- routes/news.ts) — author wird trotzdem gespeichert, rein zur Nachvollziehbarkeit.
   CREATE TABLE IF NOT EXISTS news_posts (
     id         TEXT PRIMARY KEY,
     author     TEXT NOT NULL,
@@ -232,8 +232,8 @@ db.exec(`
     CHECK ((cassette_id IS NULL) <> (post_id IS NULL))
   );
 
-  -- Imposter-Woche (server.ts): alle bekommen dieselbe Aufgabe, eine Person
-  -- nur einen vagen Hinweis. task_key zeigt in IMPOSTER_TASKS (server.ts),
+  -- Imposter-Woche (routes/imposter.ts): alle bekommen dieselbe Aufgabe, eine Person
+  -- nur einen vagen Hinweis. task_key zeigt in IMPOSTER_TASKS (routes/imposter.ts),
   -- damit Aufgabe und Hinweis nicht in jeder Zeile dupliziert werden.
   CREATE TABLE IF NOT EXISTS imposter_weeks (
     id          TEXT PRIMARY KEY,
@@ -500,7 +500,7 @@ addColumn('hotline_messages', 'source', 'source TEXT', 'Kamera oder Galerie, wie
 // vermischen — die Referenz ist rein optional und aendert nichts an dem,
 // worauf sie zeigt. NULL bei allen bisherigen Nachrichten (kein Backfill noetig).
 addColumn('posts', 'quoted_post_id', 'quoted_post_id TEXT REFERENCES posts(id)', 'Bezug auf einen Seite-A-Beitrag aus einer Seite-B-Nachricht');
-// Entwickelter Film (server.ts, /api/cassettes/:id/film): bis develop_at ist
+// Entwickelter Film (routes/film.ts): bis develop_at ist
 // der Beitrag fuer NIEMANDEN sichtbar und sein Bild wird nicht ausgeliefert.
 // created_at = develop_at, damit er nach der Freigabe im Tape des Sonntags
 // steht; taken_at haelt fest, wann wirklich belichtet wurde.
@@ -541,7 +541,7 @@ if (orphans.n > 0) {
  * Seite B ist kein Story-Format mehr, sondern ein dauerhafter Gruppenchat —
  * bestehende Seite-B-Beitraege mit einer noch offenen Frist wuerden sonst
  * kurz nach diesem Update ueberspielt, obwohl das nicht mehr Sinn der Sache
- * ist. Danach setzt server.ts fuer neue Seite-B-Beitraege gar kein
+ * ist. Danach setzt routes/posts.ts fuer neue Seite-B-Beitraege gar kein
  * expires_at mehr — dieser Block ist von Natur aus einmalig wirksam.
  */
 const pendingSideB = db
@@ -570,7 +570,7 @@ addColumn('profiles', 'album_opt_out', 'album_opt_out INTEGER NOT NULL DEFAULT 0
  * freigegebene Seite-A-Beitraege und nichts von Leuten, die ihre Beitraege
  * aus Alben ausgenommen haben. Seite B und Hot Line sind hier technisch
  * nicht erreichbar — das Album-Modul bekommt keinen anderen Zugang zur
- * Datenbank (siehe AlbumSource in server.ts und die Lint-Regel in
+ * Datenbank (siehe AlbumSource in routes/album.ts und die Lint-Regel in
  * eslint.config.js). Bei jedem Start neu angelegt, damit Aenderungen an der
  * Definition ohne Migration greifen.
  */

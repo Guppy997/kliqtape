@@ -26,7 +26,10 @@ export default defineConfig(
         'error',
         {
           patterns: [
-            { group: ['**/db', '**/db.js', '**/server', '**/server.js'], message: 'Druck-Module bekommen Daten nur ueber ihre Source.' },
+            {
+              group: ['**/db', '**/db.js', '**/server', '**/server.js', '**/routes/*'],
+              message: 'Druck-Module bekommen Daten nur ueber ihre Source.',
+            },
             { group: ['better-sqlite3'], message: 'Druck-Module oeffnen keine Datenbank.' },
           ],
         },

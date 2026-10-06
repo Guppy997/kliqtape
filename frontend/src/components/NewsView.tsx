@@ -16,7 +16,7 @@ type Step = null | 'choose' | NewsKind;
 
 /**
  * Kliqtape-Kanal — News/Insights von den Betreiber:innen, dauerhaft und fuer
- * alle sichtbar. `canPost` kommt vom Server (ADMIN_NAME, siehe server.ts) —
+ * alle sichtbar. `canPost` kommt vom Server (ADMIN_NAME, siehe backend/src/routes/news.ts) —
  * fast alle sehen hier nur die Liste, kein Erstellen-Knopf.
  */
 export default function NewsView({ open, onClose }: Props) {

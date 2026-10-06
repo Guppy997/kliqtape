@@ -68,7 +68,7 @@ export function fetchMembers(id: string, me: string): Promise<Member[]> {
 
 /* --- Melden ----------------------------------------------------------------
  * Nur speichern und bestaetigen — im Prototyp liest das kein Moderationsteam
- * automatisch, die Meldungen liegen in der Datenbank (siehe server.ts). */
+ * automatisch, die Meldungen liegen in der Datenbank (backend/src/routes/reports.ts). */
 
 export type ReportReason = 'spam' | 'harassment' | 'violence' | 'illegal' | 'other';
 export const REPORT_REASONS: { key: ReportReason; label: string }[] = [
@@ -255,7 +255,7 @@ export interface FeedItem {
   track: string;
   /** Nur auf Seite A gesetzt — welches Tape (Kalendertag) dieser Post gehoert. */
   tapeIndex: number | null;
-  /** Nur bei eigenen Beitraegen gesetzt — Tonfetzen sind privat, siehe server.ts. */
+  /** Nur bei eigenen Beitraegen gesetzt — Tonfetzen sind privat, siehe backend/src/routes/posts.ts. */
   tonfetzenCount: number;
   /** Ob ich selbst schon einen Tonfetzen geschickt habe — wer genau, sieht niemand ausser der postenden Person. */
   iSentTonfetzen: boolean;
@@ -336,7 +336,7 @@ export function fetchFeed(cassetteId: string, side: Side, me: string): Promise<F
 
 /* --- Entwickelter Film ------------------------------------------------------
  * Ein Bild pro Person, Kassette und Woche. Bis Sonntagabend liefert der
- * Server es an niemanden aus (siehe server.ts, isUnreleasedMedia). */
+ * Server es an niemanden aus (backend/src/media.ts, isUnreleasedMedia). */
 
 export interface FilmShot {
   id: string;
@@ -473,7 +473,7 @@ export function sendTonfetzen(postId: string, author: string, mediaId: string): 
   }).then(unwrap<{ mediaId: string }>);
 }
 
-/** Nur die postende Person darf das abrufen — siehe server.ts. */
+/** Nur die postende Person darf das abrufen — siehe backend/src/routes/posts.ts. */
 export function fetchTonfetzen(postId: string, me: string): Promise<Tonfetzen[]> {
   return apiFetch(`/api/posts/${postId}/reactions?me=${encodeURIComponent(me)}`).then(unwrap<Tonfetzen[]>);
 }
@@ -486,7 +486,7 @@ export const mediaUrl = (id: string) => `/api/media/${id}`;
 
 /* --- Storys ------------------------------------------------------------
  * Kassettenuebergreifend, nur Foto/Video, verschwinden nach 24h — siehe
- * server.ts fuer die Sichtbarkeits-Regel (jeder, mit dem man in
+ * backend/src/routes/stories.ts fuer die Sichtbarkeits-Regel (jeder, mit dem man in
  * irgendeiner Kassette zusammen ist).
  * ------------------------------------------------------------------------ */
 
