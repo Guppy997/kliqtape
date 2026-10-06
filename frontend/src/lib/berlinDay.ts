@@ -88,3 +88,16 @@ export function filmStampLabel(ms: number): string {
   const v = (t: string) => parts.find((p) => p.type === t)!.value;
   return `'${v('year')} ${v('month')} ${v('day')}`;
 }
+
+/* --- Kassette altert --------------------------------------------------------
+ * Alle 10 Berliner Kalendertage seit Gruendung eine Stufe abgenutzter,
+ * nach 90 Tagen ist das Maximum erreicht. Rein optisch, deshalb nur hier und
+ * nicht im Backend — die Tageszaehlung ist dieselbe wie bei tapeIndexOf(). */
+
+export const AGE_STEP_DAYS = 10;
+export const AGE_MAX_STAGE = 9;
+
+export function ageStageOf(cassetteCreatedAt: number, now = Date.now()): number {
+  const days = Math.round((berlinCivilDay(now) - berlinCivilDay(cassetteCreatedAt)) / 86_400_000);
+  return Math.max(0, Math.min(AGE_MAX_STAGE, Math.floor(days / AGE_STEP_DAYS)));
+}

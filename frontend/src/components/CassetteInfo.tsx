@@ -13,7 +13,7 @@ import {
   type Cassette,
   type FeedItem,
 } from '@/lib/api';
-import { berlinDateLabel } from '@/lib/berlinDay';
+import { AGE_MAX_STAGE, AGE_STEP_DAYS, ageStageOf, berlinDateLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import { useJump } from '@/store/jumpStore';
 import Avatar, { useProfiles } from './Avatar';
@@ -193,6 +193,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
             label={cassette.name}
             count={cassette.sideA + cassette.sideB}
             currentTape={null}
+            createdAt={cassette.createdAt}
             width={188}
           />
         </span>
@@ -250,6 +251,8 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
           {berlinDateLabel(cassette.createdAt)}
         </p>
       </div>
+
+      <AgingStrip cassette={cassette} pairIndex={pairIndex} />
 
       {/* ---- Suche über das Band ----------------------------------------- */}
       <section className="flex flex-col gap-2">
@@ -718,6 +721,49 @@ function ImposterSpecial({ cassette, onStarted, onError }: { cassette: Cassette;
           Imposter-Woche starten
         </button>
       )}
+    </section>
+  );
+}
+
+/** "So altert das Band": vier kleine Kassetten von neu bis 90 Tage, die
+ *  heutige Stufe hervorgehoben. Erklaert das Altern, ohne es zu beziffern. */
+function AgingStrip({ cassette, pairIndex }: { cassette: Cassette; pairIndex?: number }) {
+  const now = ageStageOf(cassette.createdAt);
+  const steps = [0, 3, 6, AGE_MAX_STAGE];
+  const labels = ['neu', `${3 * AGE_STEP_DAYS} Tage`, `${6 * AGE_STEP_DAYS} Tage`, `${AGE_MAX_STAGE * AGE_STEP_DAYS} Tage`];
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="font-disp text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+        Das Band altert mit
+      </h3>
+      <div className="grid grid-cols-4 gap-2">
+        {steps.map((stage, i) => {
+          const current = now >= stage && (i === steps.length - 1 || now < steps[i + 1]!);
+          return (
+            <div key={stage} className="flex flex-col items-center gap-1">
+              <span style={{ opacity: current ? 1 : 0.85, filter: current ? 'drop-shadow(0 0 0.3rem var(--accent))' : undefined }}>
+                <CassetteFacePreview
+                  side="a"
+                  cassetteId={cassette.id}
+                  pairIndex={pairIndex}
+                  label={cassette.name}
+                  count={0}
+                  currentTape={null}
+                  age={stage}
+                  width={70}
+                />
+              </span>
+              <span className="font-mono text-[0.52rem] uppercase tracking-[0.08em]" style={{ color: current ? 'var(--accent)' : 'var(--dim)' }}>
+                {current ? `jetzt · ${labels[i]}` : labels[i]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="font-mono text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+        Alle {AGE_STEP_DAYS} Tage seit dem Anlegen etwas mehr Gebrauchsspuren: das Etikett vergilbt, die
+        Kanten werden abgegriffen, das Band bekommt Korn.
+      </p>
     </section>
   );
 }

@@ -366,6 +366,14 @@ später anfühlen.
 
 **Hot Line** `#F5B324` — Sony-Sports-Walkman-Gelb, Beschriftung auf dem Gehäuse über der Taste.
 
+**Die Kassette altert.** Alle 10 Berliner Kalendertage seit dem Anlegen eine Stufe, nach
+90 Tagen ist das Maximum erreicht: das Papieretikett vergilbt von der Ecke her und bekommt ab
+Stufe 4 ein Eselsohr, der Filzstift verblasst minimal, an den Gehäusekanten wird das Plastik
+abgegriffen, es kommen Kratzer und Staub dazu, im Sichtfenster wird das Bandkorn dichter.
+Seite B (Plastiketikett) vergilbt nicht. Die Spuren sind pro Kassette fest (gleiche Saat wie
+die bisherigen Gebrauchsspuren) und auf Stufe 0 identisch mit dem Aussehen vor dieser Funktion.
+Rein optisch, berechnet im Client (`ageStageOf` in `frontend/src/lib/berlinDay.ts`).
+
 **Keine frei wählbaren Farben.** Die zwei Farbwelten sind das Produkt; ein Farbwähler würde die
 Wiedererkennbarkeit auflösen und unlesbare Kombinationen erzeugen. Stattdessen später ein paar
 fertig gestaltete **Bandsorten** (Type I / Chrome / Metal) und **Gehäusefarben** (Atomic Purple /

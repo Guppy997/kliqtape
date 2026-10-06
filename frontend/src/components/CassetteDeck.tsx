@@ -470,6 +470,7 @@ export default function CassetteDeck() {
                         label={c.name}
                         count={c.sideA + c.sideB}
                         currentTape={null}
+                        createdAt={c.createdAt}
                         width={60}
                       />
                     </span>

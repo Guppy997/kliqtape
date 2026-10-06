@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.42.0',
+    date: '2026-10-06',
+    changes: [
+      'Neu: Kassetten altern. Alle 10 Tage seit dem Anlegen etwas mehr Gebrauchsspuren — vergilbtes Etikett, Eselsohr, abgegriffene Kanten, Bandkorn',
+      'Die Kassetten-Ansicht zeigt, wie das eigene Band mit der Zeit aussehen wird',
+    ],
+  },
+  {
     version: '0.41.0',
     date: '2026-10-06',
     changes: [

@@ -397,6 +397,7 @@ function Deck() {
                     label={current?.name ?? 'Kein Band'}
                     count={data.length}
                     currentTape={currentTape}
+                    createdAt={current?.createdAt}
                     width={60}
                   />
                 </button>
@@ -485,6 +486,7 @@ function Deck() {
               label={current?.name ?? 'Kein Band'}
               count={data.length}
               currentTape={currentTape}
+              createdAt={current?.createdAt}
             />
           </div>
         </div>

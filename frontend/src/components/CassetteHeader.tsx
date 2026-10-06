@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useApp, SIDE_LABEL, type Side } from '@/store/appStore';
 import { lookFor, type CassetteLook } from '@/lib/cassetteLook';
+import { ageStageOf } from '@/lib/berlinDay';
 import Lockup from './Lockup';
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
   /** Welches Tape heute aktiv ist (Datum + Name/Nummer) — Tage gehoeren zur
    *  Kassette, nicht zur Seite, deshalb auf A und B gleich. */
   currentTape?: { dateLabel: string; shortName: string; fullName: string } | null;
+  /** Gruendung — daraus die Altersstufe (ageStageOf, berlinDay.ts). */
+  createdAt?: number;
 }
 
 const R_MAX = 26;
@@ -74,7 +77,7 @@ function flipStyle(phase: FlipPhase, dir: 1 | -1): { transform: string; transiti
  * liefert nur noch Zustand (Scroll-Fuellstand, Umdrehen-Animation) und
  * Interaktivitaet drumherum.
  */
-export default function CassetteHeader({ cassetteId, pairIndex, label, count, currentTape }: Props) {
+export default function CassetteHeader({ cassetteId, pairIndex, label, count, currentTape, createdAt }: Props) {
   const side = useApp((s) => s.side);
   const setSide = useApp((s) => s.setSide);
 
@@ -178,6 +181,7 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
           label={label}
           count={count}
           currentTape={currentTape}
+          age={createdAt ? ageStageOf(createdAt) : 0}
           reelLeft={rLeft}
           reelRight={rRight}
           flip={flipStyle(phase, dir)}
@@ -199,6 +203,8 @@ interface FaceProps {
   currentTape?: { dateLabel: string; shortName: string; fullName: string } | null;
   reelLeft: number;
   reelRight: number;
+  /** Altersstufe 0..AGE_MAX_STAGE: Etikett vergilbt, Kanten abgegriffen, Korn. */
+  age?: number;
   /** Nur beim grossen, interaktiven Kopf gesetzt — waehrend des Umdrehens
    *  kurzzeitig im 3D-Kontext (siehe Kommentar am transform unten). */
   flip?: { transform: string; transition?: string };
@@ -223,7 +229,7 @@ interface FaceProps {
  */
 function CassetteFace({
   side, cassetteId, pairIndex, label, count, currentTape,
-  reelLeft, reelRight, flip, onFlip, onScrollStart, onScrollEnd,
+  reelLeft, reelRight, age = 0, flip, onFlip, onScrollStart, onScrollEnd,
 }: FaceProps) {
   const look = lookFor(cassetteId ?? '', pairIndex);
   const { type, case: plastic, wear } = look;
@@ -316,7 +322,7 @@ function CassetteFace({
         transform: flip?.transform ?? 'none',
       }}
     >
-      <Wear wear={wear} light={isA ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.32)'} />
+      <Wear wear={wear} age={age} light={isA ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.32)'} />
       <Screws tint={isA ? 'rgba(0,0,0,.35)' : `${plastic.inner}88`} />
 
       {/* ---- Aufgeklebtes Etikett ------------------------------------
@@ -353,8 +359,9 @@ function CassetteFace({
           </span>
         </div>
 
-        {/* Beschriftungsfeld mit Linien — hier steht der Name der Runde. */}
-        <div className="overflow-hidden px-3 pb-1">
+        {/* Beschriftungsfeld mit Linien — hier steht der Name der Runde.
+            Mit dem Alter verblasst der Filzstift ein wenig. */}
+        <div className="overflow-hidden px-3 pb-1" style={{ opacity: 1 - age * 0.012 }}>
           <div className="pt-2" style={{ borderBottom: `1px solid ${rule}` }}>
             <span className="font-hand block truncate pb-0.5 text-[1.25rem] leading-tight" style={{ color: ink }}>
               {label}
@@ -371,6 +378,36 @@ function CassetteFace({
             </span>
           </div>
         </div>
+
+        {/* Altern: Papier vergilbt von der Ecke her, die Kanten dunkeln nach,
+            ab Stufe 4 hat es unten rechts ein Eselsohr (oben rechts stuende
+            es auf der Tape-Nummer). Nur auf Seite A — das
+            Etikett von Seite B ist Plastik, das vergilbt nicht. */}
+        {isA && age > 0 && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                `radial-gradient(130% 100% at 92% 8%, rgba(150,108,38,${0.022 * age}), rgba(150,108,38,0) 62%),` +
+                `linear-gradient(180deg, rgba(150,108,38,${0.008 * age}), rgba(110,74,28,${0.02 * age}))`,
+              boxShadow: `inset 0 0 ${2 + age}px rgba(90,60,20,${0.035 * age})`,
+              mixBlendMode: 'multiply',
+            }}
+          />
+        )}
+        {isA && age >= 4 && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-0 right-0"
+            style={{
+              width: 4 + age * 1.6,
+              height: 4 + age * 1.6,
+              background: `linear-gradient(315deg, ${type.shellDark} 0 50%, ${type.labelDeep} 50% 100%)`,
+              boxShadow: '-1px -1px 2px rgba(0,0,0,.25)',
+            }}
+          />
+        )}
       </div>
 
       {/* ---- Sichtfenster mit den Spulen ------------------------------
@@ -385,6 +422,22 @@ function CassetteFace({
           boxShadow: `0 1px 0 rgba(255,255,255,.09), 0 2px 6px rgba(0,0,0,.5) inset`,
         }}
       >
+        {/* Bandkorn: mit jeder Altersstufe etwas dichter. Zwei versetzte
+            Raster, damit es nicht wie ein Gitter wirkt. */}
+        {age > 0 && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-[3px]"
+            style={{
+              backgroundImage:
+                'radial-gradient(rgba(255,255,255,.55) 0.5px, transparent 0.7px),' +
+                'radial-gradient(rgba(0,0,0,.6) 0.6px, transparent 0.8px)',
+              backgroundSize: '3px 5px, 7px 4px',
+              backgroundPosition: '0 0, 2px 1px',
+              opacity: 0.011 * age,
+            }}
+          />
+        )}
         <ReelButton onClick={onScrollStart} label={isA ? 'Zurueck an den Bandanfang' : 'Zum Anfang des Gesprächs'}>
           <Reel r={reelLeft} tape={isA ? type.tape : plastic.shell} hub={isA ? type.hub : plastic.shellHi} />
         </ReelButton>
@@ -464,11 +517,15 @@ const FACE_ASPECT = '400 / 258';
  * Die Spulen stehen auf "halb voll", da eine Vorschau keine eigene
  * Scroll-Position hat, an der sich ein Fuellstand ablesen liesse.
  */
-export function CassetteFacePreview({ side, cassetteId, pairIndex, label, count, currentTape, width }:
+export function CassetteFacePreview({ side, cassetteId, pairIndex, label, count, currentTape, width, createdAt, age }:
   {
     side: Side; cassetteId: string | null; pairIndex?: number; label: string;
     count: number; currentTape?: { dateLabel: string; shortName: string; fullName: string } | null;
     width: number;
+    /** Gruendung, fuer die Altersstufe. */
+    createdAt?: number;
+    /** Stufe direkt vorgeben — fuer die Vorschau "so altert das Band". */
+    age?: number;
   }) {
   const scale = width / FACE_REF_WIDTH;
   const mid = (R_MAX + R_MIN) / 2;
@@ -488,6 +545,7 @@ export function CassetteFacePreview({ side, cassetteId, pairIndex, label, count,
           label={label}
           count={count}
           currentTape={currentTape}
+          age={age ?? (createdAt ? ageStageOf(createdAt) : 0)}
           reelLeft={mid}
           reelRight={mid}
         />
@@ -497,7 +555,11 @@ export function CassetteFacePreview({ side, cassetteId, pairIndex, label, count,
 }
 
 /** Gebrauchsspuren: feine Kratzer und Staub, pro Kassette immer dieselben. */
-function Wear({ wear, light }: { wear: CassetteLook['wear']; light: string }) {
+function Wear({ wear, light, age = 0 }: { wear: CassetteLook['wear']; light: string; age?: number }) {
+  const rubId = useId();
+  // Mit dem Alter: pro Stufe ein Kratzer und drei Staubkoerner mehr.
+  const scratches = [...wear.scratches, ...wear.extraScratches.slice(0, age)];
+  const specks = [...wear.specks, ...wear.extraSpecks.slice(0, age * 3)];
   return (
     <svg
       className="pointer-events-none absolute inset-0 size-full"
@@ -505,18 +567,33 @@ function Wear({ wear, light }: { wear: CassetteLook['wear']; light: string }) {
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      {wear.scratches.map(([x, y, len], i) => (
+      {scratches.map(([x, y, len], i) => (
         <line key={`s${i}`} x1={x} y1={y} x2={x + len} y2={y - len * 0.12}
               stroke={light} strokeWidth="0.35" opacity={0.5} />
       ))}
-      {wear.specks.map(([x, y, r], i) => (
+      {specks.map(([x, y, r], i) => (
         <circle key={`p${i}`} cx={x} cy={y} r={r * 0.35} fill={light} opacity={0.35} />
       ))}
       <rect x="0" y="0" width="100" height="100" fill="url(#scuff)" />
+      {/* Abgegriffene Kanten: an den Ecken, wo man eine Kassette anfasst,
+          wird das Plastik mit der Zeit heller und matter. */}
+      {age > 0 &&
+        [
+          [0, 0],
+          [100, 0],
+          [0, 100],
+          [100, 100],
+        ].map(([cx, cy]) => (
+          <circle key={`r${cx}${cy}`} cx={cx} cy={cy} r={10 + age * 1.6} fill={`url(#${rubId})`} opacity={Math.min(1, age * 0.11)} />
+        ))}
       <defs>
         <radialGradient id="scuff" cx="50%" cy="50%" r="72%">
           <stop offset="70%" stopColor="rgba(0,0,0,0)" />
           <stop offset="100%" stopColor="rgba(0,0,0,.22)" />
+        </radialGradient>
+        <radialGradient id={rubId}>
+          <stop offset="0%" stopColor={light} stopOpacity="0.55" />
+          <stop offset="100%" stopColor={light} stopOpacity="0" />
         </radialGradient>
       </defs>
     </svg>

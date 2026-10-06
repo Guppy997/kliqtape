@@ -211,6 +211,10 @@ export interface CassetteLook {
     specks: [number, number, number][];
     /** Ein Etikett klebt nie ganz gerade. */
     tilt: number;
+    /** Spuren, die mit dem Alter dazukommen (ageStageOf, berlinDay.ts) —
+     *  ebenfalls fest pro Kassette, damit sie nicht bei jedem Rendern springen. */
+    extraScratches: [number, number, number][];
+    extraSpecks: [number, number, number][];
   };
 }
 
@@ -283,10 +287,24 @@ export function lookFor(id: string, pairIndex?: number): CassetteLook {
     0.4 + r() * 1.1,
   ]);
 
+  // Reihenfolge ist wichtig: erst die bisherigen Werte, DANN die Alters-
+  // Spuren — so sieht jede Kassette auf Stufe 0 exakt aus wie vorher.
+  const tilt = -0.9 + r() * 1.8;
+  const extraScratches: [number, number, number][] = Array.from({ length: 12 }, () => [
+    r() * 92,
+    r() * 100,
+    4 + r() * 18,
+  ]);
+  const extraSpecks: [number, number, number][] = Array.from({ length: 32 }, () => [
+    r() * 100,
+    r() * 100,
+    0.3 + r() * 0.9,
+  ]);
+
   const look: CassetteLook = {
     type: pair.type,
     case: pair.case,
-    wear: { scratches, specks, tilt: -0.9 + r() * 1.8 },
+    wear: { scratches, specks, tilt, extraScratches, extraSpecks },
   };
 
   cache.set(key, look);
