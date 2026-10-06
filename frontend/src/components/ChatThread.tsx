@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { jumpTo, useJump } from '@/store/jumpStore';
 import { useQuery } from '@tanstack/react-query';
 import { berlinDayKey, berlinDayLabel, berlinTime, previewFor, useCassetteChat, useHotlineChat, type ChatMessage } from '@/lib/chat';
 import { fetchMixtapes, mediaUrl, HOTLINE_MAX } from '@/lib/api';
@@ -107,8 +108,19 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
   const shareableTapes = tapes.filter((t) => t.from === me && t.sealed);
 
   useEffect(() => {
+    // Suchtreffer aus der Kassetten-Ansicht (CassetteInfo.tsx) statt ans Ende.
+    const jump = useJump.getState().postId;
+    if (variant === 'cassette' && jump && chat.messages.some((m) => m.id === jump)) {
+      useJump.getState().setJump(null);
+      requestAnimationFrame(() => jumpTo(jump));
+      return;
+    }
     bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [chat.messages.length]);
+    // Bewusst nur an der Anzahl: das Polling auf Seite B liefert alle 15 s
+    // ein neues Array — haengt der Effekt daran, springt der Chat jedes Mal
+    // ans Ende, auch wenn man gerade weiter oben liest.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat.messages.length, variant]);
 
   function insertEmoji(e: string) {
     setText((t) => (t + e).slice(0, maxLen));
@@ -247,7 +259,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
           const showDivider = !prev || berlinDayKey(prev.createdAt) !== berlinDayKey(m.createdAt);
           const showSender = variant === 'cassette' && !mine && (showDivider || prev?.from !== m.from);
           return (
-            <div key={m.id}>
+            <div key={m.id} id={variant === 'cassette' ? `post-${m.id}` : undefined}>
               {showDivider && <DateDividerLabel label={berlinDayLabel(m.createdAt)} />}
               <div className={`mt-1 flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
                 {variant === 'cassette' && !mine && <Avatar name={m.from} side={side} size={1.5} />}

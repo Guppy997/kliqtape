@@ -1,21 +1,11 @@
 import { useId, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  createCassette,
-  deleteCassette,
-  fetchCassettes,
-  fetchMembers,
-  inviteMember,
-  removeMember,
-  renameCassette,
-  setCassetteColorIndex,
-  type Cassette,
-} from '@/lib/api';
+import { createCassette, fetchCassettes, setCassetteColorIndex, type Cassette } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
 import { useViewMode } from '@/store/viewStore';
 import { assignPairs, lookFor, PAIR_COUNT } from '@/lib/cassetteLook';
-import Avatar, { useProfiles } from './Avatar';
+import CassetteInfo from './CassetteInfo';
 import { CassetteFacePreview } from './CassetteHeader';
 import NavButton from './NavButton';
 import Sheet from './Sheet';
@@ -187,7 +177,7 @@ export default function CassetteDeck() {
         // Die Unterseiten (Neue Gruppe, Mitglieder) haben ihren eigenen
         // Zurueck-Pfeil zum Fach.
         hideClose
-        title={creating ? 'Neue Gruppe' : 'Kassettenfach'}
+        title={creating ? 'Neue Gruppe' : manage ? 'Kassette' : 'Kassettenfach'}
       >
         {creating ? (
           <div className="flex flex-col gap-5">
@@ -273,17 +263,22 @@ export default function CassetteDeck() {
               weitere einladen.
             </p>
           </div>
-        ) : manage ? (
-          <Members
+        ) : manage && cassettes.some((c) => c.id === manage) ? (
+          <CassetteInfo
             cassette={cassettes.find((c) => c.id === manage)!}
+            pairIndex={looks.get(manage)}
             onBack={() => setManage(null)}
-            onLeft={() => {
+            onGone={() => {
               setManage(null);
               if (manage === cassetteId) setCassette(null);
               refresh();
             }}
+            onJump={() => {
+              setManage(null);
+              setActiveNav(null);
+            }}
           />
-) : (
+        ) : (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               {/* Immer da, unabhaengig davon ob schon Storys existieren —
@@ -491,225 +486,6 @@ export default function CassetteDeck() {
       </Sheet>
     </>
   );
-
-  function Members({
-    cassette,
-    onBack,
-    onLeft,
-  }: {
-    cassette: Cassette;
-    onBack: () => void;
-    onLeft: () => void;
-  }) {
-    const [name, setName] = useState(cassette.name);
-    const [add, setAdd] = useState('');
-    const { data: members = [] } = useQuery({
-      queryKey: ['members', cassette.id],
-      queryFn: () => fetchMembers(cassette.id),
-    });
-    const { data: profiles = [] } = useProfiles();
-    const known = profiles.map((p) => p.name).filter((n) => !members.some((m) => m.name === n));
-    const query = add.trim().toLowerCase();
-    const foundKnown = query ? known.filter((n) => n.toLowerCase().includes(query)) : known;
-    const isNewName = query.length > 0 && !known.some((n) => n.toLowerCase() === query);
-
-    const doInvite = useMutation({
-      mutationFn: (who: string) => inviteMember(cassette.id, who, me),
-      onSuccess: () => setAdd(''),
-      onError: fail,
-    });
-    const doRemove = useMutation({
-      mutationFn: (who: string) => removeMember(cassette.id, who, me),
-      onSuccess: (_d, who) => {
-        refresh();
-        if (who === me) onLeft();
-      },
-      onError: fail,
-    });
-    const doDelete = useMutation({
-      mutationFn: () => deleteCassette(cassette.id, me),
-      onSuccess: () => {
-        refresh();
-        // Dieselbe Aufraeum-Logik wie beim Verlassen: Fach schliesst die
-        // Ansicht, und falls es die gerade eingelegte Kassette war, wird
-        // sie ausgelegt.
-        onLeft();
-      },
-      onError: fail,
-    });
-    const doRename = useMutation({
-      mutationFn: () => renameCassette(cassette.id, name.trim(), me),
-      onSuccess: refresh,
-      onError: fail,
-    });
-
-    return (
-      <div className="flex flex-col gap-6">
-        <button
-          type="button"
-          onClick={onBack}
-          className="font-mono self-start text-[0.62rem] uppercase tracking-[0.12em]"
-          style={{ color: 'var(--dim)' }}
-        >
-          ← Fach
-        </button>
-
-        <div className="flex gap-2">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={40}
-            className="font-hand min-w-0 flex-1 rounded-lg px-3 py-2.5 text-[1.05rem] outline-none"
-            style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-          />
-          <button
-            type="button"
-            disabled={!name.trim() || name.trim() === cassette.name}
-            onClick={() => doRename.mutate()}
-            className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
-            style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-          >
-            Umbenennen
-          </button>
-        </div>
-
-        <section className="flex flex-col gap-2">
-          <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
-            Auf diesem Band
-          </h3>
-          {members.map((m) => (
-            <div
-              key={m.name}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2"
-              style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
-            >
-              <Avatar name={m.name} side={side} size={1.6} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm" style={{ color: 'var(--ink)' }}>
-                  {m.name}
-                  {m.name === me && ' (du)'}
-                </span>
-                {m.addedBy !== m.name && (
-                  <span className="font-mono block text-[0.56rem]" style={{ color: 'var(--dim)' }}>
-                    eingeladen von {m.addedBy}
-                  </span>
-                )}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  const self = m.name === me;
-                  const q = self
-                    ? `Das Band "${cassette.name}" verlassen?`
-                    : `${m.name} vom Band nehmen?`;
-                  if (confirm(q)) doRemove.mutate(m.name);
-                }}
-                className="font-mono shrink-0 px-1 text-[0.6rem] uppercase"
-                style={{ color: m.name === me ? '#F0B5A5' : 'var(--dim)' }}
-              >
-                {m.name === me ? 'verlassen' : 'raus'}
-              </button>
-            </div>
-          ))}
-        </section>
-
-        <section className="flex flex-col gap-2">
-          <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
-            Jemanden einladen
-          </h3>
-          <input
-            value={add}
-            onChange={(e) => setAdd(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && add.trim() && !doInvite.isPending) doInvite.mutate(add.trim());
-            }}
-            maxLength={40}
-            placeholder="Suchen oder neuen Namen eintippen"
-            className="rounded-lg px-3 py-2.5 text-base outline-none"
-            style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-          />
-
-          <div className="flex flex-col gap-1.5">
-            {foundKnown.map((n) => (
-              <button
-                key={n}
-                type="button"
-                disabled={doInvite.isPending}
-                onClick={() => doInvite.mutate(n)}
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left disabled:opacity-50"
-                style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
-              >
-                <Avatar name={n} side={side} size={1.4} />
-                <span className="min-w-0 flex-1 truncate text-sm" style={{ color: 'var(--ink)' }}>{n}</span>
-                <span aria-hidden="true" className="font-disp text-base font-bold" style={{ color: 'var(--accent)' }}>+</span>
-              </button>
-            ))}
-
-            {isNewName && (
-              <button
-                type="button"
-                disabled={doInvite.isPending}
-                onClick={() => doInvite.mutate(add.trim())}
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left disabled:opacity-50"
-                style={{ background: 'var(--card)', border: '1px dashed var(--line)' }}
-              >
-                <Avatar name={add.trim()} side={side} size={1.4} />
-                <span className="min-w-0 flex-1 truncate text-sm" style={{ color: 'var(--ink)' }}>
-                  „{add.trim()}“ neu einladen
-                </span>
-                <span aria-hidden="true" className="font-disp text-base font-bold" style={{ color: 'var(--accent)' }}>+</span>
-              </button>
-            )}
-
-            {!query && known.length === 0 && (
-              <p className="font-mono py-1 text-[0.62rem]" style={{ color: 'var(--dim)' }}>
-                Noch niemand sonst bekannt — einfach oben einen Namen eintippen.
-              </p>
-            )}
-          </div>
-
-          <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-            Jedes Mitglied darf jemanden einladen — dabei ist die Person erst, wenn sie in ihren
-            Benachrichtigungen zustimmt.
-          </p>
-        </section>
-
-        <section className="flex flex-col gap-2 border-t pt-5" style={{ borderColor: 'var(--line)' }}>
-          <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: '#F0B5A5' }}>
-            Gefahrenzone
-          </h3>
-          <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-            Löscht das Band für alle Mitglieder — Beiträge, Fotos, Videos und O-Töne darauf sind
-            danach weg. Mixtapes bleiben, die gehören nicht zu einer Kassette.
-          </p>
-          <button
-            type="button"
-            disabled={doDelete.isPending}
-            onClick={() => {
-              if (
-                confirm(
-                  `"${cassette.name}" endgültig löschen? Das lässt sich nicht rückgängig machen.`,
-                )
-              ) {
-                doDelete.mutate();
-              }
-            }}
-            className="font-mono inline-flex w-fit shrink-0 items-center gap-2 rounded-lg px-3.5 py-2.5 text-[0.66rem] uppercase tracking-[0.1em] disabled:opacity-50"
-            style={{ background: 'rgba(184,70,44,.18)', border: '1px solid #B8462C', color: '#F0B5A5' }}
-          >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                 strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 4.5h10" />
-              <path d="M6.3 4.5V2.8h3.4v1.7" />
-              <path d="M4.2 4.5l.6 8.4a1 1 0 0 0 1 .9h4.4a1 1 0 0 0 1-.9l.6-8.4" />
-              <path d="M6.5 7v4M8 7v4M9.5 7v4" />
-            </svg>
-            Kassette löschen
-          </button>
-        </section>
-      </div>
-    );
-  }
 }
 
 /* ---------------------------------------------------------------------------

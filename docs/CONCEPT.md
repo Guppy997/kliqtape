@@ -50,6 +50,22 @@ Hier sind es zwei Fragen, die man ohne Nachdenken beantwortet:
 1. **Welche Kassette?** → Du weißt, mit wem du redest.
 2. **Bleibt das oder ist es weg?** → Du weißt, ob es wichtig ist.
 
+### Die Kassetten-Ansicht im Fach
+
+Aufgebaut wie die Gruppeninfo bei WhatsApp, weil das jede:r kennt: oben die Kassette mit Namen
+(Stift zum Umbenennen) und eine **Suche über das Band** (Text, Bildunterschriften, Namen,
+Mixtape-Titel auf beiden Seiten; ein Treffer legt die Kassette ein und springt hin). Darunter
+die Mitglieder und „Jemanden einladen“. Ganz unten, abgesetzt: **Kassette verlassen**,
+**Kassette melden**, **Kassette löschen**.
+
+**Löschen darf nur, wer die Kassette angelegt hat.** Umbenennen, Umfärben und Einladen bleiben
+für alle. Die Gründerin kann niemand anderes vom Band nehmen (sonst ließe sich die Regel
+umgehen); geht sie selbst, übernimmt das dienstälteste Mitglied.
+
+**Melden** geht für eine Kassette oder einen fremden Beitrag auf Seite A. Gespeichert werden
+Ziel, meldende Person, Grund und eine optionale Notiz (Tabelle `reports`). Es gibt bewusst
+noch keine Moderationsoberfläche, die Bestätigung sagt das auch so.
+
 ## 2. Warum es funktionieren kann
 
 **Kein Cold-Start-Problem.** Eine Kleingruppen-App ist mit sechs Leuten vollständig. Wachstum
@@ -195,6 +211,8 @@ Gekürzt, die vollständige Fassung steht in `backend/src/db.ts`.
 cassettes(id, name, created_by, created_at, color_index)
 cassette_members(cassette_id, member, added_by, joined_at)
 cassette_invites(id, cassette_id, invitee, invited_by, created_at)
+reports(id, cassette_id | post_id, reported_by, reason, note, created_at)
+      -- ohne Fremdschlüssel: Meldungen überleben das Löschen des Gemeldeten
 
 posts(id, cassette_id, side, author, kind, body, media_id, tape_id, source,
       note_style, quoted_post_id, created_at)
@@ -375,7 +393,8 @@ Tailscale" zu „öffentlicher Dienst auf Hetzner" **verbindlich**, nicht mehr o
 Kurzfassung: Impressum mit ladungsfähiger Anschrift · Datenschutzerklärung ·
 AV-Vertrag mit Hetzner · Verzeichnis von Verarbeitungstätigkeiten · TOM-Dokumentation ·
 DSA-Pflichten (Meldeverfahren, Moderationsregeln, Kontaktstelle) · Mindestalter.
-Dazu die Produktseite davon: **Melden und Blockieren** gibt es in der App noch nicht.
+Dazu die Produktseite davon: **Melden** gibt es seit v0.35 (speichern und bestätigen, siehe
+Abschnitt 1), **Blockieren** und eine Moderationsoberfläche noch nicht.
 
 ### 16.7 Qualitätssicherung
 

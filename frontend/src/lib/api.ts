@@ -62,8 +62,31 @@ export function fetchCassettes(me: string): Promise<Cassette[]> {
   return apiFetch(`/api/cassettes?me=${encodeURIComponent(me)}`).then(unwrap<Cassette[]>);
 }
 
-export function fetchMembers(id: string): Promise<Member[]> {
-  return apiFetch(`/api/cassettes/${id}/members`).then(unwrap<Member[]>);
+export function fetchMembers(id: string, me: string): Promise<Member[]> {
+  return apiFetch(`/api/cassettes/${id}/members?me=${encodeURIComponent(me)}`).then(unwrap<Member[]>);
+}
+
+/* --- Melden ----------------------------------------------------------------
+ * Nur speichern und bestaetigen — im Prototyp liest das kein Moderationsteam
+ * automatisch, die Meldungen liegen in der Datenbank (siehe server.ts). */
+
+export type ReportReason = 'spam' | 'harassment' | 'violence' | 'illegal' | 'other';
+export const REPORT_REASONS: { key: ReportReason; label: string }[] = [
+  { key: 'harassment', label: 'Belästigung oder Mobbing' },
+  { key: 'violence', label: 'Gewalt oder Drohung' },
+  { key: 'illegal', label: 'Illegale Inhalte' },
+  { key: 'spam', label: 'Spam oder Werbung' },
+  { key: 'other', label: 'Etwas anderes' },
+];
+
+export type ReportTarget = { cassetteId: string } | { postId: string };
+
+export function sendReport(target: ReportTarget, reason: ReportReason, note: string, by: string): Promise<{ id: string }> {
+  return apiFetch('/api/reports', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...target, reason, note, by }),
+  }).then(unwrap<{ id: string }>);
 }
 
 export function createCassette(name: string, by: string): Promise<Cassette> {

@@ -217,6 +217,21 @@ db.exec(`
     updated_at INTEGER NOT NULL DEFAULT 0
   );
 
+  -- Meldungen (Kassette ODER Beitrag). Bewusst ohne Fremdschluessel: eine
+  -- Meldung soll nicht verschwinden, nur weil die gemeldete Person ihren
+  -- Beitrag oder die ganze Kassette loescht. Keine Moderationsoberflaeche —
+  -- gespeichert und bestaetigt, gelesen wird direkt in der Datenbank.
+  CREATE TABLE IF NOT EXISTS reports (
+    id          TEXT PRIMARY KEY,
+    cassette_id TEXT,
+    post_id     TEXT,
+    reported_by TEXT NOT NULL,
+    reason      TEXT NOT NULL,
+    note        TEXT NOT NULL DEFAULT '',
+    created_at  INTEGER NOT NULL,
+    CHECK ((cassette_id IS NULL) <> (post_id IS NULL))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_posts_side_time ON posts(side, created_at);
   CREATE INDEX IF NOT EXISTS idx_members_person ON cassette_members(member);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_to ON mixtapes(to_name, sealed_at);

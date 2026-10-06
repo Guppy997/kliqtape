@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.35.0',
+    date: '2026-10-06',
+    changes: [
+      'Neue Kassetten-Ansicht im Fach, aufgebaut wie eine Gruppeninfo: oben Name und Suche über das ganze Band, darunter Mitglieder und Einladen, ganz unten Verlassen, Melden und Löschen',
+      'Suche findet Text, Bildunterschriften, Namen und Mixtape-Titel auf beiden Seiten — ein Treffer legt die Kassette ein und springt direkt hin',
+      'Neu: Kassetten und fremde Beiträge melden. Die Meldung wird gespeichert, die gemeldete Person erfährt nichts davon',
+      'Löschen darf nur noch, wer die Kassette angelegt hat. Geht diese Person, übernimmt das dienstälteste Mitglied',
+      'Wer auf einer Kassette ist, sehen nur noch ihre Mitglieder',
+      'Umbenennen nimmt jetzt auch offene Einladungen mit',
+    ],
+  },
+  {
     version: '0.34.3',
     date: '2026-10-06',
     changes: [

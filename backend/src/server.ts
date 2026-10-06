@@ -302,6 +302,9 @@ app.post('/api/auth/rename', (req, res) => {
     db.prepare(`UPDATE mixtapes SET to_name = ? WHERE to_name = ?`).run(next, from);
     db.prepare(`UPDATE cassette_tapes SET named_by = ? WHERE named_by = ?`).run(next, from);
     db.prepare(`UPDATE cassette_tape_favorites SET member = ? WHERE member = ?`).run(next, from);
+    db.prepare(`UPDATE reports SET reported_by = ? WHERE reported_by = ?`).run(next, from);
+    db.prepare(`UPDATE cassette_invites SET invitee = ? WHERE invitee = ?`).run(next, from);
+    db.prepare(`UPDATE cassette_invites SET invited_by = ? WHERE invited_by = ?`).run(next, from);
   })();
 
   res.json({ name: next });
@@ -361,6 +364,9 @@ app.get('/api/cassettes', (req, res) => {
 });
 
 app.get('/api/cassettes/:id/members', (req, res) => {
+  // Vorher ohne jede Pruefung: mit einer Kassetten-ID liess sich die
+  // Besetzung jeder Runde auslesen.
+  requireMember(req, req.params.id, String(req.query.me ?? '').trim());
   const rows = db
     .prepare(`SELECT member, added_by, joined_at FROM cassette_members WHERE cassette_id = ? ORDER BY joined_at`)
     .all(req.params.id) as { member: string; added_by: string; joined_at: number }[];
@@ -558,14 +564,48 @@ app.post('/api/invites/:id/decline', (req, res) => {
   res.status(204).end();
 });
 
+/** Wer eine Kassette angelegt hat — nur diese Person darf sie loeschen. */
+function creatorOf(cassetteId: string): string {
+  const row = db.prepare(`SELECT created_by FROM cassettes WHERE id = ?`).get(cassetteId) as
+    | { created_by: string }
+    | undefined;
+  if (!row) throw new HttpError(404, 'Kassette nicht gefunden');
+  return row.created_by;
+}
+
+/** Geht die Gruenderin, uebernimmt das dienstaelteste verbliebene Mitglied —
+ *  sonst koennte niemand mehr die Kassette loeschen (wie die Admin-Rolle bei
+ *  WhatsApp-Gruppen). Ohne verbliebene Mitglieder passiert nichts, die
+ *  leere Kassette raeumt der Aufrufer ohnehin weg. */
+function handOver(cassetteId: string, leaving: string): void {
+  const next = db
+    .prepare(
+      `SELECT member FROM cassette_members WHERE cassette_id = ? AND member != ?
+        ORDER BY joined_at ASC LIMIT 1`,
+    )
+    .get(cassetteId, leaving) as { member: string } | undefined;
+  if (next) db.prepare(`UPDATE cassettes SET created_by = ? WHERE id = ?`).run(next.member, cassetteId);
+}
+
+function handOverCassettesOf(person: string): void {
+  const owned = db.prepare(`SELECT id FROM cassettes WHERE created_by = ?`).all(person) as { id: string }[];
+  for (const { id } of owned) handOver(id, person);
+}
+
 app.delete('/api/cassettes/:id/members/:member', (req, res) => {
   const by = String(req.query.by ?? '').trim();
   const target = decodeURIComponent(req.params.member);
   requireMember(req, req.params.id, by);
+  // Sonst liesse sich "loeschen darf nur die Gruenderin" umgehen: erst sie
+  // rauswerfen, dann selbst nachruecken.
+  if (target !== by && target === creatorOf(req.params.id)) {
+    throw new HttpError(403, 'Wer die Kassette angelegt hat, geht nur selbst');
+  }
 
-  db.prepare(`DELETE FROM cassette_members WHERE cassette_id = ? AND member = ?`).run(
-    req.params.id, target,
-  );
+  db.transaction(() => {
+    if (target === by && creatorOf(req.params.id) === by) handOver(req.params.id, by);
+    db.prepare(`DELETE FROM cassette_members WHERE cassette_id = ? AND member = ?`).run(req.params.id, target);
+  })();
 
   // Leere Kassetten verschwinden mitsamt ihren Beiträgen — sonst blieben
   // verwaiste Runden liegen, die niemand mehr sehen kann.
@@ -585,12 +625,15 @@ app.delete('/api/cassettes/:id/members/:member', (req, res) => {
   res.status(204).end();
 });
 
-// Jedes Mitglied darf die ganze Kassette loeschen, nicht nur eine gerade
-// leer gewordene — wie das Umbenennen/Umfaerben ist auch das eine
-// gleichberechtigte Aktion, keine, die nur der Gruendung vorbehalten ist.
+// Loeschen darf nur, wer die Kassette angelegt hat. Frueher durfte das
+// jedes Mitglied — eine Person konnte so die Erinnerungen aller anderen
+// wegwerfen. Umbenennen und Umfaerben bleiben fuer alle offen.
 app.delete('/api/cassettes/:id', (req, res) => {
   const by = String(req.query.by ?? '').trim();
   requireMember(req, req.params.id, by);
+  if (creatorOf(req.params.id) !== by) {
+    throw new HttpError(403, 'Löschen darf nur, wer die Kassette angelegt hat');
+  }
 
   const stats = db.transaction(() => {
     // Medien zuerst einsammeln, danach loeschen — sonst sind die Referenzen weg.
@@ -611,6 +654,46 @@ app.delete('/api/cassettes/:id', (req, res) => {
   })();
 
   res.json({ geloescht: stats });
+});
+
+/* -------------------------------------------------------------------------
+ * Melden — eine Kassette oder einen Beitrag. Nur speichern und bestaetigen;
+ * eine Moderationsoberflaeche gibt es im Prototyp nicht (CONCEPT.md §16.6).
+ * ---------------------------------------------------------------------- */
+
+const REPORT_REASONS = ['spam', 'harassment', 'violence', 'illegal', 'other'] as const;
+type ReportReason = (typeof REPORT_REASONS)[number];
+
+app.post('/api/reports', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  const cassetteId = req.body?.cassetteId ? String(req.body.cassetteId) : null;
+  const postId = req.body?.postId ? String(req.body.postId) : null;
+  const reason = String(req.body?.reason ?? '') as ReportReason;
+  const note = String(req.body?.note ?? '').trim().slice(0, 500);
+  if (!by) throw new HttpError(400, 'Name fehlt');
+  if (Boolean(cassetteId) === Boolean(postId)) throw new HttpError(400, 'Entweder eine Kassette oder einen Beitrag melden');
+  if (!REPORT_REASONS.includes(reason)) throw new HttpError(400, 'Unbekannter Grund');
+
+  // Melden darf nur, wer das Gemeldete auch sehen kann — sonst liessen sich
+  // fremde Runden per ID-Raten mit Meldungen fluten.
+  if (cassetteId) {
+    requireMember(req, cassetteId, by);
+  } else {
+    const post = db.prepare(`SELECT cassette_id, author FROM posts WHERE id = ?`).get(postId) as
+      | { cassette_id: string; author: string }
+      | undefined;
+    if (!post) throw new HttpError(404, 'Beitrag nicht gefunden');
+    requireMember(req, post.cassette_id, by);
+    if (post.author === by) throw new HttpError(400, 'Den eigenen Beitrag meldet man nicht, man löscht ihn');
+  }
+
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO reports (id, cassette_id, post_id, reported_by, reason, note, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(id, cassetteId, postId, by, reason, note, Date.now());
+
+  res.status(201).json({ id });
 });
 
 /* -------------------------------------------------------------------------
@@ -1724,6 +1807,7 @@ app.get('/api/export', (req, res) => {
       .prepare(`SELECT * FROM hotline_threads WHERE person_a = ? OR person_b = ?`)
       .all(me, me),
     tapeFavoriten: db.prepare(`SELECT * FROM cassette_tape_favorites WHERE member = ?`).all(me),
+    meldungen: db.prepare(`SELECT * FROM reports WHERE reported_by = ?`).all(me),
     mixtapes: tapes,
   });
 });
@@ -1752,6 +1836,9 @@ app.delete('/api/me', (req, res) => {
     // die ganze Leitung mit, nicht nur die eigenen Nachrichten darin.
     db.prepare(`DELETE FROM hotline_threads WHERE person_a = ? OR person_b = ?`).run(me, me);
     db.prepare(`DELETE FROM profiles WHERE name = ?`).run(me);
+    db.prepare(`DELETE FROM reports WHERE reported_by = ?`).run(me);
+    db.prepare(`DELETE FROM cassette_invites WHERE invitee = ?`).run(me);
+    handOverCassettesOf(me);
     db.prepare(`DELETE FROM cassette_members WHERE member = ?`).run(me);
     db.prepare(`DELETE FROM cassette_tape_favorites WHERE member = ?`).run(me);
     // Ein Tape-Name ist kassettenweit sichtbar, nicht privat — kann beim

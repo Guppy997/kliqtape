@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { claimName, deletePost, fetchFeed, fetchTapes, whoami, ApiError, KIND_LABEL, type FeedItem, type Kind } from '@/lib/api';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
+import { jumpTo, useJump } from '@/store/jumpStore';
 import { useViewMode } from '@/store/viewStore';
 import { berlinDateLabel, tapeIndexOf } from '@/lib/berlinDay';
 import CassetteHeader, { CassetteFacePreview, FLIP_IN_MS } from '@/components/CassetteHeader';
@@ -292,6 +293,15 @@ function Deck() {
     const key = `${cassetteId}:${side}`;
     const a = arrival.current;
     if (a.key !== key) return;
+
+    // Ein Treffer aus der Suche (CassetteInfo.tsx) geht vor "erster
+    // ungesehener Beitrag".
+    const jump = useJump.getState().postId;
+    if (jump && data.some((p) => p.id === jump)) {
+      a.jumped = true;
+      useJump.getState().setJump(null);
+      requestAnimationFrame(() => jumpTo(jump));
+    }
 
     if (!a.jumped) {
       a.jumped = true;

@@ -13,6 +13,7 @@ import { baseMime, pickAudioMime } from '@/lib/tapeAudio';
 import { useApp, type Side } from '@/store/appStore';
 import { useQuote } from '@/store/quoteStore';
 import Avatar from './Avatar';
+import ReportForm from './ReportForm';
 import Sheet from './Sheet';
 import TapePlayer from './TapePlayer';
 import TapeView from './TapeView';
@@ -30,6 +31,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
   const setPendingQuote = useQuote((s) => s.setPending);
   const [openTape, setOpenTape] = useState(false);
   const [listening, setListening] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const side = item.side;
   const mine = item.author === me;
 
@@ -89,6 +91,24 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
             style={{ color: 'var(--dim)' }}
           >
             ✕
+          </button>
+        )}
+        {/* Am selben Platz wie das Loeschen am eigenen Beitrag — fremde
+            Beitraege kann man nur melden, nicht entfernen. */}
+        {!mine && (
+          <button
+            type="button"
+            onClick={() => setReporting(true)}
+            aria-label="Beitrag melden"
+            title="Melden"
+            className="ml-1 px-1"
+            style={{ color: 'var(--dim)' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                 strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3.5 14V2.5" />
+              <path d="M3.5 3h8l-1.6 2.8L11.5 8.5h-8" />
+            </svg>
           </button>
         )}
       </div>
@@ -212,6 +232,12 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
           </button>
         )}
       </div>
+
+      <Sheet open={reporting} onClose={() => setReporting(false)} title="Beitrag melden">
+        {reporting && (
+          <ReportForm target={{ postId: item.id }} what={`diesen Beitrag von ${item.author}`} onDone={() => setReporting(false)} />
+        )}
+      </Sheet>
 
       <Sheet open={openTape} onClose={() => setOpenTape(false)} title={`Mixtape von ${item.author}`}>
         {openTape && item.tapeId && <TapeView id={item.tapeId} />}

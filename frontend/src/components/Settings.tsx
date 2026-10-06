@@ -9,6 +9,12 @@ import Lockup from './Lockup';
 import VersionLog from './VersionLog';
 import { VERSION } from '@/changelog';
 
+/** Was der Server bei Funktionen sieht, die nicht an eine Seite gebunden
+ *  sind. Ehrlich halten: lieber unangenehm als geschoent (CONCEPT.md §3). */
+const SERVER_SEES_EXTRA: [string, string][] = [
+  ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
+];
+
 export default function Settings() {
   const me = useApp((s) => s.me);
   const token = useApp((s) => s.token);
@@ -275,13 +281,27 @@ export default function Settings() {
                   </tbody>
                 </table>
               </div>
+              {/* Funktionen, die nicht an Seite A/B haengen — jede neue Funktion
+                  bekommt hier eine Zeile, bevor sie ausgeliefert wird. */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[0.78rem]" style={{ color: 'var(--ink)' }}>
+                  <tbody className="align-top">
+                    {SERVER_SEES_EXTRA.map(([k, v]) => (
+                      <tr key={k} style={{ borderTop: '1px solid var(--line)' }}>
+                        <td className="py-1.5 pr-2">{k}</td>
+                        <td className="py-1.5" style={{ color: 'var(--dim)' }}>{v}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <p
                 className="font-mono rounded-lg px-3 py-2.5 text-[0.62rem] leading-relaxed"
                 style={{ background: 'rgba(184,70,44,.15)', color: '#F0B5A5' }}
               >
-                Auf dem Gehäuse steht „Ende-zu-Ende" — das stimmt noch nicht. In diesem Prototyp ist
-                <strong> nichts verschlüsselt</strong>, auch Seite B nicht. Diese Tabelle sagt immer
-                die Wahrheit; wenn Verschlüsselung kommt, ändert sie sich hier zuerst.
+                In diesem Prototyp ist <strong>nichts Ende-zu-Ende-verschlüsselt</strong>, auch
+                Seite B nicht. Diese Tabelle sagt immer die Wahrheit; wenn Verschlüsselung kommt,
+                ändert sie sich hier zuerst.
               </p>
             </Block>
 

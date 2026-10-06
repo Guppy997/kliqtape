@@ -96,6 +96,67 @@ describe('Kassetten', () => {
   it('Fremder darf die Kassette nicht loeschen', async () => {
     expect((await api('DELETE', `/api/cassettes/${cassette}?by=${CARA}`, 'cara')).status).toBe(403);
   });
+
+  it('Fremder sieht die Besetzung nicht', async () => {
+    expect((await api('GET', `/api/cassettes/${cassette}/members?me=${CARA}`, 'cara')).status).toBe(403);
+    expect((await api('GET', `/api/cassettes/${cassette}/members?me=${BEN}`, 'ben')).status).toBe(200);
+  });
+});
+
+describe('Kassette loeschen und verlassen', () => {
+  it('Nur wer die Kassette angelegt hat, darf sie loeschen', async () => {
+    const id = await cassetteWith('anna', ['ben']);
+    expect((await api('DELETE', `/api/cassettes/${id}?by=${BEN}`, 'ben')).status).toBe(403);
+    expect((await api('DELETE', `/api/cassettes/${id}?by=${ANNA}`, 'anna')).status).toBe(200);
+  });
+
+  it('Die Gruenderin laesst sich nicht von anderen rauswerfen', async () => {
+    const id = await cassetteWith('anna', ['ben']);
+    expect((await api('DELETE', `/api/cassettes/${id}/members/${ANNA}?by=${BEN}`, 'ben')).status).toBe(403);
+  });
+
+  it('Geht die Gruenderin, uebernimmt das dienstaelteste Mitglied', async () => {
+    const id = await cassetteWith('anna', ['ben', 'dora']);
+    expect((await api('DELETE', `/api/cassettes/${id}/members/${ANNA}?by=${ANNA}`, 'anna')).status).toBe(204);
+    const list = await api('GET', `/api/cassettes?me=${BEN}`, 'ben');
+    expect(list.body.find((c: { id: string }) => c.id === id).createdBy).toBe(BEN);
+    expect((await api('DELETE', `/api/cassettes/${id}?by=${nameOf('dora')}`, 'dora')).status).toBe(403);
+    expect((await api('DELETE', `/api/cassettes/${id}?by=${BEN}`, 'ben')).status).toBe(200);
+  });
+});
+
+describe('Melden', () => {
+  let cassette: string;
+  let annasPost: string;
+
+  beforeAll(async () => {
+    cassette = await cassetteWith('anna', ['ben']);
+    const res = await api('POST', '/api/posts', 'anna', {
+      cassetteId: cassette, side: 'a', author: ANNA, kind: 'text', body: 'Melde mich',
+    });
+    annasPost = res.body.id;
+  });
+
+  it('Fremder darf weder Kassette noch Beitrag melden', async () => {
+    expect((await api('POST', '/api/reports', 'cara', { by: CARA, cassetteId: cassette, reason: 'spam' })).status).toBe(403);
+    expect((await api('POST', '/api/reports', 'cara', { by: CARA, postId: annasPost, reason: 'spam' })).status).toBe(403);
+  });
+
+  it('Niemand meldet im Namen eines anderen', async () => {
+    expect((await api('POST', '/api/reports', 'cara', { by: BEN, cassetteId: cassette, reason: 'spam' })).status).toBe(401);
+  });
+
+  it('Mitglied darf Kassette und fremden Beitrag melden, aber nicht den eigenen', async () => {
+    expect((await api('POST', '/api/reports', 'ben', { by: BEN, cassetteId: cassette, reason: 'other', note: 'Test' })).status).toBe(201);
+    expect((await api('POST', '/api/reports', 'ben', { by: BEN, postId: annasPost, reason: 'harassment' })).status).toBe(201);
+    expect((await api('POST', '/api/reports', 'anna', { by: ANNA, postId: annasPost, reason: 'spam' })).status).toBe(400);
+  });
+
+  it('Genau ein Ziel und ein bekannter Grund', async () => {
+    expect((await api('POST', '/api/reports', 'ben', { by: BEN, reason: 'spam' })).status).toBe(400);
+    expect((await api('POST', '/api/reports', 'ben', { by: BEN, cassetteId: cassette, postId: annasPost, reason: 'spam' })).status).toBe(400);
+    expect((await api('POST', '/api/reports', 'ben', { by: BEN, cassetteId: cassette, reason: 'langweilig' })).status).toBe(400);
+  });
 });
 
 describe('Tapes auf Seite A', () => {
