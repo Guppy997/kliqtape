@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.40.0',
+    date: '2026-10-06',
+    changes: [
+      'Neu: Album als PDF. In der Kassetten-Ansicht Tapes von Seite A auswählen und als druckbares Album speichern',
+      'Neu im Profil: "Meine Beiträge nicht in Alben" — dann fehlen deine Beiträge in jedem Album, das jemand exportiert',
+      'Seite B und Hot Line kommen nie in ein Album: der Export-Code hat technisch keinen Zugriff darauf',
+    ],
+  },
+  {
     version: '0.39.0',
     date: '2026-10-06',
     changes: [

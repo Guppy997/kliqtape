@@ -1,6 +1,6 @@
 {
   "name": "kliqtape-backend",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,13 +14,17 @@
   "dependencies": {
     "better-sqlite3": "^11.5.0",
     "express": "^4.21.1",
-    "express-rate-limit": "^8.6.2"
+    "express-rate-limit": "^8.6.2",
+    "pdfkit": "^0.20.2",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.11",
     "@types/express": "^4.17.21",
     "@types/node": "^22.9.0",
+    "@types/pdfkit": "^0.17.6",
+    "@types/qrcode": "^1.5.6",
     "eslint": "^10.12.0",
     "globals": "^17.13.0",
     "tsx": "^4.19.2",

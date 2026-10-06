@@ -1,6 +1,15 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ApiError, deleteEverything, downloadExport, renameIdentity, saveProfile, uploadMedia } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  ApiError,
+  deleteEverything,
+  downloadExport,
+  fetchAlbumOptOut,
+  renameIdentity,
+  saveProfile,
+  setAlbumOptOut,
+  uploadMedia,
+} from '@/lib/api';
 import { useApp, SIDE_LABEL, SIDE_HINT, type Side } from '@/store/appStore';
 import Avatar, { useProfiles } from './Avatar';
 import CameraCapture from './CameraCapture';
@@ -15,6 +24,7 @@ const SERVER_SEES_EXTRA: [string, string][] = [
   ['Film', 'im Klartext. Bis Sonntagabend gibt der Server das Bild an niemanden heraus, auch nicht an dich — gespeichert ist es aber sofort'],
   ['Imposter-Woche', 'im Klartext: Aufgabe, wer Imposter ist, alle Beiträge und wer auf wen getippt hat. Andere sehen vor der Auflösung nur ihre eigene Karte'],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
+  ['Album-Export', 'das PDF entsteht auf dem Server aus Seite A — Seite B und Hot Line kann der Export-Code gar nicht lesen. Gespeichert wird das PDF nicht'],
 ];
 
 export default function Settings() {
@@ -308,6 +318,10 @@ export default function Settings() {
             </Block>
 
             {/* --- Deine Daten --- */}
+            <Block title="Alben">
+              <AlbumOptOut />
+            </Block>
+
             <Block title="Deine Daten">
               <button
                 type="button"
@@ -391,6 +405,49 @@ export default function Settings() {
         )}
       </Sheet>
     </>
+  );
+}
+
+/** "Meine Beitraege nicht in Alben" — gilt fuer alle Kassetten und fuer
+ *  alle, die exportieren. Der Server laesst die Beitraege dann weg. */
+function AlbumOptOut() {
+  const me = useApp((s) => s.me);
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ['album-opt-out', me], queryFn: () => fetchAlbumOptOut(me) });
+  const toggle = useMutation({
+    mutationFn: (optOut: boolean) => setAlbumOptOut(me, optOut),
+    onSuccess: (r) => qc.setQueryData(['album-opt-out', me], r),
+  });
+  const on = data?.optOut ?? false;
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      disabled={!data || toggle.isPending}
+      onClick={() => toggle.mutate(!on)}
+      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left disabled:opacity-60"
+      style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm" style={{ color: 'var(--ink)' }}>
+          Meine Beiträge nicht in Alben
+        </span>
+        <span className="font-mono block text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+          Wer ein Tape als PDF-Album speichert, bekommt deine Beiträge dann nicht mit.
+        </span>
+      </span>
+      <span
+        aria-hidden="true"
+        className="relative h-5 w-9 shrink-0 rounded-full transition-colors"
+        style={{ background: on ? 'var(--accent)' : 'var(--line)' }}
+      >
+        <span
+          className="absolute top-0.5 size-4 rounded-full bg-white transition-[left]"
+          style={{ left: on ? '1.1rem' : '0.125rem' }}
+        />
+      </span>
+    </button>
   );
 }
 

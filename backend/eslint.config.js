@@ -17,6 +17,23 @@ export default defineConfig(
     },
   },
   {
+    // Druck-Module (Album, Brief) bekommen ihre Daten uebergeben und duerfen
+    // die Datenbank nicht selbst oeffnen — so bleiben Seite B und Hot Line
+    // fuer den Export technisch unerreichbar (siehe album_posts in db.ts).
+    files: ['src/print/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['**/db', '**/db.js', '**/server', '**/server.js'], message: 'Druck-Module bekommen Daten nur ueber ihre Source.' },
+            { group: ['better-sqlite3'], message: 'Druck-Module oeffnen keine Datenbank.' },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // In Tests sind lose JSON-Antworten normal.
     files: ['tests/**/*.ts'],
     rules: { '@typescript-eslint/no-explicit-any': 'off' },

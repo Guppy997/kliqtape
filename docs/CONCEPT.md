@@ -164,6 +164,25 @@ in `server.ts`. Beiträge sind Seite-A-Posts mit `source = 'imposter'` und `deve
 dieselbe Sperre wie beim Film. Mit `DEMO_TOOLS=1` kann die Gründerin den Sonntagabend
 vorziehen; die Vier-Wochen-Pause entfällt dann.
 
+## 5c. Album-Export
+
+Ein oder mehrere Tapes von Seite A als **PDF-Album** (A5, Papierton, Abzüge mit Rand, zwei pro
+Seite), zu finden in der Kassetten-Ansicht unter „Zum Mitnehmen“. Clips und O-Töne lassen sich
+nicht drucken und fehlen. Wer im Profil **„Meine Beiträge nicht in Alben“** einschaltet, fehlt
+automatisch in jedem Album, das irgendwer exportiert.
+
+**Seite B und Hot Line sind technisch ausgeschlossen, nicht nur weggefiltert:**
+
+1. Die einzige Datenquelle ist die SQLite-View `album_posts` (freigegebene Seite-A-Beiträge
+   ohne ausgenommene Personen).
+2. Das Druck-Modul `backend/src/print/album.ts` importiert weder die Datenbank noch den Server.
+   Es bekommt nur eine `AlbumSource`, die `server.ts` aus dieser View baut; Medien liefert sie
+   nur für IDs aus genau diesen Zeilen.
+3. Eine ESLint-Regel verbietet in `src/print/` den Import von `db`, `server` und
+   `better-sqlite3`, ein Test prüft den Quelltext zusätzlich.
+
+Das PDF entsteht auf dem Server (pdfkit) und wird nicht gespeichert.
+
 ## 6. Das Mixtape — der eigentliche USP
 
 Ein Mixtape ist ein **Geschenk an genau eine Person**. Du baust es über Tage: bis zu **12 Titel**,
@@ -282,7 +301,8 @@ hotline_messages(id, thread_id, from_name, kind, body, media_id, tape_id, source
 stories(id, author, kind, media_id, created_at, expires_at)   -- 24 h
 mixtapes(id, from_name, to_name, title, note, cover_id, sealed_at, created_at)
 mixtape_tracks(id, mixtape_id, position, title, artist, url)
-profiles(name, avatar_id, updated_at)
+profiles(name, avatar_id, album_opt_out, updated_at)
+album_posts   -- VIEW: einzige Quelle für den Album-Export (Abschnitt 5c)
 person_tokens(name, token_hash, created_at)
 media(id, mime, bytes, duration_ms, created_at)
 ```

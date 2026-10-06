@@ -18,6 +18,7 @@ import { useJump } from '@/store/jumpStore';
 import Avatar, { useProfiles } from './Avatar';
 import { CassetteFacePreview } from './CassetteHeader';
 import { useImposter } from './ImposterCard';
+import AlbumExport from './AlbumExport';
 import ReportForm from './ReportForm';
 
 interface Props {
@@ -144,6 +145,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
     onError: fail,
   });
   const [reporting, setReporting] = useState(false);
+  const [albumOpen, setAlbumOpen] = useState(false);
 
   function leave() {
     const others = members.filter((m) => m.name !== me);
@@ -419,6 +421,30 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
         })}
       </section>
 
+      {/* ---- Aus dem Band etwas machen ------------------------------------ */}
+      <section className="flex flex-col gap-1.5">
+        <h3 className="font-disp mb-1 text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+          Zum Mitnehmen
+        </h3>
+        <button
+          type="button"
+          onClick={() => setAlbumOpen(true)}
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left"
+          style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+        >
+          <AlbumIcon />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm" style={{ color: 'var(--ink)' }}>
+              Album als PDF
+            </span>
+            <span className="font-mono block text-[0.56rem]" style={{ color: 'var(--dim)' }}>
+              Tapes von Seite A zum Ausdrucken
+            </span>
+          </span>
+        </button>
+      </section>
+      <AlbumExport open={albumOpen} cassette={cassette} onClose={() => setAlbumOpen(false)} />
+
       {/* ---- Special: Imposter-Woche ------------------------------------- */}
       <ImposterSpecial cassette={cassette} onStarted={onJump} onError={fail} />
 
@@ -563,6 +589,16 @@ function FlagIcon() {
     <svg {...iconProps}>
       <path d="M3.5 14V2.5" />
       <path d="M3.5 3h8l-1.6 2.8L11.5 8.5h-8" />
+    </svg>
+  );
+}
+
+function AlbumIcon() {
+  return (
+    <svg {...iconProps} width={18} height={18} style={{ color: 'var(--accent)' }}>
+      <rect x="2.5" y="2" width="11" height="12" rx="1" />
+      <path d="M5.5 2v12" />
+      <rect x="7.5" y="5" width="4" height="3.5" />
     </svg>
   );
 }

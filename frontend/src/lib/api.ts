@@ -776,6 +776,61 @@ export async function downloadExport(me: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+/** Speichert einen Blob als Datei — derselbe Weg fuer JSON-Export, Album,
+ *  Einladungsbrief und Mixtape-Karte. */
+export function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Manche Browser lesen die URL erst nach dem Klick — kurz stehen lassen.
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/* --- Album-Export -----------------------------------------------------------
+ * Nur Seite A. Was im Album landet, entscheidet der Server (View album_posts):
+ * nichts Unentwickeltes, nichts von Leuten mit "Meine Beitraege nicht in Alben". */
+
+export interface AlbumPreviewPost {
+  id: string;
+  author: string;
+  kind: Kind;
+  body: string;
+  mediaId: string | null;
+}
+
+export interface AlbumPreview {
+  cassetteName: string;
+  tapes: { index: number; name: string | null; date: string; posts: AlbumPreviewPost[] }[];
+}
+
+export function fetchAlbumPreview(cassetteId: string, me: string): Promise<AlbumPreview> {
+  return apiFetch(`/api/cassettes/${cassetteId}/album?me=${encodeURIComponent(me)}`).then(unwrap<AlbumPreview>);
+}
+
+export async function downloadAlbum(cassetteId: string, me: string, tapes: number[], name: string): Promise<void> {
+  const res = await apiFetch(
+    `/api/cassettes/${cassetteId}/album.pdf?me=${encodeURIComponent(me)}&tapes=${tapes.join(',')}`,
+  );
+  if (!res.ok) await unwrap(res);
+  saveBlob(await res.blob(), `kliqtape-album-${name.replace(/[^\p{L}\p{N}]+/gu, '-')}.pdf`);
+}
+
+export function fetchAlbumOptOut(me: string): Promise<{ optOut: boolean }> {
+  return apiFetch(`/api/me/album?me=${encodeURIComponent(me)}`).then(unwrap<{ optOut: boolean }>);
+}
+
+export function setAlbumOptOut(me: string, optOut: boolean): Promise<{ optOut: boolean }> {
+  return apiFetch('/api/me/album', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me, optOut }),
+  }).then(unwrap<{ optOut: boolean }>);
+}
+
 export function deleteEverything(me: string): Promise<{ geloescht: Record<string, number> }> {
   return apiFetch(`/api/me?me=${encodeURIComponent(me)}`, { method: 'DELETE' }).then(
     unwrap<{ geloescht: Record<string, number> }>,

@@ -548,6 +548,28 @@ repairReference(
    );`,
 );
 
+addColumn('profiles', 'album_opt_out', 'album_opt_out INTEGER NOT NULL DEFAULT 0', 'Meine Beiträge nicht in Alben');
+
+/**
+ * Die EINZIGE Quelle fuer den Album-Export (src/album/). Enthaelt nur
+ * freigegebene Seite-A-Beitraege und nichts von Leuten, die ihre Beitraege
+ * aus Alben ausgenommen haben. Seite B und Hot Line sind hier technisch
+ * nicht erreichbar — das Album-Modul bekommt keinen anderen Zugang zur
+ * Datenbank (siehe AlbumSource in server.ts und die Lint-Regel in
+ * eslint.config.js). Bei jedem Start neu angelegt, damit Aenderungen an der
+ * Definition ohne Migration greifen.
+ */
+db.exec(`
+  DROP VIEW IF EXISTS album_posts;
+  CREATE VIEW album_posts AS
+    SELECT p.id, p.cassette_id, p.author, p.kind, p.body, p.media_id, p.tape_id,
+           p.source, p.taken_at, p.created_at
+      FROM posts p
+     WHERE p.side = 'a'
+       AND (p.develop_at IS NULL OR p.develop_at <= CAST(strftime('%s', 'now') AS INTEGER) * 1000)
+       AND p.author NOT IN (SELECT name FROM profiles WHERE album_opt_out = 1);
+`);
+
 export type Side = 'a' | 'b';
 export type Kind = 'text' | 'photo' | 'video' | 'voice' | 'tape';
 
