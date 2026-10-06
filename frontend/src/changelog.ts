@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.37.1',
+    date: '2026-10-06',
+    changes: [
+      'Knöpfe zeigen ihre Beschriftung jetzt in der vorgesehenen Größe — eine alte Stilregel ließ seit Version 0.1 jeden Knopf die Schriftgröße seiner Umgebung erben',
+    ],
+  },
+  {
     version: '0.37.0',
     date: '2026-10-06',
     changes: [

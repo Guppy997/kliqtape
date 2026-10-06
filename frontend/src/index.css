@@ -51,9 +51,11 @@ body {
   overscroll-behavior-y: none;
 }
 
-button {
-  font: inherit;
-}
+/* Frueher stand hier `button { font: inherit; }` — ausserhalb jeder
+   Cascade-Layer. In Tailwind v4 schlaegt ungeschichtetes CSS jede Utility,
+   jeder Knopf erbte deshalb die Schriftgroesse seines Elternelements statt
+   seiner text-[...]-Klasse. Preflight setzt `font: inherit` ohnehin, nur
+   in @layer base, wo Utilities es ueberschreiben duerfen. */
 
 :focus-visible {
   outline: 2px solid currentColor;
