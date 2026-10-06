@@ -20,6 +20,7 @@ import NewsView from '@/components/NewsView';
 import StoryView from '@/components/StoryView';
 import TapeHeader, { defaultTapeName, tapeDisplayName } from '@/components/TapeHeader';
 import UpdateNotification from '@/components/UpdateNotification';
+import { EmptyBand, NoCassette } from '@/components/EmptyState';
 
 export default function App() {
   const me = useApp((s) => s.me);
@@ -132,6 +133,28 @@ function Deck() {
   const setViewMode = useViewMode((s) => s.setViewMode);
   /** Klappt die Kassette unter der Bedienzeile aus. Beim Ankommen offen. */
   const [deckOpen, setDeckOpen] = useState(true);
+  // Ohne eingelegte Kassette gibt es nichts zu zeigen — die graue
+  // "Kein Band"-Kassette verdeckte dort nur den Leerzustand.
+  const panelShown = deckOpen && Boolean(cassetteId);
+
+  // Hoehe des ausgeklappten Panels als CSS-Variable: es liegt bewusst UEBER
+  // dem Inhalt (Leseposition bleibt), Leerzustaende sollen aber darunter
+  // anfangen statt verdeckt zu werden (EmptyState.tsx). ResizeObserver
+  // feuert auch waehrend des Auf-/Zuklappens, die Variable gleitet also mit.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    const root = document.documentElement.style;
+    const update = () => root.setProperty('--deck-h', `${el.getBoundingClientRect().height}px`);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.removeProperty('--deck-h');
+    };
+  }, []);
 
   // Zuklappen bei ECHTER Nutzereingabe, nicht bei jedem Scroll-Ereignis:
   // beim Ankommen scrollt die App selbst (nach oben, zum ersten ungesehenen
@@ -340,7 +363,7 @@ function Deck() {
         className="glass sticky top-0 z-30 pt-[max(0.5rem,env(safe-area-inset-top))]"
         // Solange die Kassette ausgeklappt ist, faellt die Trennlinie nach
         // unten weg — Leiste und Panel sind dann eine durchgehende Flaeche.
-        style={{ borderBottomColor: deckOpen ? 'transparent' : undefined }}
+        style={{ borderBottomColor: panelShown ? 'transparent' : undefined }}
       >
         <div className="mx-auto flex max-w-xl flex-col gap-1.5 px-3 pb-2">
           <div
@@ -441,11 +464,12 @@ function Deck() {
           // ease-out schob fast die ganze Bewegung an den Anfang — es wirkte
           // dadurch weggeschnappt, obwohl die Dauer schon laenger war. Diese
           // Kurve startet sanft und laeuft weich aus.
+          ref={panelRef}
           className="absolute inset-x-0 top-full grid transition-[grid-template-rows,opacity] duration-[420ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
-          style={{ gridTemplateRows: deckOpen ? '1fr' : '0fr', opacity: deckOpen ? 1 : 0 }}
+          style={{ gridTemplateRows: panelShown ? '1fr' : '0fr', opacity: panelShown ? 1 : 0 }}
           // inert statt aria-hidden: eingeklappt sind Spulen und Umdreh-Flaeche
           // zwar unsichtbar, blieben aber per Tastatur erreichbar.
-          inert={!deckOpen}
+          inert={!panelShown}
         >
           {/* Dieselbe Glas-Flaeche wie die Leiste darueber, nur ohne obere
               Kante — dadurch wirkt das Panel wie deren Fortsetzung und nicht
@@ -470,18 +494,7 @@ function Deck() {
         className="mx-auto flex max-w-xl flex-col gap-1.5 px-3 pt-2"
         style={{ paddingBottom: isCassetteChat ? 'calc(var(--chatcomposer-h, 5rem) + 1rem)' : '6rem' }}
       >
-        {!cassetteId && !loadingTapes && (
-          <div className="py-16 text-center">
-            <p className="font-hand text-lg" style={{ color: 'var(--dim)' }}>
-              Kein Band eingelegt.
-            </p>
-            <p className="mt-2 font-mono text-[0.64rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-              Eine Kassette ist eine Runde von Leuten.
-              <br />
-              Öffne oben das Fach und beschrifte dein erstes Band.
-            </p>
-          </div>
-        )}
+        {!cassetteId && !loadingTapes && <NoCassette />}
 
         {cassetteId && (
           <>
@@ -506,7 +519,11 @@ function Deck() {
                   </p>
                 )}
 
-                {!isLoading && !isError && shown.length === 0 && (
+                {!isLoading && !isError && data.length === 0 && side === 'a' && current && (
+                  <EmptyBand cassette={current} />
+                )}
+
+                {!isLoading && !isError && shown.length === 0 && !(data.length === 0 && side === 'a' && current) && (
                   <div className="py-16 text-center">
                     <p className="font-hand text-lg" style={{ color: 'var(--dim)' }}>
                       {data.length === 0 ? 'Leeres Band.' : 'Nichts davon auf diesem Band.'}

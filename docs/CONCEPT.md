@@ -50,6 +50,13 @@ Hier sind es zwei Fragen, die man ohne Nachdenken beantwortet:
 1. **Welche Kassette?** → Du weißt, mit wem du redest.
 2. **Bleibt das oder ist es weg?** → Du weißt, ob es wichtig ist.
 
+### Der erste Moment
+
+Ohne Kassette zeigt die App eine leere Kassettenhülle, einen Satz dazu, was eine Kassette ist,
+drei Schritte (Beschriften, Einladen, Aufnehmen) und einen Knopf direkt ins Beschriften. Offene
+Einladungen stehen dort mit dabei. Ein leeres Band erklärt Seite A und bietet Einladen an,
+solange man allein ist.
+
 ### Die Kassetten-Ansicht im Fach
 
 Aufgebaut wie die Gruppeninfo bei WhatsApp, weil das jede:r kennt: oben die Kassette mit Namen

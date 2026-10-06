@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createCassette, fetchCassettes, setCassetteColorIndex, type Cassette } from '@/lib/api';
 import { useApp } from '@/store/appStore';
@@ -112,6 +112,26 @@ export default function CassetteDeck() {
 
   const { data: cassettes = [] } = useCassettes();
   const looks = useLookIndex();
+
+  // Von aussen mit Absicht geoeffnet (Leerzustand): direkt ins Anlegen bzw.
+  // in die Kassetten-Ansicht mit offenem Einladen springen.
+  const deckIntent = useBottomNav((s) => s.deckIntent);
+  const clearDeckIntent = useBottomNav((s) => s.clearDeckIntent);
+  const [inviteFirst, setInviteFirst] = useState(false);
+  useEffect(() => {
+    if (!open || !deckIntent) return;
+    setError(null);
+    if (deckIntent.kind === 'create') {
+      setManage(null);
+      setNewName('');
+      setCreating(true);
+    } else {
+      setCreating(false);
+      setManage(deckIntent.cassetteId);
+      setInviteFirst(true);
+    }
+    clearDeckIntent();
+  }, [open, deckIntent, clearDeckIntent]);
   // Die eingelegte Kassette steht immer oben, der Rest bleibt in der
   // Reihenfolge, die der Server schon liefert: nach letzter Aktivitaet
   // (ORDER BY last_at DESC, siehe GET /api/cassettes). sort() ist stabil,
@@ -267,7 +287,11 @@ export default function CassetteDeck() {
           <CassetteInfo
             cassette={cassettes.find((c) => c.id === manage)!}
             pairIndex={looks.get(manage)}
-            onBack={() => setManage(null)}
+            startInviting={inviteFirst}
+            onBack={() => {
+              setManage(null);
+              setInviteFirst(false);
+            }}
             onGone={() => {
               setManage(null);
               if (manage === cassetteId) setCassette(null);
@@ -463,7 +487,10 @@ export default function CassetteDeck() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setManage(c.id)}
+                    onClick={() => {
+                      setInviteFirst(false);
+                      setManage(c.id);
+                    }}
                     aria-label={`${c.name} bearbeiten`}
                     title="Bearbeiten"
                     className="grid size-7 shrink-0 place-items-center rounded-full"

@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.36.0',
+    date: '2026-10-06',
+    changes: [
+      'Ohne Kassette gibt es jetzt einen richtigen Anfang: leere Kassettenhülle, drei Schritte (Beschriften, Einladen, Aufnehmen) und ein Knopf, der direkt ins Beschriften führt',
+      'Offene Einladungen stehen dort gleich mit dabei',
+      'Ein leeres Band erklärt Seite A und bietet "lad jemanden ein" an, solange man allein ist',
+      'Die graue "Kein Band"-Kassette verdeckt den Anfang nicht mehr',
+    ],
+  },
+  {
     version: '0.35.1',
     date: '2026-10-06',
     changes: [

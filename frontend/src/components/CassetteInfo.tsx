@@ -21,6 +21,8 @@ import ReportForm from './ReportForm';
 interface Props {
   cassette: Cassette;
   pairIndex?: number;
+  /** Einladen gleich aufgeklappt — aus dem Leerzustand "allein auf dem Band". */
+  startInviting?: boolean;
   onBack: () => void;
   /** Kassette ist fuer mich weg — verlassen oder geloescht. */
   onGone: () => void;
@@ -35,7 +37,7 @@ interface Props {
  * Loeschen sieht nur, wer die Kassette angelegt hat — der Server prueft das
  * ohnehin (DELETE /api/cassettes/:id).
  */
-export default function CassetteInfo({ cassette, pairIndex, onBack, onGone, onJump }: Props) {
+export default function CassetteInfo({ cassette, pairIndex, startInviting = false, onBack, onGone, onJump }: Props) {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
   const qc = useQueryClient();
@@ -105,7 +107,7 @@ export default function CassetteInfo({ cassette, pairIndex, onBack, onGone, onJu
   }
 
   /* ---- Einladen ---------------------------------------------------------- */
-  const [inviting, setInviting] = useState(false);
+  const [inviting, setInviting] = useState(startInviting);
   const [add, setAdd] = useState('');
   const [invited, setInvited] = useState<string | null>(null);
   const { data: profiles = [] } = useProfiles();
