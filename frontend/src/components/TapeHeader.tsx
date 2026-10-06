@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { favoriteTape, setTapeName, unfavoriteTape, type TapeOverride } from '@/lib/api';
 import { berlinDateLabel, dateOfTapeIndex } from '@/lib/berlinDay';
@@ -32,6 +32,7 @@ export function tapeDisplayName(tapeIndex: number, customName: string | null | u
 export default function TapeHeader({ cassetteId, cassetteCreatedAt, tapeIndex, override, me, onChanged }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const cancelled = useRef(false);
 
   const name = tapeDisplayName(tapeIndex, override?.name);
   const dateLabel = berlinDateLabel(dateOfTapeIndex(cassetteCreatedAt, tapeIndex).getTime());
@@ -69,28 +70,51 @@ export default function TapeHeader({ cassetteId, cassetteCreatedAt, tapeIndex, o
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => rename.mutate(draft.trim())}
+            onBlur={() => {
+              // Escape bricht ab — ohne diese Sperre speicherte das danach
+              // feuernde blur den Entwurf trotzdem.
+              if (cancelled.current) return;
+              rename.mutate(draft.trim());
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-              if (e.key === 'Escape') setEditing(false);
+              if (e.key === 'Escape') {
+                cancelled.current = true;
+                setEditing(false);
+              }
             }}
             maxLength={60}
             placeholder={defaultTapeName(tapeIndex)}
+            aria-label="Name des Tapes"
             className="font-hand rounded px-1.5 py-0.5 text-[0.95rem] outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--accent)', color: 'var(--ink)' }}
           />
         ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setDraft(override?.name ?? '');
-              setEditing(true);
-            }}
-            className="font-hand text-[0.95rem]"
-            style={{ color: 'var(--ink)' }}
-          >
-            {name}
-          </button>
+          <>
+            {/* Der Name ist reiner Text — Antippen beim Scrollen loeste vorher
+                versehentlich das Umbenennen aus. Bearbeiten nur ueber den Stift. */}
+            <span className="font-hand text-[0.95rem]" style={{ color: 'var(--ink)' }}>
+              {name}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                cancelled.current = false;
+                setDraft(override?.name ?? '');
+                setEditing(true);
+              }}
+              aria-label={`${name} umbenennen`}
+              title="Umbenennen"
+              className="grid size-6 shrink-0 place-items-center rounded-full"
+              style={{ color: 'var(--dim)' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                   strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M11 2l3 3-8 8-3.5.5.5-3.5z" />
+                <path d="M9.5 3.5l3 3" />
+              </svg>
+            </button>
+          </>
         )}
       </div>
     </div>

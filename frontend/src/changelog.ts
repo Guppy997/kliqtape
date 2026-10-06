@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.35.1',
+    date: '2026-10-06',
+    changes: [
+      'Tape-Namen ändert man jetzt über das Stift-Symbol daneben — Antippen des Namens beim Scrollen startete vorher versehentlich das Umbenennen',
+      'Escape bricht das Umbenennen ab, statt den halben Entwurf doch zu speichern',
+    ],
+  },
+  {
     version: '0.35.0',
     date: '2026-10-06',
     changes: [
