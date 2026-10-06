@@ -10,6 +10,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.34.1',
+    date: '2026-10-06',
+    changes: [
+      'Hot Line: der Hinweis "Nur Text" war veraltet — Leitungen nehmen längst Bilder, Clips, O-Töne und Mixtapes an',
+    ],
+  },
+  {
     version: '0.34.0',
     date: '2026-09-08',
     changes: [

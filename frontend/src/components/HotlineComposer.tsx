@@ -225,7 +225,7 @@ export default function HotlineComposer() {
             )}
 
             <p className="font-mono mt-2 text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-              Nur Text. Der Verlauf bleibt dauerhaft.
+              Text, Bild, Clip, O-Ton oder Mixtape. Der Verlauf bleibt dauerhaft.
             </p>
           </div>
         )}

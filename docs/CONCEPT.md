@@ -81,6 +81,7 @@ saubere Typografie, großzügige Abstände, flüssige Bewegung. Kein Sepia über
   Inhalt — man sieht ihn nie umklappen.
 - **Die Spulen laufen beim Scrollen mit.** Links wird dünner, rechts dicker.
 - **Track-Nummern statt Zeitstempel.** `A3`, `B7` — Position auf dem Band, kein Zeitdruck.
+  Auf Seite A zählt die Nummer pro Tape (also pro Berlin-Kalendertag) neu ab `A1`.
 - **Tonfetzen statt „da war ich".** Reagieren heißt: eine 3 Sekunden kurze Sprachaufnahme an die
   postende Person. Privat — nur sie hört, wer wie reagiert hat, niemand sonst sieht eine Liste
   oder einen öffentlichen Zähler.
@@ -116,7 +117,9 @@ einen einzigen Aufruf nach draußen. Funktioniert für Apple Music, YouTube und 
 
 Eine offene Leitung zwischen **zwei Personen**, unabhängig von jeder Kassette. Gelber
 Walkman-Knopf unten neben REC. Normalfall ist ein echter Verlauf — die erste Nachricht eröffnet
-die Leitung, danach ein echtes Hin und Her. **Nur Text**, höchstens 240 Zeichen pro Nachricht.
+die Leitung, danach ein echtes Hin und Her. Dieselben Nachrichtenarten wie im Gruppenchat
+(Text bis 240 Zeichen, Schnappschuss, Clip, O-Ton, versiegeltes Mixtape) und dieselbe
+Darstellung: Seite B und Hot Line teilen sich die Komponente `ChatThread`.
 
 **Der Verlauf bleibt dauerhaft.** Ursprünglich war ein rollierendes 24-Stunden-Fenster geplant
 (nur die letzten 24 Stunden sichtbar, danach fallen Nachrichten einzeln raus) — das wurde
@@ -184,22 +187,31 @@ Endarchitektur.
 
 ## 10. Datenmodell
 
+Gekürzt, die vollständige Fassung steht in `backend/src/db.ts`.
+
 ```sql
-cassettes(id, name, created_by, created_at)
+cassettes(id, name, created_by, created_at, color_index)
 cassette_members(cassette_id, member, added_by, joined_at)
+cassette_invites(id, cassette_id, invitee, invited_by, created_at)
 
-posts(id, cassette_id, side, author, kind, body,
-      media_id, tape_id, source, expires_at, created_at)
-      -- side='b' setzt expires_at = created_at + 24h
+posts(id, cassette_id, side, author, kind, body, media_id, tape_id, source,
+      note_style, quoted_post_id, created_at)
+      -- beide Seiten dauerhaft; expires_at existiert noch, wird aber nicht gesetzt
+      -- quoted_post_id: Seite-B-Nachricht greift einen Seite-A-Beitrag auf
+cassette_tapes(cassette_id, tape_index, name, named_by, named_at)
+      -- Tape = Berlin-Kalendertag seit Gründung, tape_index wird berechnet, nie gespeichert
 reactions(post_id, author, media_id, created_at)
-      -- Tonfetzen: media_id zeigt auf eine kurze Sprachaufnahme, sichtbar nur fuer
-      -- posts.author selbst — sonst nur "iSentTonfetzen" (ja/nein), keine Namen
+      -- Tonfetzen: hörbar nur für posts.author, sonst nur "iSentTonfetzen" (ja/nein)
 
+hotline_threads(id, person_a, person_b, created_at)
+hotline_messages(id, thread_id, from_name, kind, body, media_id, tape_id, source,
+                 created_at, heard_at)          -- dauerhaft
+
+stories(id, author, kind, media_id, created_at, expires_at)   -- 24 h
 mixtapes(id, from_name, to_name, title, note, cover_id, sealed_at, created_at)
 mixtape_tracks(id, mixtape_id, position, title, artist, url)
-
-hotlines(id, post_id?, from_name, to_name, body, created_at, expires_at, heard_at)
 profiles(name, avatar_id, updated_at)
+person_tokens(name, token_hash, created_at)
 media(id, mime, bytes, duration_ms, created_at)
 ```
 
