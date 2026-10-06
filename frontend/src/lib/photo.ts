@@ -142,8 +142,8 @@ export async function openCamera(facing: 'user' | 'environment', withAudio: bool
     });
   } catch (err) {
     const name = (err as DOMException)?.name;
-    if (name === 'NotAllowedError') throw new Error('Zugriff abgelehnt. Erlaube Kamera und Mikrofon.');
-    if (name === 'NotFoundError') throw new Error('Keine Kamera gefunden.');
-    throw new Error('Kamera lässt sich nicht öffnen.');
+    if (name === 'NotAllowedError') throw new Error('Zugriff abgelehnt. Erlaube Kamera und Mikrofon.', { cause: err });
+    if (name === 'NotFoundError') throw new Error('Keine Kamera gefunden.', { cause: err });
+    throw new Error('Kamera lässt sich nicht öffnen.', { cause: err });
   }
 }

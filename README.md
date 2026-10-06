@@ -107,10 +107,24 @@ die Metadaten in SQLite unter `kliqtape-data`.
 
 ## Entwicklung ohne Docker
 
+Node 22, wie im Docker-Image. `better-sqlite3` 11 baut nicht unter Node 26.
+
 ```bash
 cd backend  && npm install && npm run dev     # :3000
 cd frontend && npm install && npm run dev     # :5173, proxyt /api auf :3000
 ```
+
+## Tests und CI
+
+```bash
+cd backend  && npm test            # API-Tests gegen eine Wegwerf-Datenbank
+cd backend  && npm run lint && npm run typecheck
+cd frontend && npm run lint && npm run typecheck && npm run build
+```
+
+Die Tests starten den echten Server als eigenen Prozess. Jede verändernde Route hat mindestens
+einen Test „Fremder darf das nicht“. GitHub Actions führt dasselbe bei jedem Push aus
+(`.github/workflows/ci.yml`).
 
 ## Gestaltungsregel
 

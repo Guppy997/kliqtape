@@ -13,3 +13,4 @@ media/
 *.sqlite-shm
 .vite/
 coverage/
+*.tsbuildinfo

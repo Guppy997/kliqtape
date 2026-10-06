@@ -362,6 +362,10 @@ mitbekommt (geteilter Link, Export, Protokolldatei), kommt dauerhaft dran, auch 
 Mitglied zu sein. Für eine App mit Privatsphäre als Kernversprechen sollte der Abruf an
 die Mitgliedschaft gebunden werden — oder an kurzlebige signierte Links.
 
+**Teilweise behoben (2026-10-06):** Das *Hochladen* (`POST /api/media`) verlangt jetzt einen
+gültigen Zugangscode. Vorher konnte jeder, der die URL kannte, Dateien auf die Platte schreiben.
+Der *Abruf* bleibt wie beschrieben offen.
+
 ### 16.6 Rechtliches vor der öffentlichen Registrierung
 
 Die Liste steht in Abschnitt 12 und wird mit dem Wechsel von „Freundeskreis über
@@ -373,7 +377,14 @@ Dazu die Produktseite davon: **Melden und Blockieren** gibt es in der App noch n
 
 ### 16.7 Qualitätssicherung
 
-Kommt laut Planung noch, hier nur als Merkposten: es gibt derzeit **keine Tests, keine CI
-und kein funktionierendes Linting** — beide `package.json` deklarieren ein `lint`-Skript,
-aber es fehlt eine `eslint.config.js`, der Aufruf bricht ab. Bei der Neuentwicklung von
-Anfang an einrichten (siehe 16.1, warum das konkret weh getan hat).
+**Eingerichtet (2026-10-06):** API-Tests mit vitest in `backend/tests/`. Der echte Server
+startet dabei als eigener Prozess gegen eine Wegwerf-Datenbank. Pro verändernder Route gibt es
+mindestens einen Test „Fremder darf das nicht“ (siehe 16.1), jeweils mit Gegenprobe, dass die
+berechtigte Person es darf. ESLint (Flat Config) läuft in beiden Paketen. GitHub Actions prüft
+bei jedem Push Typen, Lint, Tests und den Frontend-Build, mit `TZ=Europe/Berlin`.
+
+**Regel ab jetzt:** Eine neue verändernde Route kommt nur zusammen mit ihrem Fremden-Test ins
+Repo.
+
+**Lokal:** Node 22 wie im Docker-Image. `better-sqlite3` 11 lässt sich unter Node 26 nicht
+bauen; ohne Node 22 im Pfad hilft `npx -p node@22 -- npm test`.

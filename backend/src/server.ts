@@ -26,7 +26,9 @@ app.use(
   '/api',
   rateLimit({
     windowMs: 60_000,
-    limit: 300,
+    // Ueberschreibbar nur fuer die Testsuite, die in Sekunden mehr Anfragen
+    // stellt als ein Mensch in einer Minute.
+    limit: Number(process.env.RATE_LIMIT_PER_MIN ?? 300),
     standardHeaders: true,
     legacyHeaders: false,
   }),
@@ -80,6 +82,10 @@ app.post(
   '/api/media',
   express.raw({ type: '*/*', limit: `${MAX_UPLOAD_MB}mb` }),
   (req, res) => {
+    // Vorher ohne jede Pruefung: wer die URL kannte, konnte beliebig Dateien
+    // auf die Platte schreiben. Ein gueltiger Zugangscode reicht — zu welcher
+    // Kassette das Medium gehoert, entscheidet erst der Beitrag, der es nutzt.
+    identityOf(req);
     const mime = (req.get('content-type') ?? '').split(';')[0]?.trim() ?? '';
     const ext = ALLOWED_MIME[mime];
     if (!ext) throw new HttpError(415, `Medientyp nicht erlaubt: ${mime || 'unbekannt'}`);
@@ -212,15 +218,21 @@ function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-/** Wirft 401, wenn der mitgeschickte Token nicht zum behaupteten Namen passt. */
-function requireIdentity(req: Request, claimedName: string): void {
+/** Name hinter dem mitgeschickten Token, sonst 401. */
+function identityOf(req: Request): string {
   const token = req.header('X-Auth-Token');
   const row = token
     ? (db.prepare(`SELECT name FROM person_tokens WHERE token_hash = ?`).get(hashToken(token)) as
         | { name: string }
         | undefined)
     : undefined;
-  if (!row || row.name !== claimedName) throw new HttpError(401, 'Nicht angemeldet');
+  if (!row) throw new HttpError(401, 'Nicht angemeldet');
+  return row.name;
+}
+
+/** Wirft 401, wenn der mitgeschickte Token nicht zum behaupteten Namen passt. */
+function requireIdentity(req: Request, claimedName: string): void {
+  if (identityOf(req) !== claimedName) throw new HttpError(401, 'Nicht angemeldet');
 }
 
 app.post('/api/auth/claim', (req, res) => {

@@ -163,7 +163,6 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
       if (ms >= 90_000) stopRecording();
     }, 100);
     return () => window.clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recState]);
 
   useEffect(

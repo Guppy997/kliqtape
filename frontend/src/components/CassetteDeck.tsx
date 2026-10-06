@@ -39,11 +39,11 @@ export function useCassettes() {
  * eingelegte Kassette zaehlt nie mit, die sieht man ja gerade.
  */
 export function useCassetteNews(): Cassette[] {
-  const cassettes = useCassettes().data ?? [];
+  const cassettes = useCassettes().data;
   const cassetteId = useApp((s) => s.cassetteId);
   const seenAt = useApp((s) => s.cassetteSeenAt);
   return useMemo(
-    () => cassettes.filter((c) => c.id !== cassetteId && c.lastAt != null && c.lastAt > (seenAt[c.id] ?? 0)),
+    () => (cassettes ?? []).filter((c) => c.id !== cassetteId && c.lastAt != null && c.lastAt > (seenAt[c.id] ?? 0)),
     [cassettes, cassetteId, seenAt],
   );
 }

@@ -1,6 +1,7 @@
 /**
- * Manuell gepflegt, synchron zur Version in package.json.
- * Bewusst kein CI, bewusst kein automatisches Versionieren.
+ * Manuell gepflegt, synchron zur Version in beiden package.json.
+ * CI (.github/workflows/ci.yml) prueft Typen, Lint, Tests und Build —
+ * versioniert wird trotzdem bewusst von Hand, nicht automatisch.
  */
 export interface ChangelogEntry {
   version: string;
@@ -9,6 +10,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.34.2',
+    date: '2026-10-06',
+    changes: [
+      'Medien hochladen geht nur noch mit Zugangscode — vorher konnte jeder mit der Adresse Dateien ablegen',
+      'Unter der Haube: automatische Tests für jede ändernde Funktion ("Fremde dürfen das nicht"), Linting und CI',
+    ],
+  },
   {
     version: '0.34.1',
     date: '2026-10-06',
