@@ -1,6 +1,6 @@
 import express, { type ErrorRequestHandler, type Request } from 'express';
 import rateLimit from 'express-rate-limit';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { mkdirSync, createReadStream, writeFileSync, statSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { db, type PostRow, type Side, type Kind, type StoryKind, type NewsKind } from './db.js';
@@ -365,6 +365,11 @@ app.post('/api/auth/rename', (req, res) => {
     db.prepare(`UPDATE reports SET reported_by = ? WHERE reported_by = ?`).run(next, from);
     db.prepare(`UPDATE cassette_invites SET invitee = ? WHERE invitee = ?`).run(next, from);
     db.prepare(`UPDATE cassette_invites SET invited_by = ? WHERE invited_by = ?`).run(next, from);
+    db.prepare(`UPDATE imposter_weeks SET imposter = ? WHERE imposter = ?`).run(next, from);
+    db.prepare(`UPDATE imposter_weeks SET started_by = ? WHERE started_by = ?`).run(next, from);
+    db.prepare(`UPDATE imposter_entries SET author = ? WHERE author = ?`).run(next, from);
+    db.prepare(`UPDATE imposter_votes SET voter = ? WHERE voter = ?`).run(next, from);
+    db.prepare(`UPDATE imposter_votes SET suspect = ? WHERE suspect = ?`).run(next, from);
   })();
 
   res.json({ name: next });
@@ -870,6 +875,284 @@ app.post('/api/cassettes/:id/film/develop-now', (req, res) => {
 });
 
 /* -------------------------------------------------------------------------
+ * Imposter-Woche — ein Special, nicht jede Woche, nur ab vier Personen.
+ * Alle bekommen dieselbe Aufgabe, eine zufaellige Person nur einen vagen
+ * Hinweis. Beitraege sind bis Sonntag 19:00 verborgen (wie der Film), dann
+ * wird getippt, wer der Imposter war, und aufgeloest. Kein Punktestand,
+ * keine Belohnung, keine Stimmenzahlen — nur "richtig" oder "daneben".
+ * ---------------------------------------------------------------------- */
+
+interface ImposterTask {
+  task: string;
+  hint: string;
+  /** Womit man mitmacht: Foto (nur Kamera) oder ein paar Worte. */
+  entry: 'photo' | 'text';
+}
+
+const IMPOSTER_TASKS: Record<string, ImposterTask> = {
+  rot: { task: 'Fotografier etwas Rotes, das du jeden Tag benutzt.', hint: 'Fotografier etwas, das du benutzt.', entry: 'photo' },
+  fruehstueck: { task: 'Zeig dein Frühstück von heute.', hint: 'Zeig etwas, das du heute hattest.', entry: 'photo' },
+  fenster: { task: 'Fotografier den Blick aus deinem Fenster.', hint: 'Fotografier einen Ausblick.', entry: 'photo' },
+  schuhe: { task: 'Zeig die Schuhe, die du heute trägst.', hint: 'Zeig etwas, das du heute anhast.', entry: 'photo' },
+  rund: { task: 'Fotografier etwas Rundes in deiner Küche.', hint: 'Fotografier etwas aus deiner Wohnung.', entry: 'photo' },
+  erinnerung: { task: 'Fotografier etwas, das dich an diese Runde erinnert.', hint: 'Fotografier etwas, das dir etwas bedeutet.', entry: 'photo' },
+  gekocht: { task: 'Koch etwas, das du noch nie gekocht hast, und zeig es.', hint: 'Zeig etwas, das du gemacht hast.', entry: 'photo' },
+  lied: { task: 'Schreib das Lied auf, das du diese Woche am meisten gehört hast.', hint: 'Schreib einen Liedtitel auf.', entry: 'text' },
+  satz: { task: 'Schreib den letzten Satz auf, den du laut vorgelesen hast.', hint: 'Schreib einen Satz auf.', entry: 'text' },
+  wunsch: { task: 'Schreib auf, wohin ihr als Runde als Nächstes zusammen fahren solltet.', hint: 'Schreib einen Ort auf.', entry: 'text' },
+};
+
+const IMPOSTER_MIN_MEMBERS = 4;
+/** "Nicht jede Woche": zwischen zwei Imposter-Wochen einer Kassette. */
+const IMPOSTER_COOLDOWN_MS = 28 * 86_400_000;
+/** Wie lange nach Sonntagabend getippt werden kann, bevor von selbst aufgeloest wird. */
+const IMPOSTER_VOTING_MS = 24 * 3_600_000;
+
+interface ImposterWeekRow {
+  id: string;
+  cassette_id: string;
+  task_key: string;
+  imposter: string;
+  started_by: string;
+  started_at: number;
+  reveal_at: number;
+  revealed_at: number | null;
+}
+
+type ImposterPhase = 'playing' | 'voting' | 'revealed';
+
+/** Letzte Imposter-Woche der Kassette. Loest eine liegengebliebene
+ *  Abstimmung nebenbei auf — die App hat bewusst keinen Hintergrund-Job. */
+function latestImposterWeek(cassetteId: string, now: number): ImposterWeekRow | null {
+  const w = db
+    .prepare(`SELECT * FROM imposter_weeks WHERE cassette_id = ? ORDER BY started_at DESC LIMIT 1`)
+    .get(cassetteId) as ImposterWeekRow | undefined;
+  if (!w) return null;
+  if (!w.revealed_at && now >= w.reveal_at + IMPOSTER_VOTING_MS) {
+    w.revealed_at = w.reveal_at + IMPOSTER_VOTING_MS;
+    db.prepare(`UPDATE imposter_weeks SET revealed_at = ? WHERE id = ?`).run(w.revealed_at, w.id);
+  }
+  return w;
+}
+
+function phaseOf(w: ImposterWeekRow, now: number): ImposterPhase {
+  if (w.revealed_at) return 'revealed';
+  return now < w.reveal_at ? 'playing' : 'voting';
+}
+
+/** Hat die Runde den Imposter gefunden? Meiste Tipps auf genau die richtige
+ *  Person, Gleichstand zaehlt als daneben. Zahlen verlassen den Server nie. */
+function imposterCaught(w: ImposterWeekRow): boolean {
+  const rows = db
+    .prepare(`SELECT suspect, COUNT(*) AS n FROM imposter_votes WHERE week_id = ? GROUP BY suspect ORDER BY n DESC`)
+    .all(w.id) as { suspect: string; n: number }[];
+  if (rows.length === 0) return false;
+  if (rows.length > 1 && rows[0]!.n === rows[1]!.n) return false;
+  return rows[0]!.suspect === w.imposter;
+}
+
+function loadActiveWeek(cassetteId: string, now: number, phase: ImposterPhase): ImposterWeekRow {
+  const w = latestImposterWeek(cassetteId, now);
+  if (!w || phaseOf(w, now) !== phase) {
+    throw new HttpError(409, phase === 'playing' ? 'Gerade läuft keine Imposter-Woche' : 'Gerade wird nicht getippt');
+  }
+  return w;
+}
+
+app.get('/api/cassettes/:id/imposter', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  requireMember(req, req.params.id, me);
+  const now = Date.now();
+  const members = (
+    db.prepare(`SELECT member FROM cassette_members WHERE cassette_id = ? ORDER BY joined_at`).all(req.params.id) as {
+      member: string;
+    }[]
+  ).map((r) => r.member);
+  const w = latestImposterWeek(req.params.id, now);
+
+  const canStartAt = w ? w.started_at + IMPOSTER_COOLDOWN_MS : 0;
+  const busy = w && phaseOf(w, now) !== 'revealed';
+  const canStart = members.length >= IMPOSTER_MIN_MEMBERS && !busy && (DEMO_TOOLS || now >= canStartAt);
+
+  if (!w) return void res.json({ week: null, canStart, minMembers: IMPOSTER_MIN_MEMBERS, nextStartAt: null, demoTools: DEMO_TOOLS });
+
+  const phase = phaseOf(w, now);
+  const t = IMPOSTER_TASKS[w.task_key]!;
+  const isImposter = w.imposter === me;
+  const mine = db.prepare(`SELECT post_id FROM imposter_entries WHERE week_id = ? AND author = ?`).get(w.id, me) as
+    | { post_id: string }
+    | undefined;
+  const entries =
+    phase === 'playing'
+      ? []
+      : (db
+          .prepare(
+            `SELECT e.author, p.id, p.kind, p.body, p.media_id
+               FROM imposter_entries e JOIN posts p ON p.id = e.post_id
+              WHERE e.week_id = ? ORDER BY p.taken_at`,
+          )
+          .all(w.id) as { author: string; id: string; kind: Kind; body: string; media_id: string | null }[]);
+  const myVote = db.prepare(`SELECT suspect FROM imposter_votes WHERE week_id = ? AND voter = ?`).get(w.id, me) as
+    | { suspect: string }
+    | undefined;
+  // Wer schon getippt hat (Namen, keine Zahl) — damit man weiss, auf wen man wartet.
+  const voted = (db.prepare(`SELECT voter FROM imposter_votes WHERE week_id = ?`).all(w.id) as { voter: string }[]).map(
+    (r) => r.voter,
+  );
+
+  res.json({
+    week: {
+      id: w.id,
+      phase,
+      startedBy: w.started_by,
+      startedAt: w.started_at,
+      revealAt: w.reveal_at,
+      votingEndsAt: w.reveal_at + IMPOSTER_VOTING_MS,
+      entryKind: t.entry,
+      // Die eigene Karte: entweder die Aufgabe oder nur der Hinweis. Wer
+      // Imposter ist, erfaehrt vor der Aufloesung nur die Person selbst.
+      card: isImposter ? { imposter: true, text: t.hint } : { imposter: false, text: t.task },
+      iSubmitted: Boolean(mine),
+      entries: entries.map((e) => ({ postId: e.id, author: e.author, kind: e.kind, body: e.body, mediaId: e.media_id })),
+      myVote: myVote?.suspect ?? null,
+      voted: phase === 'playing' ? [] : voted,
+      result:
+        phase === 'revealed'
+          ? { imposter: w.imposter, task: t.task, hint: t.hint, caught: imposterCaught(w), revealedAt: w.revealed_at }
+          : null,
+    },
+    canStart,
+    minMembers: IMPOSTER_MIN_MEMBERS,
+    nextStartAt: DEMO_TOOLS ? null : canStartAt,
+    demoTools: DEMO_TOOLS,
+  });
+});
+
+app.post('/api/cassettes/:id/imposter', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  requireMember(req, req.params.id, by);
+  const now = Date.now();
+  const members = (
+    db.prepare(`SELECT member FROM cassette_members WHERE cassette_id = ?`).all(req.params.id) as { member: string }[]
+  ).map((r) => r.member);
+  if (members.length < IMPOSTER_MIN_MEMBERS) {
+    throw new HttpError(400, `Eine Imposter-Woche braucht mindestens ${IMPOSTER_MIN_MEMBERS} Leute auf dem Band`);
+  }
+  const last = latestImposterWeek(req.params.id, now);
+  if (last && phaseOf(last, now) !== 'revealed') throw new HttpError(409, 'Es läuft schon eine Imposter-Woche');
+  if (last && !DEMO_TOOLS && now < last.started_at + IMPOSTER_COOLDOWN_MS) {
+    throw new HttpError(409, 'Die Imposter-Woche ist ein Special — die nächste geht frühestens vier Wochen nach der letzten');
+  }
+
+  const keys = Object.keys(IMPOSTER_TASKS);
+  // Nicht zweimal hintereinander dieselbe Aufgabe.
+  const pool = keys.filter((k) => k !== last?.task_key);
+  const taskKey = pool[randomInt(pool.length)]!;
+  const imposter = members[randomInt(members.length)]!;
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO imposter_weeks (id, cassette_id, task_key, imposter, started_by, started_at, reveal_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(id, req.params.id, taskKey, imposter, by, now, filmReleaseAfter(now));
+
+  res.status(201).json({ id });
+});
+
+app.post('/api/cassettes/:id/imposter/entry', (req, res) => {
+  const author = String(req.body?.author ?? '').trim();
+  const mediaId = req.body?.mediaId ? String(req.body.mediaId) : null;
+  const body = String(req.body?.body ?? '').trim().slice(0, 280);
+  requireMember(req, req.params.id, author);
+  const now = Date.now();
+  const w = loadActiveWeek(req.params.id, now, 'playing');
+  const t = IMPOSTER_TASKS[w.task_key]!;
+
+  if (db.prepare(`SELECT 1 FROM imposter_entries WHERE week_id = ? AND author = ?`).get(w.id, author)) {
+    throw new HttpError(409, 'Du hast diese Woche schon etwas abgegeben');
+  }
+  if (t.entry === 'photo') {
+    if (!mediaId) throw new HttpError(400, 'Für diese Aufgabe braucht es ein Foto');
+    const media = db.prepare(`SELECT mime FROM media WHERE id = ?`).get(mediaId) as { mime: string } | undefined;
+    if (!media || !FILM_MIME.includes(media.mime)) throw new HttpError(400, 'Für diese Aufgabe braucht es ein Foto');
+    if (mediaInUse(mediaId)) throw new HttpError(400, 'Dieses Bild hängt schon woanders');
+  } else if (!body) {
+    throw new HttpError(400, 'Ein paar Worte braucht es schon');
+  }
+
+  const postId = randomUUID();
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO posts (id, cassette_id, side, author, kind, body, media_id, source, develop_at, taken_at, created_at)
+       VALUES (?, ?, 'a', ?, ?, ?, ?, 'imposter', ?, ?, ?)`,
+    ).run(postId, req.params.id, author, t.entry === 'photo' ? 'photo' : 'text', body, t.entry === 'photo' ? mediaId : null, w.reveal_at, now, w.reveal_at);
+    db.prepare(`INSERT INTO imposter_entries (week_id, author, post_id) VALUES (?, ?, ?)`).run(w.id, author, postId);
+  })();
+
+  res.status(201).json({ postId });
+});
+
+app.post('/api/cassettes/:id/imposter/vote', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  const suspect = String(req.body?.suspect ?? '').trim();
+  requireMember(req, req.params.id, by);
+  const w = loadActiveWeek(req.params.id, Date.now(), 'voting');
+  if (suspect === by) throw new HttpError(400, 'Auf dich selbst tippst du nicht');
+  const isMember = db
+    .prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`)
+    .get(req.params.id, suspect);
+  if (!isMember && suspect !== w.imposter) throw new HttpError(400, 'Diese Person ist nicht auf dem Band');
+
+  // Umentscheiden ist erlaubt, bis aufgeloest wird.
+  db.prepare(
+    `INSERT INTO imposter_votes (week_id, voter, suspect, created_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT(week_id, voter) DO UPDATE SET suspect = excluded.suspect, created_at = excluded.created_at`,
+  ).run(w.id, by, suspect, Date.now());
+  res.status(201).json({ ok: true });
+});
+
+app.post('/api/cassettes/:id/imposter/reveal', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  requireMember(req, req.params.id, by);
+  const w = loadActiveWeek(req.params.id, Date.now(), 'voting');
+  // Aufloesen darf, wer die Woche gestartet hat — oder jede:r, sobald alle
+  // Mitglieder getippt haben. Sonst nimmt jemand den anderen das Raten weg.
+  const members = db.prepare(`SELECT COUNT(*) AS n FROM cassette_members WHERE cassette_id = ?`).get(req.params.id) as {
+    n: number;
+  };
+  const votes = db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM imposter_votes v
+         JOIN cassette_members m ON m.cassette_id = ? AND m.member = v.voter
+        WHERE v.week_id = ?`,
+    )
+    .get(req.params.id, w.id) as { n: number };
+  if (by !== w.started_by && votes.n < members.n) {
+    throw new HttpError(403, `Auflösen kann ${w.started_by}, oder alle, sobald jede:r getippt hat`);
+  }
+  db.prepare(`UPDATE imposter_weeks SET revealed_at = ? WHERE id = ?`).run(Date.now(), w.id);
+  res.json({ ok: true });
+});
+
+// Nur mit DEMO_TOOLS=1: Sonntagabend vorziehen, damit die Abstimmung in
+// einer Vorfuehrung sofort beginnt. Nur wer die Kassette angelegt hat.
+app.post('/api/cassettes/:id/imposter/now', (req, res) => {
+  if (!DEMO_TOOLS) throw new HttpError(404, 'Nicht verfügbar');
+  const by = String(req.body?.by ?? '').trim();
+  requireMember(req, req.params.id, by);
+  if (creatorOf(req.params.id) !== by) throw new HttpError(403, 'Nur wer die Kassette angelegt hat');
+  const now = Date.now();
+  const w = loadActiveWeek(req.params.id, now, 'playing');
+  db.transaction(() => {
+    db.prepare(`UPDATE imposter_weeks SET reveal_at = ? WHERE id = ?`).run(now, w.id);
+    db.prepare(
+      `UPDATE posts SET develop_at = ?, created_at = ?
+        WHERE id IN (SELECT post_id FROM imposter_entries WHERE week_id = ?)`,
+    ).run(now, now, w.id);
+  })();
+  res.json({ ok: true });
+});
+
+/* -------------------------------------------------------------------------
  * Posts
  * ---------------------------------------------------------------------- */
 
@@ -881,6 +1164,9 @@ interface FeedItem
   cassetteId: string;
   /** Nur beim Film: wann wirklich belichtet wurde (created_at ist die Freigabe). */
   takenAt: number | null;
+  /** Beitrag aus einer Imposter-Woche: 'entry' vor der Aufloesung, danach
+   *  'imposter' oder 'crew'. */
+  imposterMark: 'entry' | 'imposter' | 'crew' | null;
   mediaId: string | null;
   durationMs: number | null;
   tapeId: string | null;
@@ -917,11 +1203,15 @@ app.get('/api/posts', (req, res) => {
               t.title AS tape_title, t.cover_id AS tape_cover,
               (SELECT COUNT(*) FROM mixtape_tracks mt WHERE mt.mixtape_id = t.id) AS tape_tracks,
               q.author AS quoted_author, q.kind AS quoted_kind, q.body AS quoted_body,
-              q.media_id AS quoted_media_id
+              q.media_id AS quoted_media_id,
+              -- Wer Imposter war, erst nach der Aufloesung — vorher NULL.
+              CASE WHEN iw.revealed_at IS NOT NULL THEN iw.imposter END AS imposter_name
          FROM posts p
          LEFT JOIN media m ON m.id = p.media_id
          LEFT JOIN mixtapes t ON t.id = p.tape_id
          LEFT JOIN posts q ON q.id = p.quoted_post_id
+         LEFT JOIN imposter_entries ie ON ie.post_id = p.id
+         LEFT JOIN imposter_weeks iw ON iw.id = ie.week_id
         WHERE p.side = ? AND p.cassette_id = ? AND ${RELEASED}
         ORDER BY p.created_at ASC`,
     )
@@ -934,6 +1224,7 @@ app.get('/api/posts', (req, res) => {
     quoted_kind: Kind | null;
     quoted_body: string | null;
     quoted_media_id: string | null;
+    imposter_name: string | null;
   })[];
 
   // Tonfetzen sind eine private Geste: wie viele Reaktionen ein Beitrag hat, sieht
@@ -982,6 +1273,8 @@ app.get('/api/posts', (req, res) => {
       durationMs: row.duration_ms,
       source: row.source ?? 'camera',
       takenAt: row.taken_at,
+      imposterMark:
+        row.source === 'imposter' ? (row.imposter_name ? (row.imposter_name === row.author ? 'imposter' : 'crew') : 'entry') : null,
       tapeId: row.tape_id,
       tape: row.tape_id
         ? { title: row.tape_title ?? '', coverId: row.tape_cover, trackCount: row.tape_tracks ?? 0 }
@@ -1987,6 +2280,7 @@ app.get('/api/export', (req, res) => {
       .all(me, me),
     tapeFavoriten: db.prepare(`SELECT * FROM cassette_tape_favorites WHERE member = ?`).all(me),
     meldungen: db.prepare(`SELECT * FROM reports WHERE reported_by = ?`).all(me),
+    imposterTipps: db.prepare(`SELECT * FROM imposter_votes WHERE voter = ?`).all(me),
     mixtapes: tapes,
   });
 });
@@ -2017,6 +2311,12 @@ app.delete('/api/me', (req, res) => {
     db.prepare(`DELETE FROM profiles WHERE name = ?`).run(me);
     db.prepare(`DELETE FROM reports WHERE reported_by = ?`).run(me);
     db.prepare(`DELETE FROM cassette_invites WHERE invitee = ?`).run(me);
+    // Imposter: eigene Tipps weg, Beitraege gehen mit den Posts. Der Name
+    // in einer laengst aufgeloesten Woche wird neutralisiert statt die
+    // Woche der anderen zu loeschen.
+    db.prepare(`DELETE FROM imposter_votes WHERE voter = ? OR suspect = ?`).run(me, me);
+    db.prepare(`UPDATE imposter_weeks SET imposter = '(gelöscht)' WHERE imposter = ?`).run(me);
+    db.prepare(`UPDATE imposter_weeks SET started_by = '(gelöscht)' WHERE started_by = ?`).run(me);
     handOverCassettesOf(me);
     db.prepare(`DELETE FROM cassette_members WHERE member = ?`).run(me);
     db.prepare(`DELETE FROM cassette_tape_favorites WHERE member = ?`).run(me);

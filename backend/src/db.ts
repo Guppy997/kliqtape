@@ -232,6 +232,40 @@ db.exec(`
     CHECK ((cassette_id IS NULL) <> (post_id IS NULL))
   );
 
+  -- Imposter-Woche (server.ts): alle bekommen dieselbe Aufgabe, eine Person
+  -- nur einen vagen Hinweis. task_key zeigt in IMPOSTER_TASKS (server.ts),
+  -- damit Aufgabe und Hinweis nicht in jeder Zeile dupliziert werden.
+  CREATE TABLE IF NOT EXISTS imposter_weeks (
+    id          TEXT PRIMARY KEY,
+    cassette_id TEXT NOT NULL REFERENCES cassettes(id) ON DELETE CASCADE,
+    task_key    TEXT NOT NULL,
+    imposter    TEXT NOT NULL,
+    started_by  TEXT NOT NULL,
+    started_at  INTEGER NOT NULL,
+    reveal_at   INTEGER NOT NULL,
+    revealed_at INTEGER
+  );
+
+  -- Ein Beitrag pro Person und Woche. Der Beitrag selbst ist ein normaler
+  -- Seite-A-Post mit develop_at = reveal_at (verborgen bis Sonntagabend).
+  CREATE TABLE IF NOT EXISTS imposter_entries (
+    week_id TEXT NOT NULL REFERENCES imposter_weeks(id) ON DELETE CASCADE,
+    author  TEXT NOT NULL,
+    post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    PRIMARY KEY (week_id, author)
+  );
+
+  -- Tipps, wer der Imposter war. Werden nie gezaehlt ausgeliefert — nur
+  -- das Ergebnis "richtig/daneben" nach der Aufloesung.
+  CREATE TABLE IF NOT EXISTS imposter_votes (
+    week_id    TEXT NOT NULL REFERENCES imposter_weeks(id) ON DELETE CASCADE,
+    voter      TEXT NOT NULL,
+    suspect    TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (week_id, voter)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_imposter_cassette ON imposter_weeks(cassette_id, started_at);
   CREATE INDEX IF NOT EXISTS idx_posts_side_time ON posts(side, created_at);
   CREATE INDEX IF NOT EXISTS idx_members_person ON cassette_members(member);
   CREATE INDEX IF NOT EXISTS idx_mixtapes_to ON mixtapes(to_name, sealed_at);
@@ -527,7 +561,7 @@ export interface PostRow {
   body: string;
   media_id: string | null;
   tape_id: string | null;
-  source: 'camera' | 'upload' | 'film' | null;
+  source: 'camera' | 'upload' | 'film' | 'imposter' | null;
   note_style: string | null;
   quoted_post_id: string | null;
   develop_at: number | null;

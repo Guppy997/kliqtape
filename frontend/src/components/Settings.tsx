@@ -13,6 +13,7 @@ import { VERSION } from '@/changelog';
  *  sind. Ehrlich halten: lieber unangenehm als geschoent (CONCEPT.md §3). */
 const SERVER_SEES_EXTRA: [string, string][] = [
   ['Film', 'im Klartext. Bis Sonntagabend gibt der Server das Bild an niemanden heraus, auch nicht an dich — gespeichert ist es aber sofort'],
+  ['Imposter-Woche', 'im Klartext: Aufgabe, wer Imposter ist, alle Beiträge und wer auf wen getippt hat. Andere sehen vor der Auflösung nur ihre eigene Karte'],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
 ];
 

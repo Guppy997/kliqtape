@@ -22,6 +22,7 @@ import TapeHeader, { defaultTapeName, tapeDisplayName } from '@/components/TapeH
 import UpdateNotification from '@/components/UpdateNotification';
 import { EmptyBand, NoCassette } from '@/components/EmptyState';
 import FilmBag from '@/components/FilmBag';
+import ImposterCard from '@/components/ImposterCard';
 
 export default function App() {
   const me = useApp((s) => s.me);
@@ -568,7 +569,10 @@ function Deck() {
                 {/* Film der Woche: am Ende von Seite A, dort wo man beim
                     Einlegen landet (neuester Stand). Nur ohne Filter. */}
                 {side === 'a' && filter === 'all' && current && !isLoading && (
-                  <FilmBag cassette={current} onChanged={invalidate} />
+                  <>
+                    <ImposterCard cassette={current} onChanged={invalidate} />
+                    <FilmBag cassette={current} onChanged={invalidate} />
+                  </>
                 )}
 
                 {shown.length > 0 && (

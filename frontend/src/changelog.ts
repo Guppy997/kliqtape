@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.39.0',
+    date: '2026-10-06',
+    changes: [
+      'Neu: Imposter-Woche, ein Special ab vier Leuten. Alle bekommen dieselbe Aufgabe, eine Person nur einen vagen Hinweis',
+      'Bis Sonntagabend bleiben alle Beiträge verborgen, dann tippt die Runde, wer es war — Auflösung mit Stempel, ohne Punkte und ohne Stimmenzahlen',
+      'Gestartet wird in der Kassetten-Ansicht unter "Special", höchstens alle vier Wochen',
+    ],
+  },
+  {
     version: '0.38.0',
     date: '2026-10-06',
     changes: [

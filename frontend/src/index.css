@@ -237,7 +237,23 @@ body {
   }
 }
 
+/* Imposter-Aufloesung: der Stempel faellt aufs Bild (ImposterCard.tsx). */
+.imposter-stamp {
+  transform: translate(-50%, -50%) rotate(-14deg);
+  animation: stamp 380ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(2.4);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .imposter-stamp {
+    animation: none;
+  }
   .spin,
   .rise,
   .blink {

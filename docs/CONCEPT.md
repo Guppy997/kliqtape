@@ -143,6 +143,27 @@ an; sonst ließe sich ein fremdes, sichtbares Foto per ID bis Sonntag sperren.
 **Vorführung:** Mit `DEMO_TOOLS=1` kann die Person, die die Kassette angelegt hat, den Film
 sofort entwickeln. Im Betrieb bleibt das aus.
 
+## 5b. Imposter-Woche (Special)
+
+Ein Spiel für die Runde, **nicht jede Woche**: frühestens vier Wochen nach der letzten, nur auf
+Kassetten mit **mindestens vier Leuten**, gestartet von einem Mitglied in der Kassetten-Ansicht.
+Alle bekommen dieselbe Wochenaufgabe (ein Foto oder ein paar Worte), eine zufällige Person ist
+Imposter, weiß das und bekommt nur einen vagen Hinweis. Die Beiträge sind wie der Film bis
+**Sonntag 19 Uhr** verborgen, auch die Bilder. Dann sieht die Runde alle Beiträge und tippt, wer
+die Aufgabe nicht kannte; umentscheiden geht bis zur Auflösung. Aufgelöst wird, sobald alle
+getippt haben, durch die Person, die gestartet hat, oder 24 Stunden später von selbst.
+
+Die Auflösung ist bewusst kein Glücksrad: Die Abzüge der Leute, die die Aufgabe kannten,
+bekommen nacheinander einen leisen Stempel, übrig bleibt der Imposter mit einem roten Stempel.
+Danach stehen Aufgabe, Hinweis und ob die Runde richtig lag. **Kein Punktestand, keine
+Belohnung, keine Stimmenzahlen** — der Server gibt nur „richtig“ oder „daneben“ heraus. Die
+Beiträge bleiben im Tape des Sonntags auf Seite A, der Imposter-Beitrag mit Stempel.
+
+**Technisch:** `imposter_weeks`, `imposter_entries`, `imposter_votes`; Aufgaben als feste Liste
+in `server.ts`. Beiträge sind Seite-A-Posts mit `source = 'imposter'` und `develop_at`, also
+dieselbe Sperre wie beim Film. Mit `DEMO_TOOLS=1` kann die Gründerin den Sonntagabend
+vorziehen; die Vier-Wochen-Pause entfällt dann.
+
 ## 6. Das Mixtape — der eigentliche USP
 
 Ein Mixtape ist ein **Geschenk an genau eine Person**. Du baust es über Tage: bis zu **12 Titel**,
@@ -239,6 +260,8 @@ cassettes(id, name, created_by, created_at, color_index)
 cassette_members(cassette_id, member, added_by, joined_at)
 cassette_invites(id, cassette_id, invitee, invited_by, created_at)
 reports(id, cassette_id | post_id, reported_by, reason, note, created_at)
+imposter_weeks(id, cassette_id, task_key, imposter, started_by, started_at, reveal_at, revealed_at)
+imposter_entries(week_id, author, post_id)   imposter_votes(week_id, voter, suspect, created_at)
 posts.develop_at, posts.taken_at
       -- Film: unsichtbar bis develop_at (Sonntag 19:00 Berlin), created_at = develop_at
       -- ohne Fremdschlüssel: Meldungen überleben das Löschen des Gemeldeten

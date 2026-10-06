@@ -242,11 +242,14 @@ export interface FeedItem {
   created_at: number;
   mediaId: string | null;
   durationMs: number | null;
-  /** Live aufgenommen, aus der Galerie oder entwickelter Film — wird
-   *  jeweils anders dargestellt. */
-  source: 'camera' | 'upload' | 'film';
+  /** Live aufgenommen, aus der Galerie, entwickelter Film oder Beitrag
+   *  einer Imposter-Woche — wird jeweils anders dargestellt. */
+  source: 'camera' | 'upload' | 'film' | 'imposter';
   /** Nur beim Film: wann belichtet wurde. created_at ist die Freigabe. */
   takenAt: number | null;
+  /** Beitrag aus einer Imposter-Woche: 'entry' vor der Aufloesung, danach
+   *  'imposter' oder 'crew'. */
+  imposterMark: 'entry' | 'imposter' | 'crew' | null;
   tapeId: string | null;
   tape: { title: string; coverId: string | null; trackCount: number } | null;
   track: string;
@@ -373,6 +376,63 @@ export function developFilmNow(cassetteId: string, by: string): Promise<{ develo
     body: JSON.stringify({ by }),
   }).then(unwrap<{ developed: number }>);
 }
+
+/* --- Imposter-Woche ---------------------------------------------------------
+ * Ein Special ab vier Leuten. Der Server verraet vor der Aufloesung nur der
+ * Imposter-Person selbst, dass sie es ist, und liefert nie Stimmenzahlen. */
+
+export interface ImposterEntry {
+  postId: string;
+  author: string;
+  kind: Kind;
+  body: string;
+  mediaId: string | null;
+}
+
+export interface ImposterWeek {
+  id: string;
+  phase: 'playing' | 'voting' | 'revealed';
+  startedBy: string;
+  startedAt: number;
+  revealAt: number;
+  votingEndsAt: number;
+  entryKind: 'photo' | 'text';
+  card: { imposter: boolean; text: string };
+  iSubmitted: boolean;
+  entries: ImposterEntry[];
+  myVote: string | null;
+  voted: string[];
+  result: { imposter: string; task: string; hint: string; caught: boolean; revealedAt: number } | null;
+}
+
+export interface ImposterStatus {
+  week: ImposterWeek | null;
+  canStart: boolean;
+  minMembers: number;
+  nextStartAt: number | null;
+  demoTools: boolean;
+}
+
+export function fetchImposter(cassetteId: string, me: string): Promise<ImposterStatus> {
+  return apiFetch(`/api/cassettes/${cassetteId}/imposter?me=${encodeURIComponent(me)}`).then(unwrap<ImposterStatus>);
+}
+
+function imposterPost<T>(cassetteId: string, path: string, body: unknown): Promise<T> {
+  return apiFetch(`/api/cassettes/${cassetteId}/imposter${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(unwrap<T>);
+}
+
+export const startImposter = (cassetteId: string, by: string) => imposterPost<{ id: string }>(cassetteId, '', { by });
+export const submitImposterEntry = (cassetteId: string, author: string, entry: { mediaId?: string; body?: string }) =>
+  imposterPost<{ postId: string }>(cassetteId, '/entry', { author, ...entry });
+export const voteImposter = (cassetteId: string, by: string, suspect: string) =>
+  imposterPost<{ ok: true }>(cassetteId, '/vote', { by, suspect });
+export const revealImposter = (cassetteId: string, by: string) => imposterPost<{ ok: true }>(cassetteId, '/reveal', { by });
+/** Nur mit DEMO_TOOLS=1 auf dem Server, nur fuer die Gruenderin. */
+export const imposterNow = (cassetteId: string, by: string) => imposterPost<{ ok: true }>(cassetteId, '/now', { by });
 
 /** Laedt einen Blob hoch und gibt die Medien-ID zurueck. */
 export async function uploadMedia(blob: Blob, durationMs?: number): Promise<string> {

@@ -65,7 +65,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
           {item.author}
         </span>
         <span className="font-mono text-[0.58rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
-          {item.source === 'film' ? 'Film' : KIND_LABEL[item.kind]}
+          {item.source === 'film' ? 'Film' : item.source === 'imposter' ? 'Imposter-Woche' : KIND_LABEL[item.kind]}
         </span>
         {/* Track-Nummer — Position innerhalb des Tapes. Auf Seite A zusaetzlich
             Datum+Uhrzeit, weil ein Tape mehrere Tracks an verschiedenen
@@ -114,11 +114,33 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
       </div>
 
       <div className="mt-2.5 flex flex-col gap-2.5">
-        {item.kind === 'text' && <Zettel id={item.id} style={item.noteStyle} text={item.body} />}
+        {item.kind === 'text' && item.source !== 'imposter' && <Zettel id={item.id} style={item.noteStyle} text={item.body} />}
 
         {/* Live aufgenommen: Fotoabzug mit weissem Rand und Filzstiftzeile.
             Aus der Galerie: schlichter Rahmen, gedruckte Bildunterschrift.
             Kein Verbot — aber man sieht, was gerade passiert ist und was nicht. */}
+        {/* Imposter-Woche: wie ein Abzug, nach der Aufloesung mit Stempel
+            auf dem Bild der Person, die nur den Hinweis hatte. */}
+        {item.source === 'imposter' && (
+          <div className="print relative mx-auto w-full max-w-[17rem]">
+            {item.mediaId ? (
+              <img src={mediaUrl(item.mediaId)} alt={item.body || 'Imposter-Beitrag'} loading="lazy" />
+            ) : (
+              <p className="font-hand grid min-h-[8rem] place-items-center px-3 text-center text-[1.15rem] text-[#3B3226]">{item.body}</p>
+            )}
+            {item.mediaId && item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}
+            {item.imposterMark === 'imposter' && (
+              <span
+                className="font-disp absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 -rotate-12 rounded border-2 px-2 py-0.5 text-base font-bold uppercase tracking-[0.16em]"
+                style={{ borderColor: '#C8402A', color: '#C8402A', background: 'rgba(236,229,214,.55)' }}
+              >
+                Imposter
+              </span>
+            )}
+            <p className="font-mono mt-1 text-center text-[0.5rem] uppercase tracking-[0.14em] text-[#3B3226]/60">Imposter-Woche</p>
+          </div>
+        )}
+
         {item.kind === 'photo' && item.mediaId && item.source === 'camera' && (
           <div className="print mx-auto w-full max-w-[17rem]">
             <img src={mediaUrl(item.mediaId)} alt={item.body || 'Schnappschuss'} loading="lazy" />
