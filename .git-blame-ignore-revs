@@ -1,0 +1,3 @@
+# Reine Formatierung — fuer git blame ueberspringen
+# git config blame.ignoreRevsFile .git-blame-ignore-revs
+81b5f5ac1888c79dc24547a33d88db33eeef550e
