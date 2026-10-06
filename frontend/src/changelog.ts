@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.34.3',
+    date: '2026-10-06',
+    changes: [
+      'Umdrehen der Kassette neu: eine durchgehende, ruhigere Drehung statt eines schnellen Hin-und-Zurück-Wackelns — A→B dreht nach rechts, B→A spiegelbildlich zurück',
+      'Hintergrundfarbe und Inhalt der neuen Seite gleiten mit, statt im Moment des Umdrehens hart umzuspringen',
+    ],
+  },
+  {
     version: '0.34.2',
     date: '2026-10-06',
     changes: [

@@ -5,7 +5,7 @@ import { useApp, SIDE_LABEL } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
 import { useViewMode } from '@/store/viewStore';
 import { berlinDateLabel, tapeIndexOf } from '@/lib/berlinDay';
-import CassetteHeader, { CassetteFacePreview } from '@/components/CassetteHeader';
+import CassetteHeader, { CassetteFacePreview, FLIP_IN_MS } from '@/components/CassetteHeader';
 import { useCassettes, useLookIndex } from '@/components/CassetteDeck';
 import { lookFor } from '@/lib/cassetteLook';
 import ChatThread from '@/components/ChatThread';
@@ -83,7 +83,15 @@ export default function App() {
   // ohne dass man je einen Hinweis darauf sieht. Zurueck zu NameGate statt
   // eines Geistermodus.
   return (
-    <div style={{ background: 'var(--screen)', minHeight: '100%' }}>
+    <div
+      style={{
+        backgroundColor: 'var(--screen)',
+        minHeight: '100%',
+        // Beim Umdrehen gleitet der Grundton mit, statt im Moment des
+        // Hochkant-Stehens hart umzuspringen (CassetteHeader, FLIP_IN_MS).
+        transition: `background-color ${FLIP_IN_MS + 80}ms ease-out`,
+      }}
+    >
       <UpdateNotification />
       {me && token ? <Deck /> : <NameGate prefill={me} />}
     </div>
@@ -250,6 +258,25 @@ function Deck() {
   // Nachziehen waehrend man hier verweilt) ueberschreiben kann — sonst haette
   // der Sprung nichts mehr zum Vergleichen.
   const arrival = useRef<{ key: string; lastSeen: number; jumped: boolean }>({ key: '', lastSeen: 0, jumped: true });
+
+  // Der Inhalt der neuen Seite blendet weich ein, waehrend die Kassette
+  // hereindreht — vorher stand er schlagartig da, obwohl die Kassette sich
+  // noch bewegte. Web Animations statt Klassenwechsel: kein Neu-Einhaengen
+  // des ganzen Feeds, kein Flackern.
+  const mainRef = useRef<HTMLElement>(null);
+  const lastSide = useRef(side);
+  useLayoutEffect(() => {
+    if (lastSide.current === side) return;
+    lastSide.current = side;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    mainRef.current?.animate(
+      [
+        { opacity: 0, transform: 'translateY(0.4rem)' },
+        { opacity: 1, transform: 'none' },
+      ],
+      { duration: FLIP_IN_MS, easing: 'cubic-bezier(.1,.45,.55,1)' },
+    );
+  }, [side]);
   useLayoutEffect(() => {
     if (!cassetteId) return;
     const key = `${cassetteId}:${side}`;
@@ -429,6 +456,7 @@ function Deck() {
       <NewsView open={viewMode === 'news'} onClose={() => setViewMode('cassette')} />
 
       <main
+        ref={mainRef}
         className="mx-auto flex max-w-xl flex-col gap-1.5 px-3 pt-2"
         style={{ paddingBottom: isCassetteChat ? 'calc(var(--chatcomposer-h, 5rem) + 1rem)' : '6rem' }}
       >

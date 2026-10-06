@@ -78,7 +78,9 @@ und keine Follower-Zahlen abschaffen — es würde ihr Geschäftsmodell zerstör
 saubere Typografie, großzügige Abstände, flüssige Bewegung. Kein Sepia über allem.
 
 - **Tippen auf die Kassette dreht sie um.** Auf halbem Weg steht sie hochkant, dort wechselt der
-  Inhalt — man sieht ihn nie umklappen.
+  Inhalt — man sieht ihn nie umklappen. Eine durchgehende Drehung (hinaus beschleunigend, von der
+  Gegenseite herein abbremsend, zusammen etwa 0,6 s), A→B nach rechts, B→A spiegelbildlich
+  zurück. Hintergrund und Inhalt gleiten im zweiten Teil mit.
 - **Die Spulen laufen beim Scrollen mit.** Links wird dünner, rechts dicker.
 - **Track-Nummern statt Zeitstempel.** `A3`, `B7` — Position auf dem Band, kein Zeitdruck.
   Auf Seite A zählt die Nummer pro Tape (also pro Berlin-Kalendertag) neu ab `A1`.

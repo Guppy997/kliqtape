@@ -18,7 +18,41 @@ interface Props {
 
 const R_MAX = 26;
 const R_MIN = 10;
-const FLIP_MS = 180;
+
+/* Umdrehen in zwei Haelften: hinaus bis hochkant (beschleunigend), dort
+ * wechselt die Seite, dann von der Gegenseite wieder herein (abbremsend).
+ * Zusammen ergibt das EINE durchgehende Drehung mit der hoechsten
+ * Geschwindigkeit genau im unsichtbaren Moment. Vorher drehte die Kassette
+ * in 180 ms auf 90° und auf demselben Weg zurueck — das las sich als
+ * Wackeln, nicht als Umdrehen, und war in beide Richtungen identisch. */
+export const FLIP_OUT_MS = 230;
+export const FLIP_IN_MS = 320;
+const EASE_OUT_HALF = 'cubic-bezier(.45,0,.9,.55)';
+const EASE_IN_HALF = 'cubic-bezier(.1,.45,.55,1)';
+
+/** Wo die Drehung gerade steht. 'enter' ist der eine Frame, in dem die
+ *  Kassette ohne Uebergang auf die Gegenseite springt, bevor sie hereindreht. */
+type FlipPhase = 'idle' | 'out' | 'enter' | 'in';
+
+/** Transform + Transition fuer eine Phase. A→B dreht nach rechts weg,
+ *  B→A spiegelbildlich zurueck — wie eine echte Kassette, die man umdreht
+ *  und wieder zuruecklegt. Im Ruhezustand 'none' statt rotateY(0) — siehe
+ *  Kommentar am transform in CassetteFace. */
+function flipStyle(phase: FlipPhase, dir: 1 | -1): { transform: string; transition?: string } {
+  switch (phase) {
+    case 'out':
+      return {
+        transform: `rotateY(${dir * 90}deg) scale(.94)`,
+        transition: `transform ${FLIP_OUT_MS}ms ${EASE_OUT_HALF}`,
+      };
+    case 'enter':
+      return { transform: `rotateY(${-dir * 90}deg) scale(.94)`, transition: 'none' };
+    case 'in':
+      return { transform: 'rotateY(0deg) scale(1)', transition: `transform ${FLIP_IN_MS}ms ${EASE_IN_HALF}` };
+    default:
+      return { transform: 'none' };
+  }
+}
 
 /**
  * Der Kassetten-Header — gleichzeitig der Umschalter.
@@ -45,8 +79,10 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
   const setSide = useApp((s) => s.setSide);
 
   const [progress, setProgress] = useState(0);
-  const [flipping, setFlipping] = useState(false);
+  const [phase, setPhase] = useState<FlipPhase>('idle');
+  const [dir, setDir] = useState<1 | -1>(1);
   const timer = useRef<number | null>(null);
+  const raf = useRef<number | null>(null);
 
   // Nur noch der Fuellstand der Spulen haengt am Scrollen. Ungenauigkeiten
   // waehrend nachladender Inhalte sind hier folgenlos — anders als frueher,
@@ -84,21 +120,38 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
     setProgress(0);
   }, [side, cassetteId]);
 
-  useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) window.clearTimeout(timer.current);
+      if (raf.current) cancelAnimationFrame(raf.current);
+    },
+    [],
+  );
 
   function flip() {
-    if (flipping || !cassetteId) return;
+    if (phase !== 'idle' || !cassetteId) return;
     const next: Side = side === 'a' ? 'b' : 'a';
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setSide(next);
       return;
     }
-    setFlipping(true);
+    setDir(side === 'a' ? 1 : -1);
+    setPhase('out');
     timer.current = window.setTimeout(() => {
+      // Hochkant: Seite wechseln und ohne Uebergang auf die Gegenseite
+      // springen. Erst im uebernaechsten Frame hereindrehen — sonst fasst
+      // der Browser beide Zustaende zusammen und dreht von 90° nach 0°
+      // zurueck, also wieder das alte Wackeln.
       setSide(next);
-      setFlipping(false);
-    }, FLIP_MS);
+      setPhase('enter');
+      raf.current = requestAnimationFrame(() => {
+        raf.current = requestAnimationFrame(() => {
+          setPhase('in');
+          timer.current = window.setTimeout(() => setPhase('idle'), FLIP_IN_MS);
+        });
+      });
+    }, FLIP_OUT_MS);
   }
 
   // Linke Spule = Rueckspulen (aeltester Stand), rechte = Vorspulen
@@ -117,7 +170,7 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
 
   return (
     <header className="px-3 pb-2 pt-3">
-      <div className="mx-auto max-w-xl" style={{ perspective: '900px' }}>
+      <div className="mx-auto max-w-xl" style={{ perspective: '1100px' }}>
         <CassetteFace
           side={side}
           cassetteId={cassetteId}
@@ -127,7 +180,7 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
           currentTape={currentTape}
           reelLeft={rLeft}
           reelRight={rRight}
-          flipping={flipping}
+          flip={flipStyle(phase, dir)}
           onFlip={flip}
           onScrollStart={scrollToStart}
           onScrollEnd={scrollToEnd}
@@ -148,7 +201,7 @@ interface FaceProps {
   reelRight: number;
   /** Nur beim grossen, interaktiven Kopf gesetzt — waehrend des Umdrehens
    *  kurzzeitig im 3D-Kontext (siehe Kommentar am transform unten). */
-  flipping?: boolean;
+  flip?: { transform: string; transition?: string };
   /** Fehlen diese drei, ist die Flaeche rein dekorativ: kein role="button",
    *  keine Spulen-Tasten, kein Cursor. Fuer die kleine Vorschau (App.tsx) —
    *  dort uebernimmt ein umschliessendes <button> das Tippen, verschachtelte
@@ -170,7 +223,7 @@ interface FaceProps {
  */
 function CassetteFace({
   side, cassetteId, pairIndex, label, count, currentTape,
-  reelLeft, reelRight, flipping, onFlip, onScrollStart, onScrollEnd,
+  reelLeft, reelRight, flip, onFlip, onScrollStart, onScrollEnd,
 }: FaceProps) {
   const look = lookFor(cassetteId ?? '', pairIndex);
   const { type, case: plastic, wear } = look;
@@ -251,7 +304,7 @@ function CassetteFace({
       style={{
         ...shellStyle,
         opacity: cassetteId ? 1 : 0.6,
-        transition: interactive ? `transform ${FLIP_MS}ms ease-in-out, background-image 450ms ease` : undefined,
+        transition: flip?.transition,
         // Nur WAEHREND des Umdrehens tatsaechlich in einem 3D-Kontext
         // (rotateY) — im Ruhezustand 'none' statt 'rotateY(0deg)'.
         // Dauerhaft aktiver 3D-Transform + das backdrop-filter im
@@ -260,7 +313,7 @@ function CassetteFace({
         // leer stehen, obwohl Rahmen/Hintergrund korrekt neu zeichnen.
         // 'none' im Ruhezustand nimmt den Browser aus diesem staendigen
         // 3D-Kontext raus. Die Vorschau ist nie im 3D-Kontext.
-        transform: flipping ? 'rotateY(90deg)' : 'none',
+        transform: flip?.transform ?? 'none',
       }}
     >
       <Wear wear={wear} light={isA ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.32)'} />
