@@ -108,8 +108,17 @@ export default function TapeHeader({ cassetteId, cassetteCreatedAt, tapeIndex, o
               className="grid size-6 shrink-0 place-items-center rounded-full"
               style={{ color: 'var(--dim)' }}
             >
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                   strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M11 2l3 3-8 8-3.5.5.5-3.5z" />
                 <path d="M9.5 3.5l3 3" />
               </svg>

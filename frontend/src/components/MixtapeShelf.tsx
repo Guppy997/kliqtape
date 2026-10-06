@@ -101,9 +101,28 @@ export default function MixtapeShelf() {
             Neues Mixtape bauen
           </button>
 
-          <Group title="Für dich" tapes={forMe} side={side} empty="Noch nichts geschenkt bekommen." onOpen={(id) => setView({ open: id })} />
-          <Group title="In Arbeit" tapes={drafts} side={side} empty="Kein Entwurf offen." onOpen={(id) => setView({ edit: id })} draft />
-          <Group title="Verschenkt" tapes={given} side={side} empty="Noch nichts verschenkt." onOpen={(id) => setView({ open: id })} />
+          <Group
+            title="Für dich"
+            tapes={forMe}
+            side={side}
+            empty="Noch nichts geschenkt bekommen."
+            onOpen={(id) => setView({ open: id })}
+          />
+          <Group
+            title="In Arbeit"
+            tapes={drafts}
+            side={side}
+            empty="Kein Entwurf offen."
+            onOpen={(id) => setView({ edit: id })}
+            draft
+          />
+          <Group
+            title="Verschenkt"
+            tapes={given}
+            side={side}
+            empty="Noch nichts verschenkt."
+            onOpen={(id) => setView({ open: id })}
+          />
         </div>
       </Sheet>
 
@@ -158,11 +177,15 @@ export default function MixtapeShelf() {
             />
           </div>
 
-          {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+          {error && (
+            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+              {error}
+            </p>
+          )}
 
           <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-            Bis zu 12 Titel. {to.trim() || 'Der Empfänger'} sieht nichts davon, solange du daran
-            baust — erst das Versiegeln überreicht das Tape.
+            Bis zu 12 Titel. {to.trim() || 'Der Empfänger'} sieht nichts davon, solange du daran baust — erst das
+            Versiegeln überreicht das Tape.
           </p>
 
           <button
@@ -224,7 +247,9 @@ function Group({
       </h3>
 
       {tapes.length === 0 ? (
-        <p className="font-mono text-[0.64rem]" style={{ color: 'var(--dim)' }}>{empty}</p>
+        <p className="font-mono text-[0.64rem]" style={{ color: 'var(--dim)' }}>
+          {empty}
+        </p>
       ) : (
         tapes.map((t) => (
           <button
@@ -249,7 +274,10 @@ function Group({
               <span className="font-hand block truncate text-[1.02rem]" style={{ color: 'var(--ink)' }}>
                 {t.title || 'Ohne Titel'}
               </span>
-              <span className="font-mono block truncate text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+              <span
+                className="font-mono block truncate text-[0.6rem] uppercase tracking-[0.1em]"
+                style={{ color: 'var(--dim)' }}
+              >
                 {draft ? `für ${t.to}` : t.from === t.to ? '' : `von ${t.from} · für ${t.to}`} · {t.trackCount}/12
               </span>
             </span>

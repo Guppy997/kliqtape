@@ -15,7 +15,9 @@ import { shapeTape, tracksOf, type TapeRow } from './mixtapes.js';
 export const accountRouter = Router();
 
 accountRouter.post('/api/auth/claim', (req, res) => {
-  const name = String(req.body?.name ?? '').trim().slice(0, 40);
+  const name = String(req.body?.name ?? '')
+    .trim()
+    .slice(0, 40);
   if (!name) throw new HttpError(400, 'Name fehlt');
 
   const existing = db.prepare(`SELECT 1 FROM person_tokens WHERE name = ?`).get(name);
@@ -34,8 +36,7 @@ accountRouter.get('/api/auth/whoami', (req, res) => {
   const token = req.header('X-Auth-Token');
   const row = token
     ? (db.prepare(`SELECT name FROM person_tokens WHERE token_hash = ?`).get(hashToken(token)) as
-        | { name: string }
-        | undefined)
+        { name: string } | undefined)
     : undefined;
   if (!row) throw new HttpError(401, 'Unbekannter Zugangscode');
   res.json({ name: row.name });
@@ -53,12 +54,13 @@ accountRouter.post('/api/auth/rename', (req, res) => {
   const token = req.header('X-Auth-Token');
   const current = token
     ? (db.prepare(`SELECT name FROM person_tokens WHERE token_hash = ?`).get(hashToken(token)) as
-        | { name: string }
-        | undefined)
+        { name: string } | undefined)
     : undefined;
   if (!current) throw new HttpError(401, 'Nicht angemeldet');
 
-  const next = String(req.body?.name ?? '').trim().slice(0, 40);
+  const next = String(req.body?.name ?? '')
+    .trim()
+    .slice(0, 40);
   if (!next) throw new HttpError(400, 'Name fehlt');
   if (next === current.name) return void res.json({ name: current.name });
 
@@ -120,8 +122,7 @@ accountRouter.put('/api/profiles/:name', (req, res) => {
   }
 
   const prev = db.prepare(`SELECT avatar_id FROM profiles WHERE name = ?`).get(name) as
-    | { avatar_id: string | null }
-    | undefined;
+    { avatar_id: string | null } | undefined;
 
   db.prepare(
     `INSERT INTO profiles (name, avatar_id, updated_at) VALUES (?, ?, ?)
@@ -147,8 +148,9 @@ accountRouter.get('/api/export', (req, res) => {
   if (!me) throw new HttpError(400, 'me fehlt');
   requireIdentity(req, me);
 
-  const tapes = (db.prepare(`SELECT * FROM mixtapes WHERE from_name = ? OR to_name = ?`).all(me, me) as TapeRow[])
-    .map((t) => ({ ...shapeTape(t), tracks: tracksOf(t.id) }));
+  const tapes = (db.prepare(`SELECT * FROM mixtapes WHERE from_name = ? OR to_name = ?`).all(me, me) as TapeRow[]).map(
+    (t) => ({ ...shapeTape(t), tracks: tracksOf(t.id) }),
+  );
 
   res.setHeader('Content-Disposition', `attachment; filename="kliqtape-${me}.json"`);
   res.json({
@@ -161,9 +163,7 @@ accountRouter.get('/api/export', (req, res) => {
     beitraege: db.prepare(`SELECT * FROM posts WHERE author = ? ORDER BY created_at`).all(me),
     reaktionen: db.prepare(`SELECT * FROM reactions WHERE author = ? ORDER BY created_at`).all(me),
     hotlineNachrichten: db.prepare(`SELECT * FROM hotline_messages WHERE from_name = ?`).all(me),
-    hotlineLeitungen: db
-      .prepare(`SELECT * FROM hotline_threads WHERE person_a = ? OR person_b = ?`)
-      .all(me, me),
+    hotlineLeitungen: db.prepare(`SELECT * FROM hotline_threads WHERE person_a = ? OR person_b = ?`).all(me, me),
     tapeFavoriten: db.prepare(`SELECT * FROM cassette_tape_favorites WHERE member = ?`).all(me),
     meldungen: db.prepare(`SELECT * FROM reports WHERE reported_by = ?`).all(me),
     imposterTipps: db.prepare(`SELECT * FROM imposter_votes WHERE voter = ?`).all(me),
@@ -179,11 +179,19 @@ accountRouter.delete('/api/me', (req, res) => {
   const stats = db.transaction(() => {
     // Medien zuerst einsammeln, danach loeschen — sonst sind die Referenzen weg.
     const mediaIds = [
-      ...(db.prepare(`SELECT media_id AS id FROM posts WHERE author = ? AND media_id IS NOT NULL`).all(me) as { id: string }[]),
-      ...(db.prepare(`SELECT cover_id AS id FROM mixtapes WHERE from_name = ? AND cover_id IS NOT NULL`).all(me) as { id: string }[]),
-      ...(db.prepare(`SELECT avatar_id AS id FROM profiles WHERE name = ? AND avatar_id IS NOT NULL`).all(me) as { id: string }[]),
+      ...(db.prepare(`SELECT media_id AS id FROM posts WHERE author = ? AND media_id IS NOT NULL`).all(me) as {
+        id: string;
+      }[]),
+      ...(db.prepare(`SELECT cover_id AS id FROM mixtapes WHERE from_name = ? AND cover_id IS NOT NULL`).all(me) as {
+        id: string;
+      }[]),
+      ...(db.prepare(`SELECT avatar_id AS id FROM profiles WHERE name = ? AND avatar_id IS NOT NULL`).all(me) as {
+        id: string;
+      }[]),
       ...(db.prepare(`SELECT media_id AS id FROM stories WHERE author = ?`).all(me) as { id: string }[]),
-      ...(db.prepare(`SELECT media_id AS id FROM news_posts WHERE author = ? AND media_id IS NOT NULL`).all(me) as { id: string }[]),
+      ...(db.prepare(`SELECT media_id AS id FROM news_posts WHERE author = ? AND media_id IS NOT NULL`).all(me) as {
+        id: string;
+      }[]),
     ].map((r) => r.id);
 
     const posts = db.prepare(`DELETE FROM posts WHERE author = ?`).run(me).changes;

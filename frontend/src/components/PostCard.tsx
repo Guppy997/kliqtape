@@ -70,7 +70,10 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
         {/* Track-Nummer — Position innerhalb des Tapes. Auf Seite A zusaetzlich
             Datum+Uhrzeit, weil ein Tape mehrere Tracks an verschiedenen
             Uhrzeiten desselben Tages haben kann. */}
-        <span className="font-mono ml-auto shrink-0 text-right text-[0.66rem] tabular-nums" style={{ color: 'var(--dim)' }}>
+        <span
+          className="font-mono ml-auto shrink-0 text-right text-[0.66rem] tabular-nums"
+          style={{ color: 'var(--dim)' }}
+        >
           {item.tapeIndex != null ? (
             <>
               {item.track}
@@ -104,8 +107,17 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
             className="ml-1 px-1"
             style={{ color: 'var(--dim)' }}
           >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                 strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M3.5 14V2.5" />
               <path d="M3.5 3h8l-1.6 2.8L11.5 8.5h-8" />
             </svg>
@@ -114,7 +126,9 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
       </div>
 
       <div className="mt-2.5 flex flex-col gap-2.5">
-        {item.kind === 'text' && item.source !== 'imposter' && <Zettel id={item.id} style={item.noteStyle} text={item.body} />}
+        {item.kind === 'text' && item.source !== 'imposter' && (
+          <Zettel id={item.id} style={item.noteStyle} text={item.body} />
+        )}
 
         {/* Live aufgenommen: Fotoabzug mit weissem Rand und Filzstiftzeile.
             Aus der Galerie: schlichter Rahmen, gedruckte Bildunterschrift.
@@ -126,9 +140,13 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
             {item.mediaId ? (
               <img src={mediaUrl(item.mediaId)} alt={item.body || 'Imposter-Beitrag'} loading="lazy" />
             ) : (
-              <p className="font-hand grid min-h-[8rem] place-items-center px-3 text-center text-[1.15rem] text-[#3B3226]">{item.body}</p>
+              <p className="font-hand grid min-h-[8rem] place-items-center px-3 text-center text-[1.15rem] text-[#3B3226]">
+                {item.body}
+              </p>
             )}
-            {item.mediaId && item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}
+            {item.mediaId && item.body && (
+              <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>
+            )}
             {item.imposterMark === 'imposter' && (
               <span
                 className="font-disp absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 -rotate-12 rounded border-2 px-2 py-0.5 text-base font-bold uppercase tracking-[0.16em]"
@@ -137,7 +155,9 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
                 Imposter
               </span>
             )}
-            <p className="font-mono mt-1 text-center text-[0.5rem] uppercase tracking-[0.14em] text-[#3B3226]/60">Imposter-Woche</p>
+            <p className="font-mono mt-1 text-center text-[0.5rem] uppercase tracking-[0.14em] text-[#3B3226]/60">
+              Imposter-Woche
+            </p>
           </div>
         )}
 
@@ -180,7 +200,10 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
               style={{ border: '1px solid var(--line)' }}
             />
             <figcaption className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono shrink-0 text-[0.54rem] uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+              <span
+                className="font-mono shrink-0 text-[0.54rem] uppercase tracking-[0.14em]"
+                style={{ color: 'var(--dim)' }}
+              >
                 Galerie
               </span>
               {item.body && (
@@ -217,7 +240,10 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
             className="flex items-center gap-3 rounded-lg p-2.5 text-left"
             style={{ background: 'rgba(0,0,0,.2)', border: '1px solid var(--line)' }}
           >
-            <span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-md" style={{ background: '#D8CFBB' }}>
+            <span
+              className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-md"
+              style={{ background: '#D8CFBB' }}
+            >
               {item.tape.coverId ? (
                 <img src={mediaUrl(item.tape.coverId)} alt="" className="size-full object-cover" />
               ) : (
@@ -228,7 +254,10 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
               <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
                 {item.tape.title}
               </span>
-              <span className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+              <span
+                className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]"
+                style={{ color: 'var(--dim)' }}
+              >
                 {item.tape.trackCount} Titel · Tracklist ansehen
               </span>
             </span>
@@ -268,8 +297,17 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
             className="font-mono ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.62rem] uppercase tracking-widest"
             style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
           >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                 strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M2 3.5h12v8H6.5L3 14.5V11.5H2Z" />
             </svg>
             Reagieren
@@ -279,7 +317,11 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
 
       <Sheet open={reporting} onClose={() => setReporting(false)} title="Beitrag melden">
         {reporting && (
-          <ReportForm target={{ postId: item.id }} what={`diesen Beitrag von ${item.author}`} onDone={() => setReporting(false)} />
+          <ReportForm
+            target={{ postId: item.id }}
+            what={`diesen Beitrag von ${item.author}`}
+            onDone={() => setReporting(false)}
+          />
         )}
       </Sheet>
 
@@ -305,7 +347,13 @@ const TONFETZEN_MIN_MS = 350; // kuerzer ist ein versehentliches Antippen, kein 
  * loslassen, fertig. Kein Vorhoeren, kein Bestaetigen — das waere fuer eine
  * spontane, 3 Sekunden kurze Geste zu viel Umstand.
  */
-function TonfetzenButton({ disabled, onSend }: { disabled: boolean; onSend: (blob: Blob, ms: number) => Promise<void> }) {
+function TonfetzenButton({
+  disabled,
+  onSend,
+}: {
+  disabled: boolean;
+  onSend: (blob: Blob, ms: number) => Promise<void>;
+}) {
   const recRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -324,7 +372,12 @@ function TonfetzenButton({ disabled, onSend }: { disabled: boolean; onSend: (blo
     return () => window.clearInterval(id);
   }, [state]);
 
-  useEffect(() => () => { streamRef.current?.getTracks().forEach((t) => t.stop()); }, []);
+  useEffect(
+    () => () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    },
+    [],
+  );
 
   async function start() {
     if (disabled || state !== 'idle') return;
@@ -384,12 +437,15 @@ function TonfetzenButton({ disabled, onSend }: { disabled: boolean; onSend: (blo
   const pct = Math.min(1, elapsed / TONFETZEN_MAX_MS);
   const r = 9;
   const c = 2 * Math.PI * r;
-  const label =
-    disabled ? 'geschickt'
-    : state === 'holding' ? `${(elapsed / 1000).toFixed(1)}s …`
-    : state === 'sending' ? 'sendet …'
-    : state === 'error' ? 'kein Mikro'
-    : 'Tonfetzen';
+  const label = disabled
+    ? 'geschickt'
+    : state === 'holding'
+      ? `${(elapsed / 1000).toFixed(1)}s …`
+      : state === 'sending'
+        ? 'sendet …'
+        : state === 'error'
+          ? 'kein Mikro'
+          : 'Tonfetzen';
 
   return (
     <button
@@ -397,8 +453,15 @@ function TonfetzenButton({ disabled, onSend }: { disabled: boolean; onSend: (blo
       disabled={disabled || state === 'sending'}
       aria-label={disabled ? 'Tonfetzen geschickt' : 'Gedrückt halten, um einen Tonfetzen zu schicken'}
       title={disabled ? undefined : 'Gedrückt halten, um einen Tonfetzen zu schicken'}
-      onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); void start(); }}
-      onPointerUp={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); stop(); }}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        void start();
+      }}
+      onPointerUp={(e) => {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+        stop();
+      }}
       onPointerLeave={() => state === 'holding' && stop()}
       onContextMenu={(e) => e.preventDefault()}
       className="font-mono flex select-none items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.62rem] uppercase tracking-widest transition-colors disabled:opacity-70"
@@ -449,7 +512,12 @@ function TonfetzenPlayer({ postId, me, side }: { postId: string; me: string; sid
       .catch((err) => setError(err instanceof Error ? err.message : 'Laden fehlgeschlagen'));
   }, [postId, me]);
 
-  useEffect(() => () => { audioRef.current?.pause(); }, []);
+  useEffect(
+    () => () => {
+      audioRef.current?.pause();
+    },
+    [],
+  );
 
   function playFrom(i: number) {
     if (!reactions || !reactions[i]) {
@@ -472,7 +540,12 @@ function TonfetzenPlayer({ postId, me, side }: { postId: string; me: string; sid
     setPlaying(null);
   }
 
-  if (error) return <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>;
+  if (error)
+    return (
+      <p className="text-sm" style={{ color: '#F0B5A5' }}>
+        {error}
+      </p>
+    );
   if (!reactions) {
     return (
       <p className="font-mono py-8 text-center text-xs" style={{ color: 'var(--dim)' }}>
@@ -502,7 +575,9 @@ function TonfetzenPlayer({ postId, me, side }: { postId: string; me: string; sid
             }}
           >
             <Avatar name={r.author} side={side} size={1.3} />
-            <span className="text-sm" style={{ color: 'var(--ink)' }}>{r.author}</span>
+            <span className="text-sm" style={{ color: 'var(--ink)' }}>
+              {r.author}
+            </span>
             {playing === i && (
               <span className="font-mono ml-auto text-[0.6rem]" style={{ color: 'var(--accent)' }}>
                 läuft
@@ -514,4 +589,3 @@ function TonfetzenPlayer({ postId, me, side }: { postId: string; me: string; sid
     </div>
   );
 }
-

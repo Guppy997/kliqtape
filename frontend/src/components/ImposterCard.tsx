@@ -76,12 +76,18 @@ export default function ImposterCard({ cassette, onChanged }: { cassette: Casset
   return (
     <section
       className="rise my-3 flex flex-col gap-3 rounded-xl p-3.5"
-      style={{ background: 'var(--card)', border: `1px solid ${week.phase === 'playing' && week.card.imposter ? STAMP_RED : 'var(--line)'}` }}
+      style={{
+        background: 'var(--card)',
+        border: `1px solid ${week.phase === 'playing' && week.card.imposter ? STAMP_RED : 'var(--line)'}`,
+      }}
     >
       <header className="flex items-center gap-2.5">
         <MaskIcon />
         <span className="min-w-0 flex-1">
-          <span className="font-disp block text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
+          <span
+            className="font-disp block text-xs font-bold uppercase tracking-[0.14em]"
+            style={{ color: 'var(--ink)' }}
+          >
             Imposter-Woche
           </span>
           <span className="font-mono block text-[0.56rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
@@ -94,7 +100,9 @@ export default function ImposterCard({ cassette, onChanged }: { cassette: Casset
         </span>
       </header>
 
-      {week.phase === 'playing' && <Playing week={week} cassette={cassette} demo={Boolean(data?.demoTools)} onChanged={refresh} />}
+      {week.phase === 'playing' && (
+        <Playing week={week} cassette={cassette} demo={Boolean(data?.demoTools)} onChanged={refresh} />
+      )}
       {week.phase === 'voting' && <Voting week={week} cassette={cassette} onChanged={refresh} />}
       {week.phase === 'revealed' && week.result && (
         <div className="flex flex-col gap-2">
@@ -139,7 +147,17 @@ export default function ImposterCard({ cassette, onChanged }: { cassette: Casset
   );
 }
 
-function Playing({ week, cassette, demo, onChanged }: { week: ImposterWeek; cassette: Cassette; demo: boolean; onChanged: () => void }) {
+function Playing({
+  week,
+  cassette,
+  demo,
+  onChanged,
+}: {
+  week: ImposterWeek;
+  cassette: Cassette;
+  demo: boolean;
+  onChanged: () => void;
+}) {
   const me = useApp((s) => s.me);
   const [shooting, setShooting] = useState(false);
   const [text, setText] = useState('');
@@ -168,7 +186,10 @@ function Playing({ week, cassette, demo, onChanged }: { week: ImposterWeek; cass
           border: `1px dashed ${week.card.imposter ? STAMP_RED : 'var(--line)'}`,
         }}
       >
-        <p className="font-mono text-[0.56rem] uppercase tracking-[0.12em]" style={{ color: week.card.imposter ? '#F0B5A5' : 'var(--dim)' }}>
+        <p
+          className="font-mono text-[0.56rem] uppercase tracking-[0.12em]"
+          style={{ color: week.card.imposter ? '#F0B5A5' : 'var(--dim)' }}
+        >
           {week.card.imposter ? 'Du bist der Imposter — nur ein Hinweis:' : 'Eure Aufgabe'}
         </p>
         <p className="font-hand mt-1 text-[1.2rem] leading-snug" style={{ color: 'var(--ink)' }}>
@@ -215,7 +236,11 @@ function Playing({ week, cassette, demo, onChanged }: { week: ImposterWeek; cass
           </button>
         </div>
       )}
-      {submitText.error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{(submitText.error as Error).message}</p>}
+      {submitText.error && (
+        <p className="text-sm" style={{ color: '#F0B5A5' }}>
+          {(submitText.error as Error).message}
+        </p>
+      )}
 
       {demo && cassette.createdBy === me && (
         <button
@@ -231,7 +256,14 @@ function Playing({ week, cassette, demo, onChanged }: { week: ImposterWeek; cass
 
       <Sheet open={shooting} onClose={() => setShooting(false)} variant="full" title="Imposter-Woche">
         {shooting && (
-          <CameraCapture mode="photo" allowUpload={false} sendLabel="Abgeben" title="Imposter-Woche" onCancel={() => setShooting(false)} onSend={sendPhoto} />
+          <CameraCapture
+            mode="photo"
+            allowUpload={false}
+            sendLabel="Abgeben"
+            title="Imposter-Woche"
+            onCancel={() => setShooting(false)}
+            onSend={sendPhoto}
+          />
         )}
       </Sheet>
     </>
@@ -241,7 +273,10 @@ function Playing({ week, cassette, demo, onChanged }: { week: ImposterWeek; cass
 function Voting({ week, cassette, onChanged }: { week: ImposterWeek; cassette: Cassette; onChanged: () => void }) {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
-  const vote = useMutation({ mutationFn: (suspect: string) => voteImposter(cassette.id, me, suspect), onSuccess: onChanged });
+  const vote = useMutation({
+    mutationFn: (suspect: string) => voteImposter(cassette.id, me, suspect),
+    onSuccess: onChanged,
+  });
   const reveal = useMutation({ mutationFn: () => revealImposter(cassette.id, me), onSuccess: onChanged });
   const allVoted = cassette.memberCount > 0 && week.voted.length >= cassette.memberCount;
   const canReveal = week.startedBy === me || allVoted;
@@ -313,7 +348,8 @@ function Voting({ week, cassette, onChanged }: { week: ImposterWeek; cassette: C
         </button>
       ) : (
         <p className="font-mono text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-          Aufgelöst wird, sobald alle getippt haben, von {week.startedBy} — spätestens {filmReleaseLabel(week.votingEndsAt)} von selbst.
+          Aufgelöst wird, sobald alle getippt haben, von {week.startedBy} — spätestens{' '}
+          {filmReleaseLabel(week.votingEndsAt)} von selbst.
         </p>
       )}
     </>
@@ -322,7 +358,13 @@ function Voting({ week, cassette, onChanged }: { week: ImposterWeek; cassette: C
 
 function EntryThumb({ entry, large = false }: { entry: ImposterEntry; large?: boolean }) {
   if (entry.mediaId) {
-    return <img src={mediaUrl(entry.mediaId)} alt={entry.body || `Beitrag von ${entry.author}`} className="aspect-square w-full rounded object-cover" />;
+    return (
+      <img
+        src={mediaUrl(entry.mediaId)}
+        alt={entry.body || `Beitrag von ${entry.author}`}
+        className="aspect-square w-full rounded object-cover"
+      />
+    );
   }
   return (
     <span
@@ -408,14 +450,22 @@ function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string;
         })}
       </div>
 
-      <div className="relative w-52" style={{ transform: stamped ? 'scale(1.04)' : 'scale(.9)', transition: 'transform 600ms cubic-bezier(.2,.8,.3,1)' }}>
+      <div
+        className="relative w-52"
+        style={{
+          transform: stamped ? 'scale(1.04)' : 'scale(.9)',
+          transition: 'transform 600ms cubic-bezier(.2,.8,.3,1)',
+        }}
+      >
         <div className="bg-[#ECE5D6] p-1.5 pb-6 shadow-[0_0.8rem_2rem_rgba(0,0,0,.6)]">
           {imposterEntry ? (
             <EntryThumb entry={imposterEntry} large />
           ) : (
             <span className="font-hand grid aspect-square place-items-center text-[#3B3226]">nichts abgegeben</span>
           )}
-          <span className="font-hand absolute inset-x-0 bottom-1 text-center text-[1rem] text-[#3B3226]">{imposterName}</span>
+          <span className="font-hand absolute inset-x-0 bottom-1 text-center text-[1rem] text-[#3B3226]">
+            {imposterName}
+          </span>
         </div>
         {stamped && (
           <span

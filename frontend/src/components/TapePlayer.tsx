@@ -109,7 +109,11 @@ export default function TapePlayer({ src, hintMs }: Props) {
   const ratio = dur > 0 ? Math.min(1, pos / dur) : 0;
 
   if (error) {
-    return <p className="font-mono text-[0.7rem]" style={{ color: 'var(--dim)' }}>{error}</p>;
+    return (
+      <p className="font-mono text-[0.7rem]" style={{ color: 'var(--dim)' }}>
+        {error}
+      </p>
+    );
   }
 
   return (

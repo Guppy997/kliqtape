@@ -104,7 +104,11 @@ export default function StoryView({ open, onClose }: Props) {
           {/* Fortschrittsbalken, ein Segment pro Story dieser Person */}
           <div className="flex gap-1 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
             {activeGroup.stories.map((s, i) => (
-              <div key={s.id} className="h-0.5 flex-1 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,.3)' }}>
+              <div
+                key={s.id}
+                className="h-0.5 flex-1 overflow-hidden rounded-full"
+                style={{ background: 'rgba(255,255,255,.3)' }}
+              >
                 <div
                   key={i === segmentIndex ? `${s.id}-active` : `${s.id}-${i < segmentIndex ? 'done' : 'todo'}`}
                   className="h-full rounded-full"
@@ -113,7 +117,7 @@ export default function StoryView({ open, onClose }: Props) {
                     width: i < segmentIndex ? '100%' : i > segmentIndex ? '0%' : undefined,
                     animation:
                       i === segmentIndex
-                        ? `story-progress ${activeStory.kind === 'photo' ? PHOTO_MS : activeStory.durationMs ?? VIDEO_FALLBACK_MS}ms linear forwards`
+                        ? `story-progress ${activeStory.kind === 'photo' ? PHOTO_MS : (activeStory.durationMs ?? VIDEO_FALLBACK_MS)}ms linear forwards`
                         : undefined,
                   }}
                   onAnimationEnd={i === segmentIndex ? next : undefined}
@@ -184,14 +188,25 @@ export default function StoryView({ open, onClose }: Props) {
               onClick={() => setAddMode('photo')}
               aria-label="Eigene Story aufnehmen"
               className="flex aspect-square flex-col items-center justify-center gap-2 rounded-lg"
-              style={{ border: '1.5px dashed var(--accent)', background: 'color-mix(in srgb, var(--accent) 8%, transparent)' }}
+              style={{
+                border: '1.5px dashed var(--accent)',
+                background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+              }}
             >
               <span
                 className="grid size-9 place-items-center rounded-full"
                 style={{ background: 'var(--accent)', color: '#17130E' }}
                 aria-hidden="true"
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                >
                   <path d="M7 1v12M1 7h12" />
                 </svg>
               </span>
@@ -248,11 +263,15 @@ export default function StoryView({ open, onClose }: Props) {
             </p>
           )}
 
-          {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+          {error && (
+            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+              {error}
+            </p>
+          )}
 
           <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-            Sichtbar für alle, mit denen du in irgendeiner Kassette zusammen bist — nicht nur für die
-            gerade eingelegte Runde. Verschwindet nach 24 Stunden von selbst.
+            Sichtbar für alle, mit denen du in irgendeiner Kassette zusammen bist — nicht nur für die gerade eingelegte
+            Runde. Verschwindet nach 24 Stunden von selbst.
           </p>
         </div>
       )}

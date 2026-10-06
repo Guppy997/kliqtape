@@ -1,5 +1,3 @@
-
-
 /*
  * Zeitlogik in Europe/Berlin. Gespiegelt in frontend/src/lib/berlinDay.ts —
  * bei einer Aenderung beide Seiten pflegen; tests/time.test.ts prueft, dass
@@ -74,5 +72,14 @@ export function filmReleaseAfter(ms: number): number {
 
 /** Uhrzeit und Datum fuer Druckstuecke (Album, Brief). UTC_DATE formatiert
  *  einen Kalendertag, der schon als UTC-Mitternacht vorliegt (berlinCivilDay). */
-export const BERLIN_HM = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
-export const UTC_DATE = new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+export const BERLIN_HM = new Intl.DateTimeFormat('de-DE', {
+  timeZone: 'Europe/Berlin',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+export const UTC_DATE = new Intl.DateTimeFormat('de-DE', {
+  timeZone: 'UTC',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});

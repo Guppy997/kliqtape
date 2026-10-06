@@ -350,8 +350,7 @@ if (postCols.length > 0 && !postCols.some((c) => c.name === 'tape_id')) {
 function repairReference(table: string, ddl: string, indexDdl = ''): void {
   const sql = (
     db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name = ?`).get(table) as
-      | { sql: string }
-      | undefined
+      { sql: string } | undefined
   )?.sql;
   if (!sql?.includes('posts_old')) return;
 
@@ -393,9 +392,7 @@ if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='hotl
     }[];
 
     const threadFor = new Map<string, string>();
-    const findThread = db.prepare(
-      `SELECT id FROM hotline_threads WHERE person_a = ? AND person_b = ?`,
-    );
+    const findThread = db.prepare(`SELECT id FROM hotline_threads WHERE person_a = ? AND person_b = ?`);
     const insertThread = db.prepare(
       `INSERT INTO hotline_threads (id, person_a, person_b, created_at) VALUES (?, ?, ?, ?)`,
     );
@@ -499,7 +496,12 @@ addColumn('hotline_messages', 'source', 'source TEXT', 'Kamera oder Galerie, wie
 // Archiv-Beitrag beziehen ("dazu schreiben"), ohne die beiden Seiten zu
 // vermischen — die Referenz ist rein optional und aendert nichts an dem,
 // worauf sie zeigt. NULL bei allen bisherigen Nachrichten (kein Backfill noetig).
-addColumn('posts', 'quoted_post_id', 'quoted_post_id TEXT REFERENCES posts(id)', 'Bezug auf einen Seite-A-Beitrag aus einer Seite-B-Nachricht');
+addColumn(
+  'posts',
+  'quoted_post_id',
+  'quoted_post_id TEXT REFERENCES posts(id)',
+  'Bezug auf einen Seite-A-Beitrag aus einer Seite-B-Nachricht',
+);
 // Entwickelter Film (routes/film.ts): bis develop_at ist
 // der Beitrag fuer NIEMANDEN sichtbar und sein Bild wird nicht ausgeliefert.
 // created_at = develop_at, damit er nach der Freigabe im Tape des Sonntags
@@ -524,9 +526,12 @@ if (orphans.n > 0) {
     }[];
     const first = authors[0]?.author ?? 'unbekannt';
 
-    db.prepare(
-      `INSERT OR IGNORE INTO cassettes (id, name, created_by, created_at) VALUES (?, ?, ?, ?)`,
-    ).run(id, 'Alle Freunde', first, Date.now());
+    db.prepare(`INSERT OR IGNORE INTO cassettes (id, name, created_by, created_at) VALUES (?, ?, ?, ?)`).run(
+      id,
+      'Alle Freunde',
+      first,
+      Date.now(),
+    );
 
     const join = db.prepare(
       `INSERT OR IGNORE INTO cassette_members (cassette_id, member, added_by, joined_at) VALUES (?, ?, ?, ?)`,

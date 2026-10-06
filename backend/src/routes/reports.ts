@@ -20,9 +20,12 @@ reportsRouter.post('/api/reports', (req, res) => {
   const cassetteId = req.body?.cassetteId ? String(req.body.cassetteId) : null;
   const postId = req.body?.postId ? String(req.body.postId) : null;
   const reason = String(req.body?.reason ?? '') as ReportReason;
-  const note = String(req.body?.note ?? '').trim().slice(0, 500);
+  const note = String(req.body?.note ?? '')
+    .trim()
+    .slice(0, 500);
   if (!by) throw new HttpError(400, 'Name fehlt');
-  if (Boolean(cassetteId) === Boolean(postId)) throw new HttpError(400, 'Entweder eine Kassette oder einen Beitrag melden');
+  if (Boolean(cassetteId) === Boolean(postId))
+    throw new HttpError(400, 'Entweder eine Kassette oder einen Beitrag melden');
   if (!REPORT_REASONS.includes(reason)) throw new HttpError(400, 'Unbekannter Grund');
 
   // Melden darf nur, wer das Gemeldete auch sehen kann — sonst liessen sich
@@ -30,9 +33,9 @@ reportsRouter.post('/api/reports', (req, res) => {
   if (cassetteId) {
     requireMember(req, cassetteId, by);
   } else {
-    const post = db.prepare(`SELECT cassette_id, author FROM posts p WHERE id = ? AND ${RELEASED}`).get(postId, Date.now()) as
-      | { cassette_id: string; author: string }
-      | undefined;
+    const post = db
+      .prepare(`SELECT cassette_id, author FROM posts p WHERE id = ? AND ${RELEASED}`)
+      .get(postId, Date.now()) as { cassette_id: string; author: string } | undefined;
     if (!post) throw new HttpError(404, 'Beitrag nicht gefunden');
     requireMember(req, post.cassette_id, by);
     if (post.author === by) throw new HttpError(400, 'Den eigenen Beitrag meldet man nicht, man löscht ihn');

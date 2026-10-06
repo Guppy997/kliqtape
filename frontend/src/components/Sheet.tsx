@@ -23,7 +23,15 @@ interface Props {
   children: ReactNode;
 }
 
-export default function Sheet({ open, onClose, title, variant = 'sheet', reserveBottomNav, hideClose, children }: Props) {
+export default function Sheet({
+  open,
+  onClose,
+  title,
+  variant = 'sheet',
+  reserveBottomNav,
+  hideClose,
+  children,
+}: Props) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -46,7 +54,10 @@ export default function Sheet({ open, onClose, title, variant = 'sheet', reserve
 
   const header = (
     <div className="mb-4 flex items-center gap-3">
-      <p className="font-mono min-w-0 flex-1 text-[0.66rem] uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+      <p
+        className="font-mono min-w-0 flex-1 text-[0.66rem] uppercase tracking-[0.14em]"
+        style={{ color: 'var(--dim)' }}
+      >
         {title ?? ''}
       </p>
       {!hideClose && (

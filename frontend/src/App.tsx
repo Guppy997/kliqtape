@@ -200,7 +200,12 @@ function Deck() {
     if (current == null && cassettes.length === 0 && cassetteId) setCassette(null);
   }, [loadingTapes, cassettes, current, cassetteId, setCassette]);
 
-  const { data = [], isLoading, isError, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ['feed', cassetteId, side, me],
     queryFn: () => fetchFeed(cassetteId!, side, me),
     enabled: Boolean(cassetteId),
@@ -232,10 +237,7 @@ function Deck() {
     setFilterOpen(false);
   }, [side, cassetteId]);
 
-  const shown = useMemo(
-    () => (filter !== 'all' ? data.filter((p) => p.kind === filter) : data),
-    [data, filter],
-  );
+  const shown = useMemo(() => (filter !== 'all' ? data.filter((p) => p.kind === filter) : data), [data, filter]);
 
   // Seite A: Beitraege chronologisch nach Tape (Kalendertag) gruppieren —
   // gilt auch bei aktivem Filter, anders als Seite B gibt es hier keinen
@@ -519,7 +521,10 @@ function Deck() {
                 )}
 
                 {isError && (
-                  <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'rgba(184,70,44,.18)', color: '#F0B5A5' }}>
+                  <p
+                    className="rounded-lg px-3 py-2 text-sm"
+                    style={{ background: 'rgba(184,70,44,.18)', color: '#F0B5A5' }}
+                  >
                     {/* Bandsalat: wenn das Backend nicht antwortet, ist das Band verheddert. */}
                     Bandsalat — {(error as Error).message}
                   </p>
@@ -534,7 +539,10 @@ function Deck() {
                     <p className="font-hand text-lg" style={{ color: 'var(--dim)' }}>
                       {data.length === 0 ? 'Leeres Band.' : 'Nichts davon auf diesem Band.'}
                     </p>
-                    <p className="mt-1 font-mono text-[0.66rem] uppercase tracking-widest" style={{ color: 'var(--dim)' }}>
+                    <p
+                      className="mt-1 font-mono text-[0.66rem] uppercase tracking-widest"
+                      style={{ color: 'var(--dim)' }}
+                    >
                       Seite {side.toUpperCase()} · {SIDE_LABEL[side]}
                     </p>
                   </div>
@@ -562,12 +570,7 @@ function Deck() {
                       </div>
                     ))
                   : shown.map((item) => (
-                      <PostCard
-                        key={item.id}
-                        item={item}
-                        onReacted={invalidate}
-                        onDelete={(id) => remove.mutate(id)}
-                      />
+                      <PostCard key={item.id} item={item} onReacted={invalidate} onDelete={(id) => remove.mutate(id)} />
                     ))}
 
                 {/* Film der Woche: am Ende von Seite A, dort wo man beim

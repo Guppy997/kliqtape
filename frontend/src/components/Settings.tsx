@@ -21,12 +21,24 @@ import { VERSION } from '@/changelog';
 /** Was der Server bei Funktionen sieht, die nicht an eine Seite gebunden
  *  sind. Ehrlich halten: lieber unangenehm als geschoent (CONCEPT.md §3). */
 const SERVER_SEES_EXTRA: [string, string][] = [
-  ['Film', 'im Klartext. Bis Sonntagabend gibt der Server das Bild an niemanden heraus, auch nicht an dich — gespeichert ist es aber sofort'],
-  ['Imposter-Woche', 'im Klartext: Aufgabe, wer Imposter ist, alle Beiträge und wer auf wen getippt hat. Andere sehen vor der Auflösung nur ihre eigene Karte'],
+  [
+    'Film',
+    'im Klartext. Bis Sonntagabend gibt der Server das Bild an niemanden heraus, auch nicht an dich — gespeichert ist es aber sofort',
+  ],
+  [
+    'Imposter-Woche',
+    'im Klartext: Aufgabe, wer Imposter ist, alle Beiträge und wer auf wen getippt hat. Andere sehen vor der Auflösung nur ihre eigene Karte',
+  ],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
-  ['Einladungsbrief', 'wer wann einen Brief für welche Kassette gedruckt hat und wer ihn einlöst. Den Code im QR-Code selbst speichert der Server nicht, nur einen Fingerabdruck davon'],
+  [
+    'Einladungsbrief',
+    'wer wann einen Brief für welche Kassette gedruckt hat und wer ihn einlöst. Den Code im QR-Code selbst speichert der Server nicht, nur einen Fingerabdruck davon',
+  ],
   ['Mixtape als Bild', 'nichts Neues — die Karte entsteht nur auf deinem Gerät aus dem, was du ohnehin siehst'],
-  ['Album-Export', 'das PDF entsteht auf dem Server aus Seite A — Seite B und Hot Line kann der Export-Code gar nicht lesen. Gespeichert wird das PDF nicht'],
+  [
+    'Album-Export',
+    'das PDF entsteht auf dem Server aus Seite A — Seite B und Hot Line kann der Export-Code gar nicht lesen. Gespeichert wird das PDF nicht',
+  ],
 ];
 
 export default function Settings() {
@@ -107,9 +119,7 @@ export default function Settings() {
     try {
       const { geloescht } = await deleteEverything(me);
       localStorage.removeItem('kliqtape');
-      alert(
-        `Gelöscht: ${geloescht.posts} Beiträge, ${geloescht.tapes} Mixtapes, ${geloescht.medien} Dateien.`,
-      );
+      alert(`Gelöscht: ${geloescht.posts} Beiträge, ${geloescht.tapes} Mixtapes, ${geloescht.medien} Dateien.`);
       location.reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Löschen fehlgeschlagen');
@@ -182,8 +192,7 @@ export default function Settings() {
                 </div>
               </div>
               <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-                Auch das Profilbild wird aufgenommen, nicht hochgeladen — kein perfektes Bild aus
-                der Galerie.
+                Auch das Profilbild wird aufgenommen, nicht hochgeladen — kein perfektes Bild aus der Galerie.
               </p>
             </section>
 
@@ -237,8 +246,8 @@ export default function Settings() {
                 </button>
               </div>
               <Hint>
-                Beweist, dass du {me} bist — auf einem zweiten Gerät beim Namen "{me}" eintippen, um
-                dort dieselbe Identität zu übernehmen. Nicht per E-Mail oder SMS verschicken.
+                Beweist, dass du {me} bist — auf einem zweiten Gerät beim Namen "{me}" eintippen, um dort dieselbe
+                Identität zu übernehmen. Nicht per E-Mail oder SMS verschicken.
               </Hint>
             </Block>
 
@@ -288,8 +297,12 @@ export default function Settings() {
                     ].map(([k, a, b]) => (
                       <tr key={k} style={{ borderTop: '1px solid var(--line)' }}>
                         <td className="py-1.5 pr-2">{k}</td>
-                        <td className="py-1.5 pr-2" style={{ color: 'var(--dim)' }}>{a}</td>
-                        <td className="py-1.5" style={{ color: 'var(--dim)' }}>{b}</td>
+                        <td className="py-1.5 pr-2" style={{ color: 'var(--dim)' }}>
+                          {a}
+                        </td>
+                        <td className="py-1.5" style={{ color: 'var(--dim)' }}>
+                          {b}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -303,7 +316,9 @@ export default function Settings() {
                     {SERVER_SEES_EXTRA.map(([k, v]) => (
                       <tr key={k} style={{ borderTop: '1px solid var(--line)' }}>
                         <td className="py-1.5 pr-2">{k}</td>
-                        <td className="py-1.5" style={{ color: 'var(--dim)' }}>{v}</td>
+                        <td className="py-1.5" style={{ color: 'var(--dim)' }}>
+                          {v}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -313,9 +328,8 @@ export default function Settings() {
                 className="font-mono rounded-lg px-3 py-2.5 text-[0.62rem] leading-relaxed"
                 style={{ background: 'rgba(184,70,44,.15)', color: '#F0B5A5' }}
               >
-                In diesem Prototyp ist <strong>nichts Ende-zu-Ende-verschlüsselt</strong>, auch
-                Seite B nicht. Diese Tabelle sagt immer die Wahrheit; wenn Verschlüsselung kommt,
-                ändert sie sich hier zuerst.
+                In diesem Prototyp ist <strong>nichts Ende-zu-Ende-verschlüsselt</strong>, auch Seite B nicht. Diese
+                Tabelle sagt immer die Wahrheit; wenn Verschlüsselung kommt, ändert sie sich hier zuerst.
               </p>
             </Block>
 
@@ -371,7 +385,10 @@ export default function Settings() {
                   className="flex items-baseline gap-2 rounded-lg px-3 py-2.5"
                   style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
                 >
-                  <span className="font-disp text-sm font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--ink)' }}>
+                  <span
+                    className="font-disp text-sm font-bold uppercase tracking-[0.1em]"
+                    style={{ color: 'var(--ink)' }}
+                  >
                     {s.toUpperCase()} · {SIDE_LABEL[s]}
                   </span>
                   <span className="font-mono text-[0.6rem]" style={{ color: 'var(--dim)' }}>
@@ -391,7 +408,11 @@ export default function Settings() {
                 style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--dim)' }}
               >
                 <span>
-                  Version <span className="tabular-nums" style={{ color: 'var(--accent)' }}>{VERSION}</span> · Verlauf
+                  Version{' '}
+                  <span className="tabular-nums" style={{ color: 'var(--accent)' }}>
+                    {VERSION}
+                  </span>{' '}
+                  · Verlauf
                 </span>
                 <span aria-hidden="true">{showLog ? '▴' : '▾'}</span>
               </button>
@@ -401,8 +422,16 @@ export default function Settings() {
               </p>
             </section>
 
-            {note && <p className="font-mono text-[0.66rem]" style={{ color: 'var(--accent)' }}>{note}</p>}
-            {error && <p className="font-mono text-[0.66rem]" style={{ color: '#F0B5A5' }}>{error}</p>}
+            {note && (
+              <p className="font-mono text-[0.66rem]" style={{ color: 'var(--accent)' }}>
+                {note}
+              </p>
+            )}
+            {error && (
+              <p className="font-mono text-[0.66rem]" style={{ color: '#F0B5A5' }}>
+                {error}
+              </p>
+            )}
           </div>
         )}
       </Sheet>

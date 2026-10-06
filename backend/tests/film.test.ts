@@ -39,13 +39,17 @@ describe('Entwickelter Film', () => {
 
   it('Fremder darf nicht belichten und sieht keinen Filmstand', async () => {
     const m = await upload('cara');
-    expect((await api('POST', `/api/cassettes/${cassette}/film`, 'cara', { author: CARA, mediaId: m.body.id })).status).toBe(403);
+    expect(
+      (await api('POST', `/api/cassettes/${cassette}/film`, 'cara', { author: CARA, mediaId: m.body.id })).status,
+    ).toBe(403);
     expect((await api('GET', `/api/cassettes/${cassette}/film?me=${CARA}`, 'cara')).status).toBe(403);
   });
 
   it('Niemand belichtet im Namen eines Mitglieds', async () => {
     const m = await upload('cara');
-    expect((await api('POST', `/api/cassettes/${cassette}/film`, 'cara', { author: ANNA, mediaId: m.body.id })).status).toBe(401);
+    expect(
+      (await api('POST', `/api/cassettes/${cassette}/film`, 'cara', { author: ANNA, mediaId: m.body.id })).status,
+    ).toBe(401);
   });
 
   it('Vor der Freigabe liefert der Server das Bild an niemanden aus', async () => {
@@ -60,7 +64,9 @@ describe('Entwickelter Film', () => {
 
   it('Vor der Freigabe laesst sich nichts damit anfangen', async () => {
     const voice = await upload('anna', 'audio/webm');
-    expect((await api('POST', `/api/posts/${shotId}/react`, 'anna', { author: ANNA, mediaId: voice.body.id })).status).toBe(404);
+    expect(
+      (await api('POST', `/api/posts/${shotId}/react`, 'anna', { author: ANNA, mediaId: voice.body.id })).status,
+    ).toBe(404);
     expect((await api('POST', '/api/reports', 'anna', { by: ANNA, postId: shotId, reason: 'spam' })).status).toBe(404);
   });
 
@@ -74,13 +80,23 @@ describe('Entwickelter Film', () => {
 
   it('Ein Film pro Person und Woche', async () => {
     const m = await upload('ben');
-    expect((await api('POST', `/api/cassettes/${cassette}/film`, 'ben', { author: BEN, mediaId: m.body.id })).status).toBe(409);
+    expect(
+      (await api('POST', `/api/cassettes/${cassette}/film`, 'ben', { author: BEN, mediaId: m.body.id })).status,
+    ).toBe(409);
   });
 
   it('Ein Bild, das schon woanders haengt, laesst sich nicht als Film verstecken', async () => {
     const m = await upload('anna');
-    await api('POST', '/api/posts', 'anna', { cassetteId: cassette, side: 'a', author: ANNA, kind: 'photo', mediaId: m.body.id });
-    expect((await api('POST', `/api/cassettes/${cassette}/film`, 'anna', { author: ANNA, mediaId: m.body.id })).status).toBe(400);
+    await api('POST', '/api/posts', 'anna', {
+      cassetteId: cassette,
+      side: 'a',
+      author: ANNA,
+      kind: 'photo',
+      mediaId: m.body.id,
+    });
+    expect(
+      (await api('POST', `/api/cassettes/${cassette}/film`, 'anna', { author: ANNA, mediaId: m.body.id })).status,
+    ).toBe(400);
     expect(await fetchMedia(m.body.id)).toBe(200);
   });
 

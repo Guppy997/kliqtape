@@ -57,7 +57,9 @@ describe('Imposter-Woche', () => {
   it('Fremder darf nichts abgeben, nicht tippen, nicht aufloesen, nicht vorziehen', async () => {
     const m = await upload('cara');
     const base = `/api/cassettes/${cassette}/imposter`;
-    expect((await api('POST', `${base}/entry`, 'cara', { author: CARA, mediaId: m.body.id, body: 'x' })).status).toBe(403);
+    expect((await api('POST', `${base}/entry`, 'cara', { author: CARA, mediaId: m.body.id, body: 'x' })).status).toBe(
+      403,
+    );
     expect((await api('POST', `${base}/vote`, 'cara', { by: CARA, suspect: ANNA })).status).toBe(403);
     expect((await api('POST', `${base}/reveal`, 'cara', { by: CARA })).status).toBe(403);
     expect((await api('POST', `${base}/now`, 'cara', { by: CARA })).status).toBe(403);
@@ -76,7 +78,10 @@ describe('Imposter-Woche', () => {
       expect((await api('POST', `/api/cassettes/${cassette}/imposter/entry`, p, payload)).status).toBe(201);
     }
     // Zweite Abgabe geht nicht
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter/entry`, 'anna', { author: ANNA, body: 'nochmal' })).status).toBe(409);
+    expect(
+      (await api('POST', `/api/cassettes/${cassette}/imposter/entry`, 'anna', { author: ANNA, body: 'nochmal' }))
+        .status,
+    ).toBe(409);
     if (entryKind === 'photo') expect(await fetchMedia(mediaOf.anna!)).toBe(404);
     const feed = await api('GET', `/api/posts?side=a&cassette=${cassette}&me=${ANNA}`, 'anna');
     expect(feed.body.filter((p: { source: string }) => p.source === 'imposter')).toHaveLength(0);
@@ -85,8 +90,13 @@ describe('Imposter-Woche', () => {
   });
 
   it('Vor Sonntagabend wird nicht getippt; vorziehen darf nur die Gruenderin', async () => {
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter/vote`, 'ben', { by: nameOf('ben'), suspect: ANNA })).status).toBe(409);
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter/now`, 'ben', { by: nameOf('ben') })).status).toBe(403);
+    expect(
+      (await api('POST', `/api/cassettes/${cassette}/imposter/vote`, 'ben', { by: nameOf('ben'), suspect: ANNA }))
+        .status,
+    ).toBe(409);
+    expect((await api('POST', `/api/cassettes/${cassette}/imposter/now`, 'ben', { by: nameOf('ben') })).status).toBe(
+      403,
+    );
     expect((await api('POST', `/api/cassettes/${cassette}/imposter/now`, 'anna', { by: ANNA })).status).toBe(200);
   });
 
@@ -97,22 +107,38 @@ describe('Imposter-Woche', () => {
     expect(status.body.week.result).toBeNull();
     if (entryKind === 'photo') expect(await fetchMedia(mediaOf.anna!)).toBe(200);
     const feed = await api('GET', `/api/posts?side=a&cassette=${cassette}&me=${ANNA}`, 'anna');
-    const marks = feed.body.filter((p: { source: string }) => p.source === 'imposter').map((p: { imposterMark: string }) => p.imposterMark);
+    const marks = feed.body
+      .filter((p: { source: string }) => p.source === 'imposter')
+      .map((p: { imposterMark: string }) => p.imposterMark);
     expect(marks).toEqual(['entry', 'entry', 'entry', 'entry']);
   });
 
   it('Tippen: nicht auf sich selbst, aufloesen erst wenn alle getippt haben', async () => {
     const other = PLAYERS.find((p) => p !== imposter)!;
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter/vote`, other, { by: nameOf(other), suspect: nameOf(other) })).status).toBe(400);
+    expect(
+      (
+        await api('POST', `/api/cassettes/${cassette}/imposter/vote`, other, {
+          by: nameOf(other),
+          suspect: nameOf(other),
+        })
+      ).status,
+    ).toBe(400);
     for (const p of PLAYERS) {
       const suspect = p === imposter ? PLAYERS.find((q) => q !== imposter)! : imposter;
-      expect((await api('POST', `/api/cassettes/${cassette}/imposter/vote`, p, { by: nameOf(p), suspect: nameOf(suspect) })).status).toBe(201);
+      expect(
+        (await api('POST', `/api/cassettes/${cassette}/imposter/vote`, p, { by: nameOf(p), suspect: nameOf(suspect) }))
+          .status,
+      ).toBe(201);
       if (p === 'ben') {
         // ben hat nicht gestartet, und noch haben nicht alle getippt
-        expect((await api('POST', `/api/cassettes/${cassette}/imposter/reveal`, 'ben', { by: nameOf('ben') })).status).toBe(403);
+        expect(
+          (await api('POST', `/api/cassettes/${cassette}/imposter/reveal`, 'ben', { by: nameOf('ben') })).status,
+        ).toBe(403);
       }
     }
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter/reveal`, 'ben', { by: nameOf('ben') })).status).toBe(200);
+    expect((await api('POST', `/api/cassettes/${cassette}/imposter/reveal`, 'ben', { by: nameOf('ben') })).status).toBe(
+      200,
+    );
   });
 
   it('Aufloesung: wer es war, ob die Runde richtig lag — keine Zahlen', async () => {
@@ -122,7 +148,9 @@ describe('Imposter-Woche', () => {
     expect(status.body.week.result.caught).toBe(true);
     expect(Object.keys(status.body.week.result).sort()).toEqual(['caught', 'hint', 'imposter', 'revealedAt', 'task']);
     const feed = await api('GET', `/api/posts?side=a&cassette=${cassette}&me=${ANNA}`, 'anna');
-    const mine = feed.body.find((p: { author: string; source: string }) => p.source === 'imposter' && p.author === nameOf(imposter));
+    const mine = feed.body.find(
+      (p: { author: string; source: string }) => p.source === 'imposter' && p.author === nameOf(imposter),
+    );
     expect(mine.imposterMark).toBe('imposter');
   });
 });

@@ -20,8 +20,7 @@ function maxTapeIndex(cassetteCreatedAt: number): number {
 
 function loadCassetteOr404(cassetteId: string): { created_at: number } {
   const row = db.prepare(`SELECT created_at FROM cassettes WHERE id = ?`).get(cassetteId) as
-    | { created_at: number }
-    | undefined;
+    { created_at: number } | undefined;
   if (!row) throw new HttpError(404, 'Kassette nicht gefunden');
   return row;
 }
@@ -31,9 +30,10 @@ tapesRouter.get('/api/cassettes/:id/tapes', (req, res) => {
   if (!me) throw new HttpError(400, 'me fehlt');
   requireMember(req, req.params.id, me);
 
-  const names = db
-    .prepare(`SELECT tape_index, name FROM cassette_tapes WHERE cassette_id = ?`)
-    .all(req.params.id) as { tape_index: number; name: string }[];
+  const names = db.prepare(`SELECT tape_index, name FROM cassette_tapes WHERE cassette_id = ?`).all(req.params.id) as {
+    tape_index: number;
+    name: string;
+  }[];
   const favCounts = db
     .prepare(
       `SELECT tape_index, COUNT(*) AS n FROM cassette_tape_favorites
@@ -133,9 +133,11 @@ tapesRouter.delete('/api/cassettes/:id/tapes/:tapeIndex/favorite', (req, res) =>
   if (!by) throw new HttpError(400, 'Name fehlt');
   requireMember(req, req.params.id, by);
 
-  db.prepare(
-    `DELETE FROM cassette_tape_favorites WHERE cassette_id = ? AND tape_index = ? AND member = ?`,
-  ).run(req.params.id, Number(req.params.tapeIndex), by);
+  db.prepare(`DELETE FROM cassette_tape_favorites WHERE cassette_id = ? AND tape_index = ? AND member = ?`).run(
+    req.params.id,
+    Number(req.params.tapeIndex),
+    by,
+  );
 
   res.status(204).end();
 });

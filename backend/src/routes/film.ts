@@ -38,7 +38,13 @@ filmRouter.get('/api/cassettes/:id/film', (req, res) => {
             WHERE cassette_id = ? AND source = 'film' AND develop_at = ?
             ORDER BY taken_at ASC`,
         )
-        .all(req.params.id, last.at) as { id: string; author: string; media_id: string; body: string; taken_at: number }[])
+        .all(req.params.id, last.at) as {
+        id: string;
+        author: string;
+        media_id: string;
+        body: string;
+        taken_at: number;
+      }[])
     : [];
 
   // Bewusst KEINE Angabe, wer diese Woche schon belichtet hat oder wie
@@ -49,7 +55,13 @@ filmRouter.get('/api/cassettes/:id/film', (req, res) => {
     developed: last.at
       ? {
           at: last.at,
-          shots: shots.map((r) => ({ id: r.id, author: r.author, mediaId: r.media_id, caption: r.body, takenAt: r.taken_at })),
+          shots: shots.map((r) => ({
+            id: r.id,
+            author: r.author,
+            mediaId: r.media_id,
+            caption: r.body,
+            takenAt: r.taken_at,
+          })),
         }
       : null,
     demoTools: DEMO_TOOLS,
@@ -59,7 +71,9 @@ filmRouter.get('/api/cassettes/:id/film', (req, res) => {
 filmRouter.post('/api/cassettes/:id/film', (req, res) => {
   const author = String(req.body?.author ?? '').trim();
   const mediaId = String(req.body?.mediaId ?? '').trim();
-  const caption = String(req.body?.caption ?? '').trim().slice(0, 120);
+  const caption = String(req.body?.caption ?? '')
+    .trim()
+    .slice(0, 120);
   requireMember(req, req.params.id, author);
   if (!mediaId) throw new HttpError(400, 'Aufnahme fehlt');
   const media = db.prepare(`SELECT mime FROM media WHERE id = ?`).get(mediaId) as { mime: string } | undefined;

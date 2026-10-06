@@ -37,10 +37,19 @@ export default function FilmShoot({ open, cassetteId, releaseAt, onClose, onShot
         <div className="flex flex-col gap-3">
           <p className="font-mono text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
             Ein Bild pro Woche. Es wird entwickelt
-            {releaseAt ? ` und ${filmReleaseLabel(releaseAt)} für alle gleichzeitig sichtbar` : ' und Sonntagabend für alle gleichzeitig sichtbar'}
+            {releaseAt
+              ? ` und ${filmReleaseLabel(releaseAt)} für alle gleichzeitig sichtbar`
+              : ' und Sonntagabend für alle gleichzeitig sichtbar'}
             . Bis dahin siehst auch du es nicht.
           </p>
-          <CameraCapture mode="photo" allowUpload={false} sendLabel="Belichten" title="Film" onCancel={onClose} onSend={send} />
+          <CameraCapture
+            mode="photo"
+            allowUpload={false}
+            sendLabel="Belichten"
+            title="Film"
+            onCancel={onClose}
+            onSend={send}
+          />
         </div>
       )}
     </Sheet>

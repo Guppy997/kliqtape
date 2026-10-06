@@ -23,7 +23,10 @@ export function jumpTo(postId: string): boolean {
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#E4DAC4';
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     el.animate(
-      [{ boxShadow: `0 0 0 2px ${accent}`, borderRadius: '0.75rem' }, { boxShadow: '0 0 0 2px transparent', borderRadius: '0.75rem' }],
+      [
+        { boxShadow: `0 0 0 2px ${accent}`, borderRadius: '0.75rem' },
+        { boxShadow: '0 0 0 2px transparent', borderRadius: '0.75rem' },
+      ],
       { duration: 1800, easing: 'ease-out' },
     );
   }

@@ -57,10 +57,7 @@ function NotePaper({
   const rotate = (seed % 7) - 3; // -3..3 Grad
   return (
     <div className="mx-auto w-full max-w-[17rem] px-4 py-6">
-      <div
-        className="relative rounded-sm px-4 py-4 shadow-md"
-        style={{ ...paper, transform: `rotate(${rotate}deg)` }}
-      >
+      <div className="relative rounded-sm px-4 py-4 shadow-md" style={{ ...paper, transform: `rotate(${rotate}deg)` }}>
         <p className="font-hand text-[1.05rem] leading-snug" style={{ color: INK }}>
           {text}
         </p>
@@ -199,9 +196,5 @@ export default function Zettel({ id, style, text, scale = 1 }: ZettelProps) {
   // Feste Breite VOR dem Skalieren — sonst quetscht sich die Karte in einen
   // kleinen Container, statt als verkleinerte Kopie ihrer echten Groesse zu
   // erscheinen. 17rem entspricht der max-w der Karte selbst.
-  return (
-    <div style={{ width: '17rem', transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-      {inner}
-    </div>
-  );
+  return <div style={{ width: '17rem', transform: `scale(${scale})`, transformOrigin: 'top left' }}>{inner}</div>;
 }

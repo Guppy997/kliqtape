@@ -21,8 +21,7 @@ export const albumRouter = Router();
 
 function albumSourceFor(cassetteId: string): AlbumSource {
   const cassette = db.prepare(`SELECT name, created_at FROM cassettes WHERE id = ?`).get(cassetteId) as
-    | { name: string; created_at: number }
-    | undefined;
+    { name: string; created_at: number } | undefined;
   if (!cassette) throw new HttpError(404, 'Kassette nicht gefunden');
   const rows = db
     .prepare(
@@ -70,10 +69,12 @@ function albumSourceFor(cassetteId: string): AlbumSource {
       })),
     tapeNames: () =>
       new Map(
-        (db.prepare(`SELECT tape_index, name FROM cassette_tapes WHERE cassette_id = ?`).all(cassetteId) as {
-          tape_index: number;
-          name: string;
-        }[]).map((r) => [r.tape_index, r.name]),
+        (
+          db.prepare(`SELECT tape_index, name FROM cassette_tapes WHERE cassette_id = ?`).all(cassetteId) as {
+            tape_index: number;
+            name: string;
+          }[]
+        ).map((r) => [r.tape_index, r.name]),
       ),
     mediaFile: (mediaId) => {
       if (!allowed.has(mediaId)) return null;
@@ -117,7 +118,10 @@ albumRouter.get('/api/cassettes/:id/album.pdf', (req, res) => {
   if (album.tapes.length === 0) throw new HttpError(404, 'In diesen Tapes ist nichts, das sich drucken lässt');
   const safe = album.cassetteName.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'kassette';
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="kliqtape-album-${safe}.pdf"; filename*=UTF-8''kliqtape-album-${encodeURIComponent(safe)}.pdf`);
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="kliqtape-album-${safe}.pdf"; filename*=UTF-8''kliqtape-album-${encodeURIComponent(safe)}.pdf`,
+  );
   res.setHeader('Cache-Control', 'no-store');
   renderAlbumPdf(album, source, res);
 });
@@ -128,8 +132,7 @@ albumRouter.get('/api/me/album', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   requireIdentity(req, me);
   const row = db.prepare(`SELECT album_opt_out FROM profiles WHERE name = ?`).get(me) as
-    | { album_opt_out: number }
-    | undefined;
+    { album_opt_out: number } | undefined;
   res.json({ optOut: row?.album_opt_out === 1 });
 });
 

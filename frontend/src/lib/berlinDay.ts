@@ -73,7 +73,9 @@ export function filmReleaseLabel(ms: number): string {
 /** "Mi, 14:32" — wann ein Filmbild belichtet wurde. */
 export function takenLabel(ms: number): string {
   const d = new Date(ms);
-  const wd = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short' }).format(d).replace('.', '');
+  const wd = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short' })
+    .format(d)
+    .replace('.', '');
   return `${wd}, ${berlinTimeLabel(ms)}`;
 }
 

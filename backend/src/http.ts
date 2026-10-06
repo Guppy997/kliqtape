@@ -1,5 +1,3 @@
-
-
 /** Fehler mit HTTP-Status, damit die zentrale Middleware (server.ts) sauber
  *  antworten kann. Wird in Routen einfach geworfen — Express 4 faengt
  *  synchrone Fehler selbst. */

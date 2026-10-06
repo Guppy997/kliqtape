@@ -118,7 +118,10 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
   const known = profiles.map((p) => p.name).filter((n) => !members.some((m) => m.name === n));
   const addQ = add.trim().toLowerCase();
   const foundKnown = addQ ? known.filter((n) => n.toLowerCase().includes(addQ)) : known;
-  const isNewName = addQ.length > 0 && !known.some((n) => n.toLowerCase() === addQ) && !members.some((m) => m.name.toLowerCase() === addQ);
+  const isNewName =
+    addQ.length > 0 &&
+    !known.some((n) => n.toLowerCase() === addQ) &&
+    !members.some((m) => m.name.toLowerCase() === addQ);
   const doInvite = useMutation({
     mutationFn: (who: string) => inviteMember(cassette.id, who, me),
     onSuccess: (_d, who) => {
@@ -270,7 +273,12 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
             style={{ color: 'var(--ink)' }}
           />
           {query && (
-            <button type="button" onClick={() => setQuery('')} aria-label="Suche leeren" style={{ color: 'var(--dim)' }}>
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label="Suche leeren"
+              style={{ color: 'var(--dim)' }}
+            >
               ×
             </button>
           )}
@@ -337,7 +345,15 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
             style={{ background: 'var(--accent)', color: '#17130E' }}
             aria-hidden="true"
           >
-            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 14 14"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            >
               <path d="M7 1v12M1 7h12" />
             </svg>
           </span>
@@ -474,7 +490,10 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
           </span>
         </button>
         {letterUrl && (
-          <p className="font-mono flex flex-wrap items-center gap-x-2 px-1 text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+          <p
+            className="font-mono flex flex-wrap items-center gap-x-2 px-1 text-[0.58rem] leading-relaxed"
+            style={{ color: 'var(--dim)' }}
+          >
             Brief gespeichert. Wer ihn einlöst, muss noch zustimmen.
             <button
               type="button"
@@ -555,7 +574,9 @@ function Highlight({ text, q }: { text: string; q: string }) {
     <>
       {start > 0 && '…'}
       {text.slice(start, i)}
-      <mark style={{ background: 'color-mix(in srgb, var(--accent) 35%, transparent)', color: 'inherit', borderRadius: 2 }}>
+      <mark
+        style={{ background: 'color-mix(in srgb, var(--accent) 35%, transparent)', color: 'inherit', borderRadius: 2 }}
+      >
         {text.slice(i, i + q.length)}
       </mark>
       {text.slice(i + q.length)}
@@ -668,7 +689,15 @@ function TrashIcon() {
 
 /** Start der Imposter-Woche. Hier statt auf Seite A, weil es eine
  *  Entscheidung fuer die ganze Runde ist und bewusst selten vorkommt. */
-function ImposterSpecial({ cassette, onStarted, onError }: { cassette: Cassette; onStarted: () => void; onError: (e: Error) => void }) {
+function ImposterSpecial({
+  cassette,
+  onStarted,
+  onError,
+}: {
+  cassette: Cassette;
+  onStarted: () => void;
+  onError: (e: Error) => void;
+}) {
   const me = useApp((s) => s.me);
   const qc = useQueryClient();
   const { data } = useImposter(cassette.id);
@@ -689,7 +718,8 @@ function ImposterSpecial({ cassette, onStarted, onError }: { cassette: Cassette;
   let status: string;
   if (running) status = 'Läuft gerade — Aufgabe und Abgabe stehen am Ende von Seite A.';
   else if (cassette.memberCount < data.minMembers) status = `Geht ab ${data.minMembers} Leuten auf dem Band.`;
-  else if (!data.canStart && data.nextStartAt) status = `Die nächste geht frühestens am ${berlinDateLabel(data.nextStartAt)}.`;
+  else if (!data.canStart && data.nextStartAt)
+    status = `Die nächste geht frühestens am ${berlinDateLabel(data.nextStartAt)}.`;
   else status = '';
 
   return (
@@ -701,8 +731,8 @@ function ImposterSpecial({ cassette, onStarted, onError }: { cassette: Cassette;
         Imposter-Woche
       </p>
       <p className="text-[0.8rem] leading-snug" style={{ color: 'var(--dim)' }}>
-        Alle bekommen dieselbe Aufgabe, eine Person nur einen vagen Hinweis. Sonntagabend zeigen alle,
-        was sie gemacht haben, und ihr tippt, wer es war. Kein Punktestand, nur der Spaß.
+        Alle bekommen dieselbe Aufgabe, eine Person nur einen vagen Hinweis. Sonntagabend zeigen alle, was sie gemacht
+        haben, und ihr tippt, wer es war. Kein Punktestand, nur der Spaß.
       </p>
       {status ? (
         <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -713,7 +743,8 @@ function ImposterSpecial({ cassette, onStarted, onError }: { cassette: Cassette;
           type="button"
           disabled={start.isPending}
           onClick={() => {
-            if (confirm(`Imposter-Woche auf "${cassette.name}" starten? Alle auf dem Band bekommen ihre Karte.`)) start.mutate();
+            if (confirm(`Imposter-Woche auf "${cassette.name}" starten? Alle auf dem Band bekommen ihre Karte.`))
+              start.mutate();
           }}
           className="font-mono self-start rounded-full px-3.5 py-1.5 text-[0.62rem] uppercase tracking-[0.12em] disabled:opacity-50"
           style={{ background: '#C8402A', color: '#FFF4EC' }}
@@ -730,7 +761,12 @@ function ImposterSpecial({ cassette, onStarted, onError }: { cassette: Cassette;
 function AgingStrip({ cassette, pairIndex }: { cassette: Cassette; pairIndex?: number }) {
   const now = ageStageOf(cassette.createdAt);
   const steps = [0, 3, 6, AGE_MAX_STAGE];
-  const labels = ['neu', `${3 * AGE_STEP_DAYS} Tage`, `${6 * AGE_STEP_DAYS} Tage`, `${AGE_MAX_STAGE * AGE_STEP_DAYS} Tage`];
+  const labels = [
+    'neu',
+    `${3 * AGE_STEP_DAYS} Tage`,
+    `${6 * AGE_STEP_DAYS} Tage`,
+    `${AGE_MAX_STAGE * AGE_STEP_DAYS} Tage`,
+  ];
   return (
     <section className="flex flex-col gap-2">
       <h3 className="font-disp text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
@@ -741,7 +777,12 @@ function AgingStrip({ cassette, pairIndex }: { cassette: Cassette; pairIndex?: n
           const current = now >= stage && (i === steps.length - 1 || now < steps[i + 1]!);
           return (
             <div key={stage} className="flex flex-col items-center gap-1">
-              <span style={{ opacity: current ? 1 : 0.85, filter: current ? 'drop-shadow(0 0 0.3rem var(--accent))' : undefined }}>
+              <span
+                style={{
+                  opacity: current ? 1 : 0.85,
+                  filter: current ? 'drop-shadow(0 0 0.3rem var(--accent))' : undefined,
+                }}
+              >
                 <CassetteFacePreview
                   side="a"
                   cassetteId={cassette.id}
@@ -753,7 +794,10 @@ function AgingStrip({ cassette, pairIndex }: { cassette: Cassette; pairIndex?: n
                   width={70}
                 />
               </span>
-              <span className="font-mono text-[0.52rem] uppercase tracking-[0.08em]" style={{ color: current ? 'var(--accent)' : 'var(--dim)' }}>
+              <span
+                className="font-mono text-[0.52rem] uppercase tracking-[0.08em]"
+                style={{ color: current ? 'var(--accent)' : 'var(--dim)' }}
+              >
                 {current ? `jetzt · ${labels[i]}` : labels[i]}
               </span>
             </div>
@@ -761,8 +805,8 @@ function AgingStrip({ cassette, pairIndex }: { cassette: Cassette; pairIndex?: n
         })}
       </div>
       <p className="font-mono text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-        Alle {AGE_STEP_DAYS} Tage seit dem Anlegen etwas mehr Gebrauchsspuren: das Etikett vergilbt, die
-        Kanten werden abgegriffen, das Band bekommt Korn.
+        Alle {AGE_STEP_DAYS} Tage seit dem Anlegen etwas mehr Gebrauchsspuren: das Etikett vergilbt, die Kanten werden
+        abgegriffen, das Band bekommt Korn.
       </p>
     </section>
   );

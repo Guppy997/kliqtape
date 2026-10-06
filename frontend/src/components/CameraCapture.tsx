@@ -7,12 +7,7 @@ const MAX_VIDEO_MS = 10_000;
 interface Props {
   mode: 'photo' | 'video';
   onCancel: () => void;
-  onSend: (
-    blob: Blob,
-    durationMs: number | undefined,
-    caption: string,
-    source: 'camera' | 'upload',
-  ) => Promise<void>;
+  onSend: (blob: Blob, durationMs: number | undefined, caption: string, source: 'camera' | 'upload') => Promise<void>;
   /** Bild aus der Galerie zulassen. Im Feed ein zweiter Weg, beim Cover der normale. */
   allowUpload?: boolean;
   /** Beschriftungszeile ausblenden — z. B. beim Profilbild. */
@@ -84,7 +79,12 @@ export default function CameraCapture({
     };
   }, [facing, mode]);
 
-  useEffect(() => () => { if (shot) URL.revokeObjectURL(shot.url); }, [shot]);
+  useEffect(
+    () => () => {
+      if (shot) URL.revokeObjectURL(shot.url);
+    },
+    [shot],
+  );
 
   useEffect(() => {
     if (!recording) return;
@@ -112,11 +112,18 @@ export default function CameraCapture({
     const mime = pickVideoMime();
     const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
     chunks.current = [];
-    rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.current.push(e.data); };
+    rec.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.current.push(e.data);
+    };
     rec.onstop = () => {
       const type = baseMime(rec.mimeType || mime || 'video/webm');
       const blob = new Blob(chunks.current, { type });
-      setShot({ blob, url: URL.createObjectURL(blob), ms: Math.min(MAX_VIDEO_MS, Date.now() - startedAt.current), source: 'camera' });
+      setShot({
+        blob,
+        url: URL.createObjectURL(blob),
+        ms: Math.min(MAX_VIDEO_MS, Date.now() - startedAt.current),
+        source: 'camera',
+      });
       setRecording(false);
     };
     rec.start(200);
@@ -274,7 +281,10 @@ export default function CameraCapture({
           <>
             <button
               type="button"
-              onClick={() => { URL.revokeObjectURL(shot.url); setShot(null); }}
+              onClick={() => {
+                URL.revokeObjectURL(shot.url);
+                setShot(null);
+              }}
               className="rounded-lg px-4 py-2.5 text-sm"
               style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
             >

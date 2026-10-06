@@ -43,11 +43,7 @@ export class TapeDeck {
 
     // Rueckwaertspuffer einmal vorberechnen. Live umzudrehen waere pro
     // Schnipsel zu teuer und wuerde beim Ziehen ruckeln.
-    const rev = ctx.createBuffer(
-      this.forward.numberOfChannels,
-      this.forward.length,
-      this.forward.sampleRate,
-    );
+    const rev = ctx.createBuffer(this.forward.numberOfChannels, this.forward.length, this.forward.sampleRate);
     for (let c = 0; c < this.forward.numberOfChannels; c++) {
       const src = this.forward.getChannelData(c);
       const dst = rev.getChannelData(c);

@@ -9,7 +9,15 @@ import Sheet from './Sheet';
  * Auswahl zeigt pro Tape ein paar Bilder statt einer Anzahl — wie man im
  * Schuhkarton blaettert, nicht wie in einer Statistik.
  */
-export default function AlbumExport({ open, cassette, onClose }: { open: boolean; cassette: Cassette; onClose: () => void }) {
+export default function AlbumExport({
+  open,
+  cassette,
+  onClose,
+}: {
+  open: boolean;
+  cassette: Cassette;
+  onClose: () => void;
+}) {
   const me = useApp((s) => s.me);
   const { data, isLoading } = useQuery({
     queryKey: ['album-preview', cassette.id, me],
@@ -24,7 +32,13 @@ export default function AlbumExport({ open, cassette, onClose }: { open: boolean
   }, [data]);
 
   const save = useMutation({
-    mutationFn: () => downloadAlbum(cassette.id, me, [...chosen].sort((a, b) => a - b), cassette.name),
+    mutationFn: () =>
+      downloadAlbum(
+        cassette.id,
+        me,
+        [...chosen].sort((a, b) => a - b),
+        cassette.name,
+      ),
   });
 
   const toggle = (i: number) =>
@@ -39,9 +53,8 @@ export default function AlbumExport({ open, cassette, onClose }: { open: boolean
     <Sheet open={open} onClose={onClose} variant="full" title="Album als PDF">
       <div className="flex flex-col gap-4">
         <p className="text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
-          Wähle die Tapes von Seite A, die ins Album sollen. Seite B und Hot Line kommen nie hinein,
-          Clips und O-Töne lassen sich nicht drucken. Wer seine Beiträge aus Alben ausgenommen hat,
-          fehlt bewusst.
+          Wähle die Tapes von Seite A, die ins Album sollen. Seite B und Hot Line kommen nie hinein, Clips und O-Töne
+          lassen sich nicht drucken. Wer seine Beiträge aus Alben ausgenommen hat, fehlt bewusst.
         </p>
 
         {isLoading && (
@@ -72,12 +85,19 @@ export default function AlbumExport({ open, cassette, onClose }: { open: boolean
                 <span
                   aria-hidden="true"
                   className="grid size-5 shrink-0 place-items-center rounded"
-                  style={{ border: `1.5px solid ${on ? 'var(--accent)' : 'var(--line)'}`, background: on ? 'var(--accent)' : 'transparent', color: '#17130E' }}
+                  style={{
+                    border: `1.5px solid ${on ? 'var(--accent)' : 'var(--line)'}`,
+                    background: on ? 'var(--accent)' : 'transparent',
+                    color: '#17130E',
+                  }}
                 >
                   {on && '✓'}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="font-mono block text-[0.56rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+                  <span
+                    className="font-mono block text-[0.56rem] uppercase tracking-[0.12em]"
+                    style={{ color: 'var(--dim)' }}
+                  >
                     Tape {String(t.index).padStart(2, '0')} · {t.date}
                   </span>
                   <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>

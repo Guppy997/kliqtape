@@ -34,8 +34,8 @@ export function NoCassette() {
           Noch kein Band im Fach.
         </h2>
         <p className="mx-auto max-w-[19rem] text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
-          Eine Kassette ist eine Runde von Leuten: die Freitagsrunde, die WG, die Familie. Jede
-          bekommt ihr eigenes Band, nichts vermischt sich.
+          Eine Kassette ist eine Runde von Leuten: die Freitagsrunde, die WG, die Familie. Jede bekommt ihr eigenes
+          Band, nichts vermischt sich.
         </p>
       </div>
 
@@ -115,8 +115,8 @@ export function EmptyBand({ cassette }: { cassette: Cassette }) {
         Das Band ist noch leer.
       </h2>
       <p className="max-w-[19rem] text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
-        Seite A ist das Archiv von „{cassette.name}“: Fotos, Absprachen, alles, was bleiben soll.
-        Mit dem Plus oben nimmst du den ersten Track auf.
+        Seite A ist das Archiv von „{cassette.name}“: Fotos, Absprachen, alles, was bleiben soll. Mit dem Plus oben
+        nimmst du den ersten Track auf.
       </p>
       {alone && (
         <button
@@ -125,7 +125,16 @@ export function EmptyBand({ cassette }: { cassette: Cassette }) {
           className="mt-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold"
           style={{ background: 'var(--card)', border: '1px solid var(--accent)', color: 'var(--accent)' }}
         >
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 14 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
             <path d="M7 1v12M1 7h12" />
           </svg>
           Du bist noch allein, lad jemanden ein
@@ -146,7 +155,17 @@ function EmptyShell() {
       {/* Scharnierkante */}
       <path d="M18 18h174" stroke="var(--line)" strokeWidth="1" />
       {/* Ausgeschnittene Form, in die die Kassette gehoert */}
-      <rect x="38" y="30" width="134" height="84" rx="6" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="5 5" opacity=".75" />
+      <rect
+        x="38"
+        y="30"
+        width="134"
+        height="84"
+        rx="6"
+        stroke="var(--accent)"
+        strokeWidth="1.5"
+        strokeDasharray="5 5"
+        opacity=".75"
+      />
       <circle cx="78" cy="72" r="11" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="3 4" opacity=".6" />
       <circle cx="132" cy="72" r="11" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="3 4" opacity=".6" />
       {/* Plus mittig: hier kommt dein Band hin */}
@@ -165,7 +184,13 @@ function BlankLabel() {
       <rect x="1" y="1" width="166" height="72" rx="4" fill="var(--card)" stroke="var(--line)" />
       <rect x="1" y="1" width="166" height="15" rx="4" fill="var(--accent)" opacity=".85" />
       <path d="M14 38h140M14 56h140" stroke="var(--line)" strokeWidth="1" />
-      <path d="M16 35c6-6 12 4 18-2s10 2 14-1" stroke="var(--dim)" strokeWidth="1.3" strokeLinecap="round" opacity=".6" />
+      <path
+        d="M16 35c6-6 12 4 18-2s10 2 14-1"
+        stroke="var(--dim)"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        opacity=".6"
+      />
     </svg>
   );
 }

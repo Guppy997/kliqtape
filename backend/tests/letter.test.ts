@@ -17,7 +17,12 @@ async function letter(cassette: string, as: Person, by: string) {
   });
   const buf = Buffer.from(await res.arrayBuffer());
   const url = res.headers.get('x-letter-url');
-  return { status: res.status, type: res.headers.get('content-type'), buf, token: url ? new URL(url).searchParams.get('brief') : null };
+  return {
+    status: res.status,
+    type: res.headers.get('content-type'),
+    buf,
+    token: url ? new URL(url).searchParams.get('brief') : null,
+  };
 }
 
 describe('Einladung als Brief', () => {

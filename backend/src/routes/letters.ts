@@ -35,7 +35,8 @@ lettersRouter.post('/api/cassettes/:id/letter.pdf', (req, res) => {
   // Origin schickt der Browser bei POST ohnehin mit und zeigt auf die App,
   // nicht auf den Backend-Port hinter einem Proxy.
   const origin = req.get('origin');
-  const base = PUBLIC_URL || (origin && /^https?:\/\/[^/\s]+$/.test(origin) ? origin : `${req.protocol}://${req.get('host')}`);
+  const base =
+    PUBLIC_URL || (origin && /^https?:\/\/[^/\s]+$/.test(origin) ? origin : `${req.protocol}://${req.get('host')}`);
   const url = `${base}/?brief=${token}`;
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename="kliqtape-einladung.pdf"');
@@ -61,7 +62,14 @@ lettersRouter.post('/api/letters/redeem', (req, res) => {
         WHERE l.token_hash = ?`,
     )
     .get(hashToken(token)) as
-    | { id: string; cassette_id: string; created_by: string; expires_at: number; used_at: number | null; cassette_name: string }
+    | {
+        id: string;
+        cassette_id: string;
+        created_by: string;
+        expires_at: number;
+        used_at: number | null;
+        cassette_name: string;
+      }
     | undefined;
   if (!letter) throw new HttpError(404, 'Diesen Brief kennt der Server nicht');
   if (letter.used_at) throw new HttpError(410, 'Dieser Brief wurde schon eingelöst');

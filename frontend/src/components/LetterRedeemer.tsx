@@ -25,7 +25,10 @@ export default function LetterRedeemer() {
     redeemLetter(me, token)
       .then((r) => {
         void qc.invalidateQueries({ queryKey: ['invites', me] });
-        setMessage({ ok: true, text: `${r.invitedBy} lädt dich auf „${r.cassetteName}“ ein. Stimm zu, dann bist du dabei.` });
+        setMessage({
+          ok: true,
+          text: `${r.invitedBy} lädt dich auf „${r.cassetteName}“ ein. Stimm zu, dann bist du dabei.`,
+        });
         setActive('notify');
       })
       .catch((e: Error) => setMessage({ ok: false, text: e.message }));
@@ -42,13 +45,21 @@ export default function LetterRedeemer() {
         boxShadow: '0 0.8rem 2rem rgba(0,0,0,.5)',
       }}
     >
-      <span className="font-mono shrink-0 pt-0.5 text-[0.56rem] uppercase tracking-[0.12em]" style={{ color: message.ok ? 'var(--accent)' : '#F0B5A5' }}>
+      <span
+        className="font-mono shrink-0 pt-0.5 text-[0.56rem] uppercase tracking-[0.12em]"
+        style={{ color: message.ok ? 'var(--accent)' : '#F0B5A5' }}
+      >
         Brief
       </span>
       <p className="min-w-0 flex-1 text-sm leading-snug" style={{ color: 'var(--ink)' }}>
         {message.text}
       </p>
-      <button type="button" onClick={() => setMessage(null)} aria-label="Hinweis schließen" style={{ color: 'var(--dim)' }}>
+      <button
+        type="button"
+        onClick={() => setMessage(null)}
+        aria-label="Hinweis schließen"
+        style={{ color: 'var(--dim)' }}
+      >
         ✕
       </button>
     </div>

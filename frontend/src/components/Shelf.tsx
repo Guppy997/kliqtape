@@ -1,6 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
-import { favoriteTape, fetchFeed, fetchTapes, setTapeName, unfavoriteTape, type Cassette, type TapeOverride } from '@/lib/api';
+import {
+  favoriteTape,
+  fetchFeed,
+  fetchTapes,
+  setTapeName,
+  unfavoriteTape,
+  type Cassette,
+  type TapeOverride,
+} from '@/lib/api';
 import { berlinDateLabel, dateOfTapeIndex } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import { MiniCassette, useCassettes, useLookIndex } from './CassetteDeck';
@@ -153,7 +161,7 @@ export default function Shelf({ me }: { me: string }) {
                 color: cassetteFilter === 'all' ? 'var(--dim)' : 'var(--accent)',
               }}
             >
-              {cassetteFilter === 'all' ? 'Filter' : cassettes.find((c) => c.id === cassetteFilter)?.name ?? 'Filter'}{' '}
+              {cassetteFilter === 'all' ? 'Filter' : (cassettes.find((c) => c.id === cassetteFilter)?.name ?? 'Filter')}{' '}
               {filterOpen ? '▴' : '▾'}
             </button>
           </div>
@@ -279,7 +287,10 @@ function TapeRowItem({
       </button>
 
       <div className="min-w-0 flex-1">
-        <span className="font-mono block truncate text-[0.56rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+        <span
+          className="font-mono block truncate text-[0.56rem] uppercase tracking-[0.1em]"
+          style={{ color: 'var(--dim)' }}
+        >
           {cassette.name}
         </span>
         {editing ? (

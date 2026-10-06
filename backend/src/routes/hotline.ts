@@ -78,8 +78,7 @@ hotlineRouter.get('/api/hotlines/threads/:id/messages', (req, res) => {
   requireIdentity(req, me);
 
   const thread = db.prepare(`SELECT * FROM hotline_threads WHERE id = ?`).get(req.params.id) as
-    | { id: string; person_a: string; person_b: string; created_at: number }
-    | undefined;
+    { id: string; person_a: string; person_b: string; created_at: number } | undefined;
   if (!thread) throw new HttpError(404, 'Leitung nicht gefunden');
   if (thread.person_a !== me && thread.person_b !== me) {
     throw new HttpError(403, 'Du bist nicht in dieser Leitung');
@@ -155,8 +154,7 @@ hotlineRouter.post('/api/hotlines/threads', (req, res) => {
   if (kind === 'tape') {
     if (!tapeId) throw new HttpError(400, 'Welches Mixtape?');
     const tape = db.prepare(`SELECT sealed_at FROM mixtapes WHERE id = ?`).get(tapeId) as
-      | { sealed_at: number | null }
-      | undefined;
+      { sealed_at: number | null } | undefined;
     if (!tape) throw new HttpError(404, 'Mixtape nicht gefunden');
     if (!tape.sealed_at) throw new HttpError(400, 'Nur versiegelte Mixtapes lassen sich teilen');
   }
@@ -166,8 +164,7 @@ hotlineRouter.post('/api/hotlines/threads', (req, res) => {
 
   let threadId = (
     db.prepare(`SELECT id FROM hotline_threads WHERE person_a = ? AND person_b = ?`).get(a, b) as
-      | { id: string }
-      | undefined
+      { id: string } | undefined
   )?.id;
 
   if (!threadId) {
@@ -195,8 +192,7 @@ hotlineRouter.post('/api/hotlines/threads/:id/heard', (req, res) => {
   requireIdentity(req, me);
 
   const thread = db.prepare(`SELECT person_a, person_b FROM hotline_threads WHERE id = ?`).get(req.params.id) as
-    | { person_a: string; person_b: string }
-    | undefined;
+    { person_a: string; person_b: string } | undefined;
   if (!thread) throw new HttpError(404, 'Leitung nicht gefunden');
   if (thread.person_a !== me && thread.person_b !== me) throw new HttpError(403, 'Du bist nicht in dieser Leitung');
 

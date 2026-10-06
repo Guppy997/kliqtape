@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { jumpTo, useJump } from '@/store/jumpStore';
 import { useQuery } from '@tanstack/react-query';
-import { berlinDayKey, berlinDayLabel, berlinTime, previewFor, useCassetteChat, useHotlineChat, type ChatMessage } from '@/lib/chat';
+import {
+  berlinDayKey,
+  berlinDayLabel,
+  berlinTime,
+  previewFor,
+  useCassetteChat,
+  useHotlineChat,
+  type ChatMessage,
+} from '@/lib/chat';
 import { fetchMixtapes, mediaUrl, HOTLINE_MAX } from '@/lib/api';
 import { baseMime, pickAudioMime } from '@/lib/tapeAudio';
 import { useApp } from '@/store/appStore';
@@ -126,7 +134,13 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
     setText((t) => (t + e).slice(0, maxLen));
   }
 
-  async function sendAttachment(kind: 'photo' | 'video', blob: Blob, ms: number | undefined, caption: string, source: 'camera' | 'upload') {
+  async function sendAttachment(
+    kind: 'photo' | 'video',
+    blob: Blob,
+    ms: number | undefined,
+    caption: string,
+    source: 'camera' | 'upload',
+  ) {
     setAttachBusy(true);
     setError(null);
     try {
@@ -247,10 +261,16 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
   }
 
   const messageList = (
-    <div className={variant === 'hotline' ? 'flex flex-1 flex-col gap-1 overflow-y-auto py-3' : 'flex flex-col gap-1 py-3'}>
+    <div
+      className={variant === 'hotline' ? 'flex flex-1 flex-col gap-1 overflow-y-auto py-3' : 'flex flex-col gap-1 py-3'}
+    >
       {chat.messages.length === 0 ? (
         <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>
-          {variant === 'hotline' ? (chat.other ? `Noch nichts mit ${chat.other}.` : 'Wähl jemanden.') : 'Noch nichts geschrieben.'}
+          {variant === 'hotline'
+            ? chat.other
+              ? `Noch nichts mit ${chat.other}.`
+              : 'Wähl jemanden.'
+            : 'Noch nichts geschrieben.'}
         </p>
       ) : (
         chat.messages.map((m, i) => {
@@ -265,7 +285,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                 {variant === 'cassette' && !mine && <Avatar name={m.from} side={side} size={1.5} />}
                 <div className="flex max-w-[76%] flex-col gap-0.5">
                   {showSender && (
-                    <span className="font-mono px-1 text-[0.56rem] uppercase tracking-[0.06em]" style={{ color: 'var(--dim)' }}>
+                    <span
+                      className="font-mono px-1 text-[0.56rem] uppercase tracking-[0.06em]"
+                      style={{ color: 'var(--dim)' }}
+                    >
                       {m.from}
                     </span>
                   )}
@@ -307,8 +330,15 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
   );
 
   const composerInner = (
-    <div className="flex flex-col gap-1.5 pt-2" style={variant === 'hotline' ? { borderTop: '1px solid var(--line)' } : undefined}>
-      {error && <p className="text-xs" style={{ color: '#F0B5A5' }}>{error}</p>}
+    <div
+      className="flex flex-col gap-1.5 pt-2"
+      style={variant === 'hotline' ? { borderTop: '1px solid var(--line)' } : undefined}
+    >
+      {error && (
+        <p className="text-xs" style={{ color: '#F0B5A5' }}>
+          {error}
+        </p>
+      )}
 
       {/* Angehefteter Bezug auf einen Seite-A-Beitrag (siehe PostCard.tsx,
           "Reagieren") — bis zum Absenden jederzeit ueber das Kreuz wieder
@@ -320,7 +350,8 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
           style={{ background: 'var(--card)', borderLeft: '3px solid var(--accent)' }}
         >
           <span className="min-w-0 flex-1 truncate text-[0.76rem]" style={{ color: 'var(--dim)' }}>
-            An <span style={{ color: 'var(--ink)' }}>{pendingQuote.author}</span>: {previewFor(pendingQuote.kind, pendingQuote.body)}
+            An <span style={{ color: 'var(--ink)' }}>{pendingQuote.author}</span>:{' '}
+            {previewFor(pendingQuote.kind, pendingQuote.body)}
           </span>
           <button
             type="button"
@@ -347,7 +378,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                 {String(Math.floor(recElapsed / 60000)).padStart(2, '0')}:
                 {String(Math.floor((recElapsed % 60000) / 1000)).padStart(2, '0')}
               </span>
-              <span className="font-mono truncate text-[0.6rem] uppercase tracking-wide" style={{ color: 'var(--dim)' }}>
+              <span
+                className="font-mono truncate text-[0.6rem] uppercase tracking-wide"
+                style={{ color: 'var(--dim)' }}
+              >
                 nimmt auf …
               </span>
             </div>
@@ -369,7 +403,17 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
               className="grid size-11 shrink-0 place-items-center rounded-lg"
               style={{ background: accent, color: variant === 'hotline' ? '#20180A' : '#17130E' }}
             >
-              <svg width="14" height="11" viewBox="0 0 14 11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                width="14"
+                height="11"
+                viewBox="0 0 14 11"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M1 6l3.5 3.5L13 1" />
               </svg>
             </button>
@@ -387,7 +431,17 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
               className="grid size-9 shrink-0 place-items-center self-end rounded-full text-lg transition-transform active:scale-90"
               style={{ color: 'var(--dim)' }}
             >
-              <svg width="19" height="19" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                width="19"
+                height="19"
+                viewBox="0 0 18 18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <circle cx="9" cy="9" r="7" />
                 <path d="M6 10.5c.8 1 1.9 1.5 3 1.5s2.2-.5 3-1.5" />
                 <circle cx="6.6" cy="7" r="0.7" fill="currentColor" stroke="none" />
@@ -398,7 +452,9 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
               value={text}
               onChange={(e) => setText(e.target.value.slice(0, maxLen))}
               rows={1}
-              placeholder={variant === 'hotline' ? (chat.other ? `An ${chat.other} …` : 'Erst jemanden wählen …') : 'Schreib was …'}
+              placeholder={
+                variant === 'hotline' ? (chat.other ? `An ${chat.other} …` : 'Erst jemanden wählen …') : 'Schreib was …'
+              }
               disabled={!canSend}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -422,7 +478,16 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                 color: 'var(--ink)',
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
                 <path d="M8 1.5v13M1.5 8h13" />
               </svg>
             </button>
@@ -443,7 +508,17 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                 className="grid size-11 shrink-0 place-items-center rounded-lg transition-transform active:scale-95 disabled:opacity-40"
                 style={{ background: accent, color: variant === 'hotline' ? '#20180A' : '#17130E' }}
               >
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 15 15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M7.5 12.5V2.5M3.5 6.5l4-4 4 4" />
                 </svg>
               </button>
@@ -460,7 +535,17 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                   border: '1px solid color-mix(in srgb, var(--accent) 45%, transparent)',
                 }}
               >
-                <svg width="13" height="15" viewBox="0 0 14 16" fill="none" stroke="var(--accent)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="13"
+                  height="15"
+                  viewBox="0 0 14 16"
+                  fill="none"
+                  stroke="var(--accent)"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <rect x="4.5" y="1" width="5" height="8" rx="2.5" />
                   <path d="M1.5 7.5a5.5 5.5 0 0 0 11 0" />
                   <path d="M7 13v2" />
@@ -471,7 +556,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
         )}
       </div>
       {recState !== 'recording' && (
-        <p className="font-mono text-right text-[0.58rem]" style={{ color: maxLen - text.length < 30 ? accent : 'var(--dim)' }}>
+        <p
+          className="font-mono text-right text-[0.58rem]"
+          style={{ color: maxLen - text.length < 30 ? accent : 'var(--dim)' }}
+        >
           {maxLen - text.length}
         </p>
       )}
@@ -571,7 +659,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                 className="flex items-center gap-3 rounded-xl p-2.5 text-left disabled:opacity-50"
                 style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
               >
-                <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md" style={{ background: '#D8CFBB' }}>
+                <span
+                  className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md"
+                  style={{ background: '#D8CFBB' }}
+                >
                   {t.coverId ? (
                     <img src={mediaUrl(t.coverId)} alt="" className="size-full object-cover" />
                   ) : (
@@ -582,7 +673,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                   <span className="font-hand block truncate text-[1.02rem]" style={{ color: 'var(--ink)' }}>
                     {t.title}
                   </span>
-                  <span className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+                  <span
+                    className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]"
+                    style={{ color: 'var(--dim)' }}
+                  >
                     ursprünglich für {t.to} · {t.trackCount}/12
                   </span>
                 </span>
@@ -622,28 +716,50 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
 function ChatBubbleContent({ msg }: { msg: ChatMessage }) {
   switch (msg.kind) {
     case 'text':
-      return <p className="text-[0.9rem] leading-relaxed"><EmojiText text={msg.body} /></p>;
+      return (
+        <p className="text-[0.9rem] leading-relaxed">
+          <EmojiText text={msg.body} />
+        </p>
+      );
 
     case 'photo':
       return msg.mediaId ? (
         <div className="flex flex-col gap-1.5">
           <img src={mediaUrl(msg.mediaId)} alt={msg.body || 'Foto'} loading="lazy" className="max-w-full rounded-md" />
-          {msg.body && <p className="text-[0.85rem]"><EmojiText text={msg.body} /></p>}
+          {msg.body && (
+            <p className="text-[0.85rem]">
+              <EmojiText text={msg.body} />
+            </p>
+          )}
         </div>
       ) : null;
 
     case 'video':
       return msg.mediaId ? (
         <div className="flex flex-col gap-1.5">
-          <video src={mediaUrl(msg.mediaId)} controls playsInline preload="metadata" className="max-w-full rounded-md" />
-          {msg.body && <p className="text-[0.85rem]"><EmojiText text={msg.body} /></p>}
+          <video
+            src={mediaUrl(msg.mediaId)}
+            controls
+            playsInline
+            preload="metadata"
+            className="max-w-full rounded-md"
+          />
+          {msg.body && (
+            <p className="text-[0.85rem]">
+              <EmojiText text={msg.body} />
+            </p>
+          )}
         </div>
       ) : null;
 
     case 'voice':
       return msg.mediaId ? (
         <div className="flex flex-col gap-1.5">
-          {msg.body && <p className="font-hand text-[0.95rem]"><EmojiText text={msg.body} /></p>}
+          {msg.body && (
+            <p className="font-hand text-[0.95rem]">
+              <EmojiText text={msg.body} />
+            </p>
+          )}
           <TapePlayer src={mediaUrl(msg.mediaId)} hintMs={msg.durationMs} />
         </div>
       ) : null;

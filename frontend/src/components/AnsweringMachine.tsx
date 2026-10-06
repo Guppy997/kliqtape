@@ -81,7 +81,14 @@ export default function AnsweringMachine() {
       />
 
       {/* Hauptseite: wird ueber die untere Leiste gewechselt, deshalb ohne X. */}
-      <Sheet open={open} onClose={() => setActiveNav(null)} variant="full" reserveBottomNav hideClose title="Neuigkeiten">
+      <Sheet
+        open={open}
+        onClose={() => setActiveNav(null)}
+        variant="full"
+        reserveBottomNav
+        hideClose
+        title="Neuigkeiten"
+      >
         <div className="flex flex-col gap-6">
           {notifCount === 0 && (
             <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>
@@ -117,7 +124,10 @@ export default function AnsweringMachine() {
                         <span className="font-semibold">{inv.invitedBy}</span> lädt dich zu{' '}
                         <span className="font-semibold">{inv.cassetteName}</span> ein
                       </p>
-                      <p className="font-mono mt-0.5 text-[0.56rem] uppercase tracking-[0.08em]" style={{ color: 'var(--dim)' }}>
+                      <p
+                        className="font-mono mt-0.5 text-[0.56rem] uppercase tracking-[0.08em]"
+                        style={{ color: 'var(--dim)' }}
+                      >
                         {timeAgo(inv.createdAt)}
                       </p>
                     </div>
@@ -168,7 +178,10 @@ export default function AnsweringMachine() {
                     <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
                       {c.name}
                     </span>
-                    <span className="font-mono block text-[0.58rem] uppercase tracking-[0.08em]" style={{ color: 'var(--accent)' }}>
+                    <span
+                      className="font-mono block text-[0.58rem] uppercase tracking-[0.08em]"
+                      style={{ color: 'var(--accent)' }}
+                    >
                       Neuer Beitrag
                     </span>
                   </span>

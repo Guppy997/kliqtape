@@ -81,7 +81,12 @@ export const REPORT_REASONS: { key: ReportReason; label: string }[] = [
 
 export type ReportTarget = { cassetteId: string } | { postId: string };
 
-export function sendReport(target: ReportTarget, reason: ReportReason, note: string, by: string): Promise<{ id: string }> {
+export function sendReport(
+  target: ReportTarget,
+  reason: ReportReason,
+  note: string,
+  by: string,
+): Promise<{ id: string }> {
   return apiFetch('/api/reports', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -149,10 +154,9 @@ export function declineInvite(id: string, me: string): Promise<void> {
 }
 
 export function removeMember(id: string, member: string, by: string): Promise<void> {
-  return apiFetch(
-    `/api/cassettes/${id}/members/${encodeURIComponent(member)}?by=${encodeURIComponent(by)}`,
-    { method: 'DELETE' },
-  ).then(unwrap<void>);
+  return apiFetch(`/api/cassettes/${id}/members/${encodeURIComponent(member)}?by=${encodeURIComponent(by)}`, {
+    method: 'DELETE',
+  }).then(unwrap<void>);
 }
 
 /** Löscht die ganze Kassette samt aller Beiträge und Medien — endgültig. */
@@ -202,10 +206,9 @@ export function favoriteTape(cassetteId: string, tapeIndex: number, by: string):
 }
 
 export function unfavoriteTape(cassetteId: string, tapeIndex: number, by: string): Promise<void> {
-  return apiFetch(
-    `/api/cassettes/${cassetteId}/tapes/${tapeIndex}/favorite?by=${encodeURIComponent(by)}`,
-    { method: 'DELETE' },
-  ).then(unwrap<void>);
+  return apiFetch(`/api/cassettes/${cassetteId}/tapes/${tapeIndex}/favorite?by=${encodeURIComponent(by)}`, {
+    method: 'DELETE',
+  }).then(unwrap<void>);
 }
 
 export interface FeedItem {
@@ -336,7 +339,12 @@ export function fetchFilm(cassetteId: string, me: string): Promise<FilmStatus> {
   return apiFetch(`/api/cassettes/${cassetteId}/film?me=${encodeURIComponent(me)}`).then(unwrap<FilmStatus>);
 }
 
-export function shootFilm(cassetteId: string, author: string, mediaId: string, caption: string): Promise<{ id: string; developAt: number }> {
+export function shootFilm(
+  cassetteId: string,
+  author: string,
+  mediaId: string,
+  caption: string,
+): Promise<{ id: string; developAt: number }> {
   return apiFetch(`/api/cassettes/${cassetteId}/film`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -406,7 +414,8 @@ export const submitImposterEntry = (cassetteId: string, author: string, entry: {
   imposterPost<{ postId: string }>(cassetteId, '/entry', { author, ...entry });
 export const voteImposter = (cassetteId: string, by: string, suspect: string) =>
   imposterPost<{ ok: true }>(cassetteId, '/vote', { by, suspect });
-export const revealImposter = (cassetteId: string, by: string) => imposterPost<{ ok: true }>(cassetteId, '/reveal', { by });
+export const revealImposter = (cassetteId: string, by: string) =>
+  imposterPost<{ ok: true }>(cassetteId, '/reveal', { by });
 /** Nur mit DEMO_TOOLS=1 auf dem Server, nur fuer die Gruenderin. */
 export const imposterNow = (cassetteId: string, by: string) => imposterPost<{ ok: true }>(cassetteId, '/now', { by });
 
@@ -415,9 +424,7 @@ export async function uploadMedia(blob: Blob, durationMs?: number): Promise<stri
   const headers: Record<string, string> = { 'Content-Type': blob.type };
   if (durationMs != null) headers['X-Duration-Ms'] = String(Math.round(durationMs));
 
-  const { id } = await apiFetch('/api/media', { method: 'POST', headers, body: blob }).then(
-    unwrap<{ id: string }>,
-  );
+  const { id } = await apiFetch('/api/media', { method: 'POST', headers, body: blob }).then(unwrap<{ id: string }>);
   return id;
 }
 
@@ -486,7 +493,11 @@ export function fetchStories(me: string): Promise<StoryGroup[]> {
   return apiFetch(`/api/stories?me=${encodeURIComponent(me)}`).then(unwrap<StoryGroup[]>);
 }
 
-export function createStory(input: { author: string; kind: StoryKind; mediaId: string }): Promise<{ id: string; expiresAt: number }> {
+export function createStory(input: {
+  author: string;
+  kind: StoryKind;
+  mediaId: string;
+}): Promise<{ id: string; expiresAt: number }> {
   return apiFetch('/api/stories', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -541,7 +552,12 @@ export function updateProjectFunding(input: { me: string; balance: string; note:
   }).then(unwrap<void>);
 }
 
-export function createNewsPost(input: { author: string; kind: NewsKind; body?: string; mediaId?: string | null }): Promise<{ id: string }> {
+export function createNewsPost(input: {
+  author: string;
+  kind: NewsKind;
+  body?: string;
+  mediaId?: string | null;
+}): Promise<{ id: string }> {
   return apiFetch('/api/news', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -781,7 +797,10 @@ export async function requestLetter(cassetteId: string, by: string): Promise<str
   return res.headers.get('X-Letter-Url');
 }
 
-export function redeemLetter(me: string, token: string): Promise<{ inviteId: string; cassetteName: string; invitedBy: string }> {
+export function redeemLetter(
+  me: string,
+  token: string,
+): Promise<{ inviteId: string; cassetteName: string; invitedBy: string }> {
   return apiFetch('/api/letters/redeem', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -53,7 +53,16 @@ export default function HotlineComposer() {
     <>
       <NavButton
         icon={
-          <svg width="17" height="15" viewBox="0 0 17 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+          <svg
+            width="17"
+            height="15"
+            viewBox="0 0 17 15"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <path d="M1.5 2.5A1.5 1.5 0 0 1 3 1h11a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 14 11H6.8L3 14v-3H3a1.5 1.5 0 0 1-1.5-1.5v-7Z" />
           </svg>
         }
@@ -179,8 +188,16 @@ export default function HotlineComposer() {
                 // Das Hot-Line-Gelb bleibt den Ungelesen-Zaehlern vorbehalten.
                 style={{ background: 'var(--accent)', color: '#17130E' }}
               >
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor"
-                     strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
                   <path d="M7 1v12M1 7h12" />
                 </svg>
               </button>
@@ -206,7 +223,9 @@ export default function HotlineComposer() {
                   <Avatar name={t.other} side={side} size={1.8} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{t.other}</span>
+                      <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                        {t.other}
+                      </span>
                       {t.unread > 0 && (
                         <span
                           className="font-mono rounded-full px-1.5 py-0.5 text-[0.56rem]"

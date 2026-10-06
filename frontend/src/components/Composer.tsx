@@ -1,6 +1,15 @@
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createPost, fetchFilm, fetchMixtapes, mediaUrl, uploadMedia, NOTE_STYLES, type Kind, type NoteStyle } from '@/lib/api';
+import {
+  createPost,
+  fetchFilm,
+  fetchMixtapes,
+  mediaUrl,
+  uploadMedia,
+  NOTE_STYLES,
+  type Kind,
+  type NoteStyle,
+} from '@/lib/api';
 import { filmReleaseLabel } from '@/lib/berlinDay';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
 import MixtapeRecorder from './MixtapeRecorder';
@@ -17,10 +26,22 @@ interface Props {
 
 const CHOICES: { kind: Kind; label: string; description: string }[] = [
   { kind: 'tape', label: 'Mixtape', description: 'Eines deiner versiegelten Mixtapes mit der ganzen Runde teilen.' },
-  { kind: 'voice', label: 'O-Ton', description: 'Bis zu 90 Sekunden deine Stimme — nur auf Seite B, fürs laufende Gespräch.' },
-  { kind: 'photo', label: 'Schnappschuss', description: 'Ein Foto direkt mit der Kamera. Kein Hochladen aus der Galerie — nur der Moment gerade jetzt.' },
+  {
+    kind: 'voice',
+    label: 'O-Ton',
+    description: 'Bis zu 90 Sekunden deine Stimme — nur auf Seite B, fürs laufende Gespräch.',
+  },
+  {
+    kind: 'photo',
+    label: 'Schnappschuss',
+    description: 'Ein Foto direkt mit der Kamera. Kein Hochladen aus der Galerie — nur der Moment gerade jetzt.',
+  },
   { kind: 'video', label: 'Clip', description: 'Ein kurzes Video, maximal 10 Sekunden.' },
-  { kind: 'text', label: 'Zettel', description: 'Ein paar geschriebene Zeilen — nur auf Seite A, im bleibenden Archiv.' },
+  {
+    kind: 'text',
+    label: 'Zettel',
+    description: 'Ein paar geschriebene Zeilen — nur auf Seite A, im bleibenden Archiv.',
+  },
 ];
 
 /** Handgezeichnete Icons je Beitragsart, gleicher Strichstil wie die untere
@@ -28,7 +49,17 @@ const CHOICES: { kind: Kind; label: string; description: string }[] = [
  *  dasselbe wie in BottomBar.tsx, nicht neu erfunden. */
 const ICONS: Record<Kind, ReactNode> = {
   tape: (
-    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+    <svg
+      width="16"
+      height="12"
+      viewBox="0 0 16 12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <rect x="0.65" y="0.65" width="14.7" height="10.7" rx="1.5" />
       <circle cx="4.5" cy="6" r="1.6" />
       <circle cx="11.5" cy="6" r="1.6" />
@@ -36,7 +67,16 @@ const ICONS: Record<Kind, ReactNode> = {
     </svg>
   ),
   voice: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <line x1="2" y1="6" x2="2" y2="10" />
       <line x1="5.5" y1="3" x2="5.5" y2="13" />
       <line x1="9" y1="1" x2="9" y2="15" />
@@ -44,19 +84,49 @@ const ICONS: Record<Kind, ReactNode> = {
     </svg>
   ),
   photo: (
-    <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+    <svg
+      width="16"
+      height="14"
+      viewBox="0 0 16 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <path d="M1 4.2h2.6l1-1.6h4.8l1 1.6H15v8.4H1z" />
       <circle cx="8" cy="8.4" r="2.6" />
     </svg>
   ),
   video: (
-    <svg width="17" height="13" viewBox="0 0 17 13" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+    <svg
+      width="17"
+      height="13"
+      viewBox="0 0 17 13"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <rect x="0.65" y="2.4" width="9.5" height="8.2" rx="1.2" />
       <path d="M10.15 5.4l5.2-2.6v8.4l-5.2-2.6z" />
     </svg>
   ),
   text: (
-    <svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+    <svg
+      width="14"
+      height="16"
+      viewBox="0 0 14 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <path d="M1 0.7h8.4L13 4.3v11H1z" />
       <path d="M9.4 0.7v3.6H13" />
       <path d="M3.4 7.4h7.2M3.4 10h5.2" />
@@ -186,14 +256,26 @@ export default function Composer({ onPosted }: Props) {
                 className="grid size-9 shrink-0 place-items-center rounded-full"
                 style={{ background: 'rgba(0,0,0,.18)', color: 'var(--accent)' }}
               >
-                <svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="16"
+                  viewBox="0 0 14 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <rect x="1" y="3" width="9" height="12" rx="1.3" />
                   <rect x="3" y="0.8" width="5" height="2.2" rx=".5" />
                   <path d="M10 6h3v6h-3" />
                 </svg>
               </span>
               <span className="min-w-0 flex-1">
-                <span className="font-disp block text-sm font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--ink)' }}>
+                <span
+                  className="font-disp block text-sm font-bold uppercase tracking-[0.06em]"
+                  style={{ color: 'var(--ink)' }}
+                >
                   Film
                 </span>
                 <span className="font-mono block text-[0.66rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -219,7 +301,10 @@ export default function Composer({ onPosted }: Props) {
                 {ICONS[c.kind]}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="font-disp block text-sm font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--ink)' }}>
+                <span
+                  className="font-disp block text-sm font-bold uppercase tracking-[0.06em]"
+                  style={{ color: 'var(--ink)' }}
+                >
                   {c.label}
                 </span>
                 <span className="font-mono block text-[0.66rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -232,7 +317,12 @@ export default function Composer({ onPosted }: Props) {
       </Sheet>
 
       {/* Eines der eigenen Mixtapes teilen */}
-      <Sheet open={step === 'tape'} onClose={() => setStep(null)} variant="full" title={`Mixtape teilen · ${SIDE_LABEL[side]}`}>
+      <Sheet
+        open={step === 'tape'}
+        onClose={() => setStep(null)}
+        variant="full"
+        title={`Mixtape teilen · ${SIDE_LABEL[side]}`}
+      >
         <div className="flex flex-col gap-3">
           {shareable.length === 0 ? (
             <p className="font-hand py-8 text-center text-lg" style={{ color: 'var(--dim)' }}>
@@ -248,7 +338,10 @@ export default function Composer({ onPosted }: Props) {
                 className="flex items-center gap-3 rounded-xl p-2.5 text-left disabled:opacity-50"
                 style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
               >
-                <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md" style={{ background: '#D8CFBB' }}>
+                <span
+                  className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md"
+                  style={{ background: '#D8CFBB' }}
+                >
                   {t.coverId ? (
                     <img src={mediaUrl(t.coverId)} alt="" className="size-full object-cover" />
                   ) : (
@@ -259,17 +352,23 @@ export default function Composer({ onPosted }: Props) {
                   <span className="font-hand block truncate text-[1.02rem]" style={{ color: 'var(--ink)' }}>
                     {t.title}
                   </span>
-                  <span className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+                  <span
+                    className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]"
+                    style={{ color: 'var(--dim)' }}
+                  >
                     ursprünglich für {t.to} · {t.trackCount}/12
                   </span>
                 </span>
               </button>
             ))
           )}
-          {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+          {error && (
+            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+              {error}
+            </p>
+          )}
           <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-            Geteilt sehen alle auf dieser Seite das Tape — auch wenn du es ursprünglich für eine
-            Person gebaut hast.
+            Geteilt sehen alle auf dieser Seite das Tape — auch wenn du es ursprünglich für eine Person gebaut hast.
           </p>
         </div>
       </Sheet>
@@ -323,7 +422,11 @@ export default function Composer({ onPosted }: Props) {
             ))}
           </div>
 
-          {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+          {error && (
+            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+              {error}
+            </p>
+          )}
           <div className="flex gap-2">
             <button
               type="button"

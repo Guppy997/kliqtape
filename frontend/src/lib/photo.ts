@@ -32,9 +32,7 @@ export async function capturePhoto(video: HTMLVideoElement): Promise<CapturedPho
   ctx.drawImage(video, 0, 0, w, h);
   applyClassicLook(ctx, w, h);
 
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, 'image/jpeg', 0.86),
-  );
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
   if (!blob) throw new Error('Bild konnte nicht erzeugt werden');
 
   return { blob, previewUrl: URL.createObjectURL(blob) };

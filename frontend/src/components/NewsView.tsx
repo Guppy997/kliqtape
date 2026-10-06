@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createNewsPost, deleteNewsPost, fetchNews, mediaUrl, updateProjectFunding, uploadMedia, type NewsKind } from '@/lib/api';
+import {
+  createNewsPost,
+  deleteNewsPost,
+  fetchNews,
+  mediaUrl,
+  updateProjectFunding,
+  uploadMedia,
+  type NewsKind,
+} from '@/lib/api';
 import { berlinDateLabel, berlinTimeLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import CameraCapture from './CameraCapture';
@@ -97,7 +105,10 @@ export default function NewsView({ open, onClose }: Props) {
   return (
     <Sheet open={open} onClose={onClose} variant="full" title="Kliqtape">
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3 rounded-xl p-3" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
+        <div
+          className="flex items-center gap-3 rounded-xl p-3"
+          style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+        >
           <Lockup size="1.6rem" />
           <span className="font-mono flex-1 text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
             News, Insights und was sonst noch am Projekt passiert.
@@ -110,7 +121,16 @@ export default function NewsView({ open, onClose }: Props) {
               className="grid size-9 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
               style={{ background: 'var(--accent)', color: '#17130E' }}
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
                 <path d="M7 1v12M1 7h12" />
               </svg>
             </button>
@@ -129,7 +149,10 @@ export default function NewsView({ open, onClose }: Props) {
           }}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="font-disp block text-sm font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--accent)' }}>
+            <span
+              className="font-disp block text-sm font-bold uppercase tracking-[0.06em]"
+              style={{ color: 'var(--accent)' }}
+            >
               Unterstütze unser Projekt
             </span>
             {canPost && (
@@ -157,7 +180,10 @@ export default function NewsView({ open, onClose }: Props) {
                 </span>
               )}
               {funding.updatedAt > 0 && (
-                <span className="font-mono mt-1.5 block text-[0.54rem] uppercase tracking-[0.08em]" style={{ color: 'var(--dim)' }}>
+                <span
+                  className="font-mono mt-1.5 block text-[0.54rem] uppercase tracking-[0.08em]"
+                  style={{ color: 'var(--dim)' }}
+                >
                   Stand: {berlinDateLabel(funding.updatedAt)}
                 </span>
               )}
@@ -182,7 +208,11 @@ export default function NewsView({ open, onClose }: Props) {
         )}
 
         {posts.map((p) => (
-          <article key={p.id} className="rounded-xl p-3" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
+          <article
+            key={p.id}
+            className="rounded-xl p-3"
+            style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+          >
             <div className="flex items-center gap-2">
               <Lockup size="0.85rem" />
               <span className="font-mono ml-auto shrink-0 text-[0.58rem] tabular-nums" style={{ color: 'var(--dim)' }}>
@@ -210,7 +240,13 @@ export default function NewsView({ open, onClose }: Props) {
               <img src={mediaUrl(p.mediaId)} alt="" className="mt-2 w-full rounded-lg" />
             )}
             {p.kind === 'video' && p.mediaId && (
-              <video src={mediaUrl(p.mediaId)} controls playsInline preload="metadata" className="mt-2 w-full rounded-lg" />
+              <video
+                src={mediaUrl(p.mediaId)}
+                controls
+                playsInline
+                preload="metadata"
+                className="mt-2 w-full rounded-lg"
+              />
             )}
           </article>
         ))}
@@ -230,7 +266,10 @@ export default function NewsView({ open, onClose }: Props) {
               className="rounded-xl p-3 text-left"
               style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
             >
-              <span className="font-disp block text-sm font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--ink)' }}>
+              <span
+                className="font-disp block text-sm font-bold uppercase tracking-[0.06em]"
+                style={{ color: 'var(--ink)' }}
+              >
                 {c.label}
               </span>
             </button>
@@ -250,7 +289,11 @@ export default function NewsView({ open, onClose }: Props) {
             className="resize-none rounded-lg p-3 text-[0.95rem] outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
-          {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+          {error && (
+            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+              {error}
+            </p>
+          )}
           <button
             type="button"
             onClick={sendText}
@@ -263,7 +306,12 @@ export default function NewsView({ open, onClose }: Props) {
         </div>
       </Sheet>
 
-      <Sheet open={step === 'photo' || step === 'video'} onClose={() => setStep(null)} variant="full" title={step === 'photo' ? 'Foto' : 'Video'}>
+      <Sheet
+        open={step === 'photo' || step === 'video'}
+        onClose={() => setStep(null)}
+        variant="full"
+        title={step === 'photo' ? 'Foto' : 'Video'}
+      >
         {(step === 'photo' || step === 'video') && (
           <CameraCapture
             mode={step}
@@ -306,7 +354,11 @@ export default function NewsView({ open, onClose }: Props) {
               style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
             />
           </label>
-          {fundingError && <p className="text-sm" style={{ color: '#F0B5A5' }}>{fundingError}</p>}
+          {fundingError && (
+            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+              {fundingError}
+            </p>
+          )}
           <button
             type="button"
             onClick={saveFunding}

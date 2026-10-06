@@ -104,10 +104,7 @@ body {
      Materialsprache der App — die Bedienleiste eines Kassettendecks ist eine
      Frontplatte, kein Milchglas. */
   background:
-    linear-gradient(
-      color-mix(in srgb, var(--ink) 7%, transparent),
-      color-mix(in srgb, var(--ink) 7%, transparent)
-    ),
+    linear-gradient(color-mix(in srgb, var(--ink) 7%, transparent), color-mix(in srgb, var(--ink) 7%, transparent)),
     var(--screen);
   border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
   box-shadow:

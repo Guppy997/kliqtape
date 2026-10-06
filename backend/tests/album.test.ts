@@ -33,7 +33,11 @@ describe('Album-Export', () => {
     await post('anna', 'b', 'GEHEIM aus dem Gruppenchat');
     await api('POST', '/api/hotlines/threads', 'anna', { from: ANNA, to: BEN, body: 'GEHEIM aus der Hot Line' });
     const film = await upload('ben');
-    await api('POST', `/api/cassettes/${cassette}/film`, 'ben', { author: BEN, mediaId: film.body.id, caption: 'GEHEIM unentwickelt' });
+    await api('POST', `/api/cassettes/${cassette}/film`, 'ben', {
+      author: BEN,
+      mediaId: film.body.id,
+      caption: 'GEHEIM unentwickelt',
+    });
     expect((await api('PUT', '/api/me/album', 'dora', { me: DORA, optOut: true })).status).toBe(200);
   });
 

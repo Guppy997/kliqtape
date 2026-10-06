@@ -37,8 +37,10 @@ function networkOf(person: string): string[] {
  *  denselben "jetzt"-Wert verwendet statt eine zweite Uhrzeit zu lesen. */
 function sweepExpiredStories(): number {
   const now = Date.now();
-  const expired = db.prepare(`SELECT id, media_id FROM stories WHERE expires_at <= ?`).all(now) as
-    { id: string; media_id: string }[];
+  const expired = db.prepare(`SELECT id, media_id FROM stories WHERE expires_at <= ?`).all(now) as {
+    id: string;
+    media_id: string;
+  }[];
   if (expired.length > 0) {
     db.transaction(() => {
       db.prepare(`DELETE FROM stories WHERE expires_at <= ?`).run(now);
@@ -116,9 +118,14 @@ storiesRouter.post('/api/stories', (req, res) => {
 
   const id = randomUUID();
   const now = Date.now();
-  db.prepare(
-    `INSERT INTO stories (id, author, kind, media_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, author.trim().slice(0, 40), kind, mediaId, now, now + STORY_LIFETIME_MS);
+  db.prepare(`INSERT INTO stories (id, author, kind, media_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)`).run(
+    id,
+    author.trim().slice(0, 40),
+    kind,
+    mediaId,
+    now,
+    now + STORY_LIFETIME_MS,
+  );
 
   res.status(201).json({ id, expiresAt: now + STORY_LIFETIME_MS });
 });
@@ -130,8 +137,7 @@ storiesRouter.delete('/api/stories/:id', (req, res) => {
   requireIdentity(req, me);
 
   const row = db.prepare(`SELECT author, media_id FROM stories WHERE id = ?`).get(req.params.id) as
-    | { author: string; media_id: string }
-    | undefined;
+    { author: string; media_id: string } | undefined;
   if (!row) throw new HttpError(404, 'Story nicht gefunden');
   // Anders als bei posts (dort fehlt diese Pruefung bisher komplett) hier
   // bewusst eine echte Besitzpruefung — bei einer kassettenuebergreifend

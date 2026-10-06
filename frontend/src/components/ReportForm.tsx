@@ -32,9 +32,8 @@ export default function ReportForm({ target, what, onDone }: Props) {
           Gemeldet. Danke.
         </p>
         <p className="font-mono text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-          Die Meldung ist gespeichert. Im Prototyp gibt es noch kein Moderationsteam, das sie
-          automatisch bearbeitet — sie liegt bei den Betreiber:innen. Niemand auf dem Band erfährt,
-          dass du gemeldet hast.
+          Die Meldung ist gespeichert. Im Prototyp gibt es noch kein Moderationsteam, das sie automatisch bearbeitet —
+          sie liegt bei den Betreiber:innen. Niemand auf dem Band erfährt, dass du gemeldet hast.
         </p>
         <button
           type="button"

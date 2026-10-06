@@ -78,7 +78,9 @@ describe('Kassetten', () => {
   });
 
   it('Fremder darf niemanden einladen', async () => {
-    expect((await api('POST', `/api/cassettes/${cassette}/invites`, 'cara', { by: CARA, invitee: CARA })).status).toBe(403);
+    expect((await api('POST', `/api/cassettes/${cassette}/invites`, 'cara', { by: CARA, invitee: CARA })).status).toBe(
+      403,
+    );
   });
 
   it('Fremder darf keine fremde Einladung annehmen oder ablehnen', async () => {
@@ -132,30 +134,52 @@ describe('Melden', () => {
   beforeAll(async () => {
     cassette = await cassetteWith('anna', ['ben']);
     const res = await api('POST', '/api/posts', 'anna', {
-      cassetteId: cassette, side: 'a', author: ANNA, kind: 'text', body: 'Melde mich',
+      cassetteId: cassette,
+      side: 'a',
+      author: ANNA,
+      kind: 'text',
+      body: 'Melde mich',
     });
     annasPost = res.body.id;
   });
 
   it('Fremder darf weder Kassette noch Beitrag melden', async () => {
-    expect((await api('POST', '/api/reports', 'cara', { by: CARA, cassetteId: cassette, reason: 'spam' })).status).toBe(403);
-    expect((await api('POST', '/api/reports', 'cara', { by: CARA, postId: annasPost, reason: 'spam' })).status).toBe(403);
+    expect((await api('POST', '/api/reports', 'cara', { by: CARA, cassetteId: cassette, reason: 'spam' })).status).toBe(
+      403,
+    );
+    expect((await api('POST', '/api/reports', 'cara', { by: CARA, postId: annasPost, reason: 'spam' })).status).toBe(
+      403,
+    );
   });
 
   it('Niemand meldet im Namen eines anderen', async () => {
-    expect((await api('POST', '/api/reports', 'cara', { by: BEN, cassetteId: cassette, reason: 'spam' })).status).toBe(401);
+    expect((await api('POST', '/api/reports', 'cara', { by: BEN, cassetteId: cassette, reason: 'spam' })).status).toBe(
+      401,
+    );
   });
 
   it('Mitglied darf Kassette und fremden Beitrag melden, aber nicht den eigenen', async () => {
-    expect((await api('POST', '/api/reports', 'ben', { by: BEN, cassetteId: cassette, reason: 'other', note: 'Test' })).status).toBe(201);
-    expect((await api('POST', '/api/reports', 'ben', { by: BEN, postId: annasPost, reason: 'harassment' })).status).toBe(201);
-    expect((await api('POST', '/api/reports', 'anna', { by: ANNA, postId: annasPost, reason: 'spam' })).status).toBe(400);
+    expect(
+      (await api('POST', '/api/reports', 'ben', { by: BEN, cassetteId: cassette, reason: 'other', note: 'Test' }))
+        .status,
+    ).toBe(201);
+    expect(
+      (await api('POST', '/api/reports', 'ben', { by: BEN, postId: annasPost, reason: 'harassment' })).status,
+    ).toBe(201);
+    expect((await api('POST', '/api/reports', 'anna', { by: ANNA, postId: annasPost, reason: 'spam' })).status).toBe(
+      400,
+    );
   });
 
   it('Genau ein Ziel und ein bekannter Grund', async () => {
     expect((await api('POST', '/api/reports', 'ben', { by: BEN, reason: 'spam' })).status).toBe(400);
-    expect((await api('POST', '/api/reports', 'ben', { by: BEN, cassetteId: cassette, postId: annasPost, reason: 'spam' })).status).toBe(400);
-    expect((await api('POST', '/api/reports', 'ben', { by: BEN, cassetteId: cassette, reason: 'langweilig' })).status).toBe(400);
+    expect(
+      (await api('POST', '/api/reports', 'ben', { by: BEN, cassetteId: cassette, postId: annasPost, reason: 'spam' }))
+        .status,
+    ).toBe(400);
+    expect(
+      (await api('POST', '/api/reports', 'ben', { by: BEN, cassetteId: cassette, reason: 'langweilig' })).status,
+    ).toBe(400);
   });
 });
 
@@ -171,7 +195,9 @@ describe('Tapes auf Seite A', () => {
   });
 
   it('Mitglied darf ein Tape benennen', async () => {
-    expect((await api('PUT', `/api/cassettes/${cassette}/tapes/1`, 'ben', { by: BEN, name: 'Erster Tag' })).status).toBe(200);
+    expect(
+      (await api('PUT', `/api/cassettes/${cassette}/tapes/1`, 'ben', { by: BEN, name: 'Erster Tag' })).status,
+    ).toBe(200);
   });
 
   it('Fremder darf nicht favorisieren oder entfavorisieren', async () => {
@@ -191,21 +217,33 @@ describe('Beitraege', () => {
   beforeAll(async () => {
     cassette = await cassetteWith('anna', ['ben']);
     const res = await api('POST', '/api/posts', 'anna', {
-      cassetteId: cassette, side: 'a', author: ANNA, kind: 'text', body: 'Hallo Runde',
+      cassetteId: cassette,
+      side: 'a',
+      author: ANNA,
+      kind: 'text',
+      body: 'Hallo Runde',
     });
     postId = res.body.id;
   });
 
   it('Fremder darf nicht posten', async () => {
     const res = await api('POST', '/api/posts', 'cara', {
-      cassetteId: cassette, side: 'b', author: CARA, kind: 'text', body: 'Hi',
+      cassetteId: cassette,
+      side: 'b',
+      author: CARA,
+      kind: 'text',
+      body: 'Hi',
     });
     expect(res.status).toBe(403);
   });
 
   it('Niemand postet im Namen eines Mitglieds', async () => {
     const res = await api('POST', '/api/posts', 'cara', {
-      cassetteId: cassette, side: 'b', author: BEN, kind: 'text', body: 'Hi',
+      cassetteId: cassette,
+      side: 'b',
+      author: BEN,
+      kind: 'text',
+      body: 'Hi',
     });
     expect(res.status).toBe(401);
   });
@@ -231,7 +269,11 @@ describe('Beitraege', () => {
 
   it('Autorin darf eigenen Beitrag loeschen', async () => {
     const res = await api('POST', '/api/posts', 'anna', {
-      cassetteId: cassette, side: 'a', author: ANNA, kind: 'text', body: 'weg damit',
+      cassetteId: cassette,
+      side: 'a',
+      author: ANNA,
+      kind: 'text',
+      body: 'weg damit',
     });
     expect((await api('DELETE', `/api/posts/${res.body.id}?me=${ANNA}`, 'anna')).status).toBe(204);
   });
@@ -240,7 +282,9 @@ describe('Beitraege', () => {
 describe('Storys', () => {
   it('Niemand postet eine Story im Namen eines anderen', async () => {
     const media = await upload('cara');
-    expect((await api('POST', '/api/stories', 'cara', { author: ANNA, kind: 'photo', mediaId: media.body.id })).status).toBe(401);
+    expect(
+      (await api('POST', '/api/stories', 'cara', { author: ANNA, kind: 'photo', mediaId: media.body.id })).status,
+    ).toBe(401);
   });
 
   it('Fremde Story loeschen geht nicht', async () => {
@@ -273,7 +317,9 @@ describe('Hot Line', () => {
   });
 
   it('Niemand schreibt im Namen eines anderen', async () => {
-    expect((await api('POST', '/api/hotlines/threads', 'cara', { from: ANNA, to: BEN, body: 'Fake' })).status).toBe(401);
+    expect((await api('POST', '/api/hotlines/threads', 'cara', { from: ANNA, to: BEN, body: 'Fake' })).status).toBe(
+      401,
+    );
   });
 
   it('Fremder liest keine fremde Leitung und markiert nichts als gehoert', async () => {

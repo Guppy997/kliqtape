@@ -255,9 +255,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.28.1',
     date: '2026-08-16',
-    changes: [
-      'Kassettenfach: Suchleiste über den eigenen Gruppen',
-    ],
+    changes: ['Kassettenfach: Suchleiste über den eigenen Gruppen'],
   },
   {
     version: '0.28.0',
@@ -487,9 +485,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.19.4',
     date: '2026-08-07',
-    changes: [
-      'Home-Knopf zeigt jetzt eine kleine Kassette statt eines Haussymbols — passt besser zum Rest der App',
-    ],
+    changes: ['Home-Knopf zeigt jetzt eine kleine Kassette statt eines Haussymbols — passt besser zum Rest der App'],
   },
   {
     version: '0.19.3',
@@ -783,9 +779,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.10.2',
     date: '2026-08-03',
-    changes: [
-      '„Tapen" heißt jetzt Tonfetzen — „tapen" war im Deutschen schon an Kinesio-Tape vergeben',
-    ],
+    changes: ['„Tapen" heißt jetzt Tonfetzen — „tapen" war im Deutschen schon an Kinesio-Tape vergeben'],
   },
   {
     version: '0.10.1',

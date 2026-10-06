@@ -76,7 +76,8 @@ export const shapeTape = (t: TapeRow, withTracks = true) => ({
   sealedAt: t.sealed_at,
   createdAt: t.created_at,
   tracks: withTracks ? tracksOf(t.id) : [],
-  trackCount: (db.prepare(`SELECT COUNT(*) AS n FROM mixtape_tracks WHERE mixtape_id = ?`).get(t.id) as { n: number }).n,
+  trackCount: (db.prepare(`SELECT COUNT(*) AS n FROM mixtape_tracks WHERE mixtape_id = ?`).get(t.id) as { n: number })
+    .n,
 });
 
 /** Entwuerfe sieht nur der Ersteller, versiegelte Tapes beide Seiten. */
@@ -109,7 +110,9 @@ mixtapesRouter.get('/api/mixtapes/:id', (req, res) => {
 mixtapesRouter.post('/api/mixtapes', (req, res) => {
   const from = String(req.body?.from ?? '').trim();
   const to = String(req.body?.to ?? '').trim();
-  const title = String(req.body?.title ?? '').trim().slice(0, 60);
+  const title = String(req.body?.title ?? '')
+    .trim()
+    .slice(0, 60);
 
   if (!from) throw new HttpError(400, 'Absender fehlt');
   if (!to) throw new HttpError(400, 'Für wen ist das Tape?');
@@ -117,9 +120,13 @@ mixtapesRouter.post('/api/mixtapes', (req, res) => {
   requireIdentity(req, from);
 
   const id = randomUUID();
-  db.prepare(
-    `INSERT INTO mixtapes (id, from_name, to_name, title, created_at) VALUES (?, ?, ?, ?, ?)`,
-  ).run(id, from, to, title, Date.now());
+  db.prepare(`INSERT INTO mixtapes (id, from_name, to_name, title, created_at) VALUES (?, ?, ?, ?, ?)`).run(
+    id,
+    from,
+    to,
+    title,
+    Date.now(),
+  );
 
   res.status(201).json(shapeTape(loadTape(id)));
 });
@@ -140,12 +147,7 @@ mixtapesRouter.patch('/api/mixtapes/:id', (req, res) => {
     coverId = next;
   }
 
-  db.prepare(`UPDATE mixtapes SET title = ?, note = ?, cover_id = ? WHERE id = ?`).run(
-    title,
-    note,
-    coverId,
-    tape.id,
-  );
+  db.prepare(`UPDATE mixtapes SET title = ?, note = ?, cover_id = ? WHERE id = ?`).run(title, note, coverId, tape.id);
 
   // Altes Cover erst nach dem Umbiegen der Referenz loeschen.
   if (tape.cover_id && tape.cover_id !== coverId) dropMedia(tape.cover_id);
@@ -157,19 +159,30 @@ mixtapesRouter.post('/api/mixtapes/:id/tracks', (req, res) => {
   const tape = requireTapeOwner(req, req.params.id);
   if (tape.sealed_at) throw new HttpError(409, 'Tape ist versiegelt');
 
-  const title = String(req.body?.title ?? '').trim().slice(0, 90);
-  const artist = String(req.body?.artist ?? '').trim().slice(0, 90);
-  const url = String(req.body?.url ?? '').trim().slice(0, 500);
+  const title = String(req.body?.title ?? '')
+    .trim()
+    .slice(0, 90);
+  const artist = String(req.body?.artist ?? '')
+    .trim()
+    .slice(0, 90);
+  const url = String(req.body?.url ?? '')
+    .trim()
+    .slice(0, 500);
   if (!title) throw new HttpError(400, 'Titel fehlt');
 
-  const { n } = db
-    .prepare(`SELECT COUNT(*) AS n FROM mixtape_tracks WHERE mixtape_id = ?`)
-    .get(tape.id) as { n: number };
+  const { n } = db.prepare(`SELECT COUNT(*) AS n FROM mixtape_tracks WHERE mixtape_id = ?`).get(tape.id) as {
+    n: number;
+  };
   if (n >= MAX_TRACKS) throw new HttpError(409, `Das Band ist voll — ${MAX_TRACKS} Titel`);
 
-  db.prepare(
-    `INSERT INTO mixtape_tracks (id, mixtape_id, position, title, artist, url) VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(randomUUID(), tape.id, n + 1, title, artist, url);
+  db.prepare(`INSERT INTO mixtape_tracks (id, mixtape_id, position, title, artist, url) VALUES (?, ?, ?, ?, ?, ?)`).run(
+    randomUUID(),
+    tape.id,
+    n + 1,
+    title,
+    artist,
+    url,
+  );
 
   res.status(201).json(shapeTape(loadTape(tape.id)));
 });
@@ -178,10 +191,7 @@ mixtapesRouter.delete('/api/mixtapes/:id/tracks/:trackId', (req, res) => {
   const tape = requireTapeOwner(req, req.params.id);
   if (tape.sealed_at) throw new HttpError(409, 'Tape ist versiegelt');
 
-  db.prepare(`DELETE FROM mixtape_tracks WHERE id = ? AND mixtape_id = ?`).run(
-    req.params.trackId,
-    tape.id,
-  );
+  db.prepare(`DELETE FROM mixtape_tracks WHERE id = ? AND mixtape_id = ?`).run(req.params.trackId, tape.id);
 
   // Positionen neu durchnummerieren, damit keine Luecken bleiben.
   const rest = tracksOf(tape.id);

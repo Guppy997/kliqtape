@@ -14,11 +14,10 @@ import { tapeIndexOf } from '../time.js';
 
 export const postsRouter = Router();
 
-interface FeedItem
-  extends Omit<
-    PostRow,
-    'media_id' | 'tape_id' | 'cassette_id' | 'expires_at' | 'note_style' | 'quoted_post_id' | 'develop_at' | 'taken_at'
-  > {
+interface FeedItem extends Omit<
+  PostRow,
+  'media_id' | 'tape_id' | 'cassette_id' | 'expires_at' | 'note_style' | 'quoted_post_id' | 'develop_at' | 'taken_at'
+> {
   cassetteId: string;
   /** Nur beim Film: wann wirklich belichtet wurde (created_at ist die Freigabe). */
   takenAt: number | null;
@@ -47,8 +46,7 @@ postsRouter.get('/api/posts', (req, res) => {
   if (!cassetteId) throw new HttpError(400, 'Welche Kassette?');
 
   const cassette = db.prepare(`SELECT created_at FROM cassettes WHERE id = ?`).get(cassetteId) as
-    | { created_at: number }
-    | undefined;
+    { created_at: number } | undefined;
   if (!cassette) throw new HttpError(404, 'Kassette nicht gefunden');
   // Fehlte bisher komplett: ohne diese Pruefung konnte jede Person mit einer
   // Kassetten-ID deren ganzen Feed lesen, egal ob Mitglied oder nicht.
@@ -132,14 +130,20 @@ postsRouter.get('/api/posts', (req, res) => {
       source: row.source ?? 'camera',
       takenAt: row.taken_at,
       imposterMark:
-        row.source === 'imposter' ? (row.imposter_name ? (row.imposter_name === row.author ? 'imposter' : 'crew') : 'entry') : null,
+        row.source === 'imposter'
+          ? row.imposter_name
+            ? row.imposter_name === row.author
+              ? 'imposter'
+              : 'crew'
+            : 'entry'
+          : null,
       tapeId: row.tape_id,
       tape: row.tape_id
         ? { title: row.tape_title ?? '', coverId: row.tape_cover, trackCount: row.tape_tracks ?? 0 }
         : null,
       track,
       tapeIndex,
-      tonfetzenCount: row.author === me ? countByPost.get(row.id) ?? 0 : 0,
+      tonfetzenCount: row.author === me ? (countByPost.get(row.id) ?? 0) : 0,
       iSentTonfetzen: mineByPost.has(row.id),
       noteStyle: (row.note_style as NoteStyle | null) ?? null,
       quotedPostId: row.quoted_post_id,
@@ -160,8 +164,16 @@ postsRouter.get('/api/posts', (req, res) => {
 
 postsRouter.post('/api/posts', (req, res) => {
   const {
-    cassetteId, side, author, kind, body = '', mediaId = null, tapeId = null, source = null,
-    noteStyle = null, quotedPostId = null,
+    cassetteId,
+    side,
+    author,
+    kind,
+    body = '',
+    mediaId = null,
+    tapeId = null,
+    source = null,
+    noteStyle = null,
+    quotedPostId = null,
   } = req.body ?? {};
 
   if (!SIDES.includes(side)) throw new HttpError(400, 'side muss a oder b sein');
@@ -187,8 +199,7 @@ postsRouter.post('/api/posts', (req, res) => {
   if (kind === 'tape') {
     if (!tapeId) throw new HttpError(400, 'Welches Mixtape?');
     const tape = db.prepare(`SELECT from_name, sealed_at FROM mixtapes WHERE id = ?`).get(tapeId) as
-      | { from_name: string; sealed_at: number | null }
-      | undefined;
+      { from_name: string; sealed_at: number | null } | undefined;
     if (!tape) throw new HttpError(404, 'Mixtape nicht gefunden');
     // Nur eigene und bereits versiegelte Tapes lassen sich teilen — ein
     // Entwurf ist privat, und fremde Tapes gehoeren einem nicht.
@@ -248,8 +259,7 @@ postsRouter.delete('/api/posts/:id', (req, res) => {
   requireIdentity(req, me);
 
   const row = db.prepare(`SELECT author, media_id FROM posts WHERE id = ?`).get(req.params.id) as
-    | { author: string; media_id: string | null }
-    | undefined;
+    { author: string; media_id: string | null } | undefined;
   if (!row) throw new HttpError(404, 'Post nicht gefunden');
   if (row.author !== me) throw new HttpError(403, 'Das ist nicht dein Beitrag');
 
@@ -298,9 +308,7 @@ postsRouter.post('/api/posts/:id/react', (req, res) => {
 // sonst wird aus der Geste wieder eine Performance vor der ganzen Runde.
 postsRouter.get('/api/posts/:id/reactions', (req, res) => {
   const me = String(req.query.me ?? '').trim();
-  const post = db.prepare(`SELECT author FROM posts WHERE id = ?`).get(req.params.id) as
-    | { author: string }
-    | undefined;
+  const post = db.prepare(`SELECT author FROM posts WHERE id = ?`).get(req.params.id) as { author: string } | undefined;
   if (!post) throw new HttpError(404, 'Post nicht gefunden');
   if (!me || post.author !== me) throw new HttpError(403, 'Nur die postende Person hört das');
   requireIdentity(req, me);

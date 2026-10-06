@@ -1,7 +1,15 @@
 import { emojiSrc, EMOJI_LIST } from '@/lib/emoji';
 import Sheet from './Sheet';
 
-export default function EmojiPicker({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (e: string) => void }) {
+export default function EmojiPicker({
+  open,
+  onClose,
+  onPick,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onPick: (e: string) => void;
+}) {
   return (
     <Sheet open={open} onClose={onClose} title="Emoji">
       <div className="grid grid-cols-8 gap-1.5">

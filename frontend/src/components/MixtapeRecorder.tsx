@@ -45,9 +45,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
     setError(null);
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error(
-          'Mikrofon nicht verfügbar. Browser geben es nur über https oder localhost frei.',
-        );
+        throw new Error('Mikrofon nicht verfügbar. Browser geben es nur über https oder localhost frei.');
       }
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },

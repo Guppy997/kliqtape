@@ -25,16 +25,44 @@ interface ImposterTask {
 }
 
 const IMPOSTER_TASKS: Record<string, ImposterTask> = {
-  rot: { task: 'Fotografier etwas Rotes, das du jeden Tag benutzt.', hint: 'Fotografier etwas, das du benutzt.', entry: 'photo' },
+  rot: {
+    task: 'Fotografier etwas Rotes, das du jeden Tag benutzt.',
+    hint: 'Fotografier etwas, das du benutzt.',
+    entry: 'photo',
+  },
   fruehstueck: { task: 'Zeig dein Frühstück von heute.', hint: 'Zeig etwas, das du heute hattest.', entry: 'photo' },
   fenster: { task: 'Fotografier den Blick aus deinem Fenster.', hint: 'Fotografier einen Ausblick.', entry: 'photo' },
   schuhe: { task: 'Zeig die Schuhe, die du heute trägst.', hint: 'Zeig etwas, das du heute anhast.', entry: 'photo' },
-  rund: { task: 'Fotografier etwas Rundes in deiner Küche.', hint: 'Fotografier etwas aus deiner Wohnung.', entry: 'photo' },
-  erinnerung: { task: 'Fotografier etwas, das dich an diese Runde erinnert.', hint: 'Fotografier etwas, das dir etwas bedeutet.', entry: 'photo' },
-  gekocht: { task: 'Koch etwas, das du noch nie gekocht hast, und zeig es.', hint: 'Zeig etwas, das du gemacht hast.', entry: 'photo' },
-  lied: { task: 'Schreib das Lied auf, das du diese Woche am meisten gehört hast.', hint: 'Schreib einen Liedtitel auf.', entry: 'text' },
-  satz: { task: 'Schreib den letzten Satz auf, den du laut vorgelesen hast.', hint: 'Schreib einen Satz auf.', entry: 'text' },
-  wunsch: { task: 'Schreib auf, wohin ihr als Runde als Nächstes zusammen fahren solltet.', hint: 'Schreib einen Ort auf.', entry: 'text' },
+  rund: {
+    task: 'Fotografier etwas Rundes in deiner Küche.',
+    hint: 'Fotografier etwas aus deiner Wohnung.',
+    entry: 'photo',
+  },
+  erinnerung: {
+    task: 'Fotografier etwas, das dich an diese Runde erinnert.',
+    hint: 'Fotografier etwas, das dir etwas bedeutet.',
+    entry: 'photo',
+  },
+  gekocht: {
+    task: 'Koch etwas, das du noch nie gekocht hast, und zeig es.',
+    hint: 'Zeig etwas, das du gemacht hast.',
+    entry: 'photo',
+  },
+  lied: {
+    task: 'Schreib das Lied auf, das du diese Woche am meisten gehört hast.',
+    hint: 'Schreib einen Liedtitel auf.',
+    entry: 'text',
+  },
+  satz: {
+    task: 'Schreib den letzten Satz auf, den du laut vorgelesen hast.',
+    hint: 'Schreib einen Satz auf.',
+    entry: 'text',
+  },
+  wunsch: {
+    task: 'Schreib auf, wohin ihr als Runde als Nächstes zusammen fahren solltet.',
+    hint: 'Schreib einen Ort auf.',
+    entry: 'text',
+  },
 };
 
 const IMPOSTER_MIN_MEMBERS = 4;
@@ -109,14 +137,20 @@ imposterRouter.get('/api/cassettes/:id/imposter', (req, res) => {
   const busy = w && phaseOf(w, now) !== 'revealed';
   const canStart = members.length >= IMPOSTER_MIN_MEMBERS && !busy && (DEMO_TOOLS || now >= canStartAt);
 
-  if (!w) return void res.json({ week: null, canStart, minMembers: IMPOSTER_MIN_MEMBERS, nextStartAt: null, demoTools: DEMO_TOOLS });
+  if (!w)
+    return void res.json({
+      week: null,
+      canStart,
+      minMembers: IMPOSTER_MIN_MEMBERS,
+      nextStartAt: null,
+      demoTools: DEMO_TOOLS,
+    });
 
   const phase = phaseOf(w, now);
   const t = IMPOSTER_TASKS[w.task_key]!;
   const isImposter = w.imposter === me;
   const mine = db.prepare(`SELECT post_id FROM imposter_entries WHERE week_id = ? AND author = ?`).get(w.id, me) as
-    | { post_id: string }
-    | undefined;
+    { post_id: string } | undefined;
   const entries =
     phase === 'playing'
       ? []
@@ -128,8 +162,7 @@ imposterRouter.get('/api/cassettes/:id/imposter', (req, res) => {
           )
           .all(w.id) as { author: string; id: string; kind: Kind; body: string; media_id: string | null }[]);
   const myVote = db.prepare(`SELECT suspect FROM imposter_votes WHERE week_id = ? AND voter = ?`).get(w.id, me) as
-    | { suspect: string }
-    | undefined;
+    { suspect: string } | undefined;
   // Wer schon getippt hat (Namen, keine Zahl) — damit man weiss, auf wen man wartet.
   const voted = (db.prepare(`SELECT voter FROM imposter_votes WHERE week_id = ?`).all(w.id) as { voter: string }[]).map(
     (r) => r.voter,
@@ -148,7 +181,13 @@ imposterRouter.get('/api/cassettes/:id/imposter', (req, res) => {
       // Imposter ist, erfaehrt vor der Aufloesung nur die Person selbst.
       card: isImposter ? { imposter: true, text: t.hint } : { imposter: false, text: t.task },
       iSubmitted: Boolean(mine),
-      entries: entries.map((e) => ({ postId: e.id, author: e.author, kind: e.kind, body: e.body, mediaId: e.media_id })),
+      entries: entries.map((e) => ({
+        postId: e.id,
+        author: e.author,
+        kind: e.kind,
+        body: e.body,
+        mediaId: e.media_id,
+      })),
       myVote: myVote?.suspect ?? null,
       voted: phase === 'playing' ? [] : voted,
       result:
@@ -176,7 +215,10 @@ imposterRouter.post('/api/cassettes/:id/imposter', (req, res) => {
   const last = latestImposterWeek(req.params.id, now);
   if (last && phaseOf(last, now) !== 'revealed') throw new HttpError(409, 'Es läuft schon eine Imposter-Woche');
   if (last && !DEMO_TOOLS && now < last.started_at + IMPOSTER_COOLDOWN_MS) {
-    throw new HttpError(409, 'Die Imposter-Woche ist ein Special — die nächste geht frühestens vier Wochen nach der letzten');
+    throw new HttpError(
+      409,
+      'Die Imposter-Woche ist ein Special — die nächste geht frühestens vier Wochen nach der letzten',
+    );
   }
 
   const keys = Object.keys(IMPOSTER_TASKS);
@@ -196,7 +238,9 @@ imposterRouter.post('/api/cassettes/:id/imposter', (req, res) => {
 imposterRouter.post('/api/cassettes/:id/imposter/entry', (req, res) => {
   const author = String(req.body?.author ?? '').trim();
   const mediaId = req.body?.mediaId ? String(req.body.mediaId) : null;
-  const body = String(req.body?.body ?? '').trim().slice(0, 280);
+  const body = String(req.body?.body ?? '')
+    .trim()
+    .slice(0, 280);
   requireMember(req, req.params.id, author);
   const now = Date.now();
   const w = loadActiveWeek(req.params.id, now, 'playing');
@@ -219,7 +263,17 @@ imposterRouter.post('/api/cassettes/:id/imposter/entry', (req, res) => {
     db.prepare(
       `INSERT INTO posts (id, cassette_id, side, author, kind, body, media_id, source, develop_at, taken_at, created_at)
        VALUES (?, ?, 'a', ?, ?, ?, ?, 'imposter', ?, ?, ?)`,
-    ).run(postId, req.params.id, author, t.entry === 'photo' ? 'photo' : 'text', body, t.entry === 'photo' ? mediaId : null, w.reveal_at, now, w.reveal_at);
+    ).run(
+      postId,
+      req.params.id,
+      author,
+      t.entry === 'photo' ? 'photo' : 'text',
+      body,
+      t.entry === 'photo' ? mediaId : null,
+      w.reveal_at,
+      now,
+      w.reveal_at,
+    );
     db.prepare(`INSERT INTO imposter_entries (week_id, author, post_id) VALUES (?, ?, ?)`).run(w.id, author, postId);
   })();
 

@@ -228,8 +228,19 @@ interface FaceProps {
  * die Vorschau (CassetteFacePreview) exakt dieselbe Funktion, nur skaliert.
  */
 function CassetteFace({
-  side, cassetteId, pairIndex, label, count, currentTape,
-  reelLeft, reelRight, age = 0, flip, onFlip, onScrollStart, onScrollEnd,
+  side,
+  cassetteId,
+  pairIndex,
+  label,
+  count,
+  currentTape,
+  reelLeft,
+  reelRight,
+  age = 0,
+  flip,
+  onFlip,
+  onScrollStart,
+  onScrollEnd,
 }: FaceProps) {
   const look = lookFor(cassetteId ?? '', pairIndex);
   const { type, case: plastic, wear } = look;
@@ -249,8 +260,7 @@ function CassetteFace({
         // eigenen Akzentfarbe der Kassette (type.stripe) — damit sie sich
         // vom Hintergrund abhebt, unabhaengig davon, wie dunkel der gerade
         // ist (reines "dunkel auf dunkel" reicht sonst nicht als Kontrast).
-        boxShadow:
-          `0 0.5rem 1.2rem rgba(0,0,0,.5), 0 1.4rem 2.8rem rgba(0,0,0,.55), 0 0 0 1px ${type.stripe}70, 0 0 1.6rem ${type.stripe}2e, 0 1px 0 rgba(255,255,255,.14) inset, 0 -1px 0 rgba(0,0,0,.6) inset`,
+        boxShadow: `0 0.5rem 1.2rem rgba(0,0,0,.5), 0 1.4rem 2.8rem rgba(0,0,0,.55), 0 0 0 1px ${type.stripe}70, 0 0 1.6rem ${type.stripe}2e, 0 1px 0 rgba(255,255,255,.14) inset, 0 -1px 0 rgba(0,0,0,.6) inset`,
       }
     : {
         backgroundImage:
@@ -273,8 +283,7 @@ function CassetteFace({
         // Gleiche Idee wie bei Seite A: grosser Schlagschatten + Rand/Glow
         // in plastic.glow (der Leucht-Akzentfarbe dieser Sorte) fuers Abheben
         // vom Hintergrund.
-        boxShadow:
-          `0 0.5rem 1.4rem ${plastic.inner}aa, 0 1.4rem 2.8rem rgba(0,0,0,.5), 0 0 0 1px ${plastic.glow}80, 0 0 1.8rem ${plastic.glow}3d, 0 0 0 1px ${plastic.shellHi}88 inset, 0 0.9rem 1.6rem ${plastic.inner}99 inset`,
+        boxShadow: `0 0.5rem 1.4rem ${plastic.inner}aa, 0 1.4rem 2.8rem rgba(0,0,0,.5), 0 0 0 1px ${plastic.glow}80, 0 0 1.8rem ${plastic.glow}3d, 0 0 0 1px ${plastic.shellHi}88 inset, 0 0.9rem 1.6rem ${plastic.inner}99 inset`,
       };
 
   const paper = isA ? type.label : `${plastic.inner}dd`;
@@ -368,7 +377,10 @@ function CassetteFace({
             </span>
           </div>
           <div className="pt-1.5" style={{ borderBottom: `1px solid ${rule}` }}>
-            <span className="font-hand block truncate pb-0.5 text-[0.95rem] leading-tight opacity-70" style={{ color: ink }}>
+            <span
+              className="font-hand block truncate pb-0.5 text-[0.95rem] leading-tight opacity-70"
+              style={{ color: ink }}
+            >
               {/* Seite A zeigt den (ggf. umbenannten) Tape-Namen, Seite B
                   immer nur "Gruppenchat" — Tape-Namen sind ein Konzept
                   des Archivs, nicht des laufenden Gesprächs. */}
@@ -478,8 +490,15 @@ function CassetteFace({
 /** Spulen-Taste: mit Handler ein echter <button>, sonst eine reine <span> —
  *  eine Vorschau ohne eigene Spul-Funktion soll kein eigenes Tipp-Ziel sein,
  *  das nur den umschliessenden Tippbereich stoeren wuerde. */
-function ReelButton({ onClick, label, children }:
-  { onClick?: (e: React.MouseEvent) => void; label: string; children: React.ReactNode }) {
+function ReelButton({
+  onClick,
+  label,
+  children,
+}: {
+  onClick?: (e: React.MouseEvent) => void;
+  label: string;
+  children: React.ReactNode;
+}) {
   if (!onClick) {
     return <span className="shrink-0">{children}</span>;
   }
@@ -517,16 +536,29 @@ const FACE_ASPECT = '400 / 258';
  * Die Spulen stehen auf "halb voll", da eine Vorschau keine eigene
  * Scroll-Position hat, an der sich ein Fuellstand ablesen liesse.
  */
-export function CassetteFacePreview({ side, cassetteId, pairIndex, label, count, currentTape, width, createdAt, age }:
-  {
-    side: Side; cassetteId: string | null; pairIndex?: number; label: string;
-    count: number; currentTape?: { dateLabel: string; shortName: string; fullName: string } | null;
-    width: number;
-    /** Gruendung, fuer die Altersstufe. */
-    createdAt?: number;
-    /** Stufe direkt vorgeben — fuer die Vorschau "so altert das Band". */
-    age?: number;
-  }) {
+export function CassetteFacePreview({
+  side,
+  cassetteId,
+  pairIndex,
+  label,
+  count,
+  currentTape,
+  width,
+  createdAt,
+  age,
+}: {
+  side: Side;
+  cassetteId: string | null;
+  pairIndex?: number;
+  label: string;
+  count: number;
+  currentTape?: { dateLabel: string; shortName: string; fullName: string } | null;
+  width: number;
+  /** Gruendung, fuer die Altersstufe. */
+  createdAt?: number;
+  /** Stufe direkt vorgeben — fuer die Vorschau "so altert das Band". */
+  age?: number;
+}) {
   const scale = width / FACE_REF_WIDTH;
   const mid = (R_MAX + R_MIN) / 2;
   // rounded-xl waere hier ein fixer 12px-Radius, gedacht fuer die grosse,
@@ -568,8 +600,16 @@ function Wear({ wear, light, age = 0 }: { wear: CassetteLook['wear']; light: str
       aria-hidden="true"
     >
       {scratches.map(([x, y, len], i) => (
-        <line key={`s${i}`} x1={x} y1={y} x2={x + len} y2={y - len * 0.12}
-              stroke={light} strokeWidth="0.35" opacity={0.5} />
+        <line
+          key={`s${i}`}
+          x1={x}
+          y1={y}
+          x2={x + len}
+          y2={y - len * 0.12}
+          stroke={light}
+          strokeWidth="0.35"
+          opacity={0.5}
+        />
       ))}
       {specks.map(([x, y, r], i) => (
         <circle key={`p${i}`} cx={x} cy={y} r={r * 0.35} fill={light} opacity={0.35} />
@@ -584,7 +624,14 @@ function Wear({ wear, light, age = 0 }: { wear: CassetteLook['wear']; light: str
           [0, 100],
           [100, 100],
         ].map(([cx, cy]) => (
-          <circle key={`r${cx}${cy}`} cx={cx} cy={cy} r={10 + age * 1.6} fill={`url(#${rubId})`} opacity={Math.min(1, age * 0.11)} />
+          <circle
+            key={`r${cx}${cy}`}
+            cx={cx}
+            cy={cy}
+            r={10 + age * 1.6}
+            fill={`url(#${rubId})`}
+            opacity={Math.min(1, age * 0.11)}
+          />
         ))}
       <defs>
         <radialGradient id="scuff" cx="50%" cy="50%" r="72%">
@@ -604,12 +651,7 @@ function Wear({ wear, light, age = 0 }: { wear: CassetteLook['wear']; light: str
 function Screws({ tint }: { tint: string }) {
   return (
     <span className="pointer-events-none absolute inset-0" aria-hidden="true">
-      {[
-        'left-1.5 top-1.5',
-        'right-1.5 top-1.5',
-        'left-1.5 bottom-1.5',
-        'right-1.5 bottom-1.5',
-      ].map((pos) => (
+      {['left-1.5 top-1.5', 'right-1.5 top-1.5', 'left-1.5 bottom-1.5', 'right-1.5 bottom-1.5'].map((pos) => (
         <i
           key={pos}
           className={`absolute ${pos} block size-1.5 rounded-full`}
@@ -697,8 +739,16 @@ function Reel({ r, tape, hub }: { r: number; tape: string; hub: string }) {
       <circle cx="31" cy="31" r="9" fill={`url(#${hubGrad})`} />
       <g className="spin" style={{ transformOrigin: '31px 31px' }}>
         {[0, 60, 120, 180, 240, 300].map((deg) => (
-          <rect key={deg} x="30.2" y="23" width="1.8" height="5" fill={tape} opacity="0.8"
-                transform={`rotate(${deg} 31 31)`} />
+          <rect
+            key={deg}
+            x="30.2"
+            y="23"
+            width="1.8"
+            height="5"
+            fill={tape}
+            opacity="0.8"
+            transform={`rotate(${deg} 31 31)`}
+          />
         ))}
       </g>
     </svg>

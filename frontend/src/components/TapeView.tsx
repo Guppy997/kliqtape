@@ -11,16 +11,28 @@ interface Props {
 /** Ein versiegeltes Tape, so wie es der Beschenkte sieht: J-Card mit Tracklist. */
 export default function TapeView({ id }: Props) {
   const me = useApp((s) => s.me);
-  const { data: tape, isError, error } = useQuery({
+  const {
+    data: tape,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ['mixtape', id],
     queryFn: () => fetchMixtape(id, me),
   });
 
   if (isError) {
-    return <p className="text-sm" style={{ color: '#F0B5A5' }}>{(error as Error).message}</p>;
+    return (
+      <p className="text-sm" style={{ color: '#F0B5A5' }}>
+        {(error as Error).message}
+      </p>
+    );
   }
   if (!tape) {
-    return <p className="font-mono text-xs" style={{ color: 'var(--dim)' }}>Tape wird geholt …</p>;
+    return (
+      <p className="font-mono text-xs" style={{ color: 'var(--dim)' }}>
+        Tape wird geholt …
+      </p>
+    );
   }
 
   const mine = tape.from === me;
@@ -36,9 +48,7 @@ export default function TapeView({ id }: Props) {
             <span className="font-hand text-2xl text-[#3B3226]">{tape.title}</span>
           </div>
         )}
-        <p className="font-hand mt-2 px-1 text-center text-[1.15rem] leading-tight text-[#3B3226]">
-          {tape.title}
-        </p>
+        <p className="font-hand mt-2 px-1 text-center text-[1.15rem] leading-tight text-[#3B3226]">{tape.title}</p>
         <p className="font-mono mt-1 text-center text-[0.58rem] uppercase tracking-[0.1em] text-[#3B3226]/60">
           {mine ? `für ${tape.to}` : `von ${tape.from}`}
         </p>
@@ -63,7 +73,9 @@ export default function TapeView({ id }: Props) {
                 {String(t.position).padStart(2, '0')}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[0.9rem]" style={{ color: 'var(--ink)' }}>{t.title}</span>
+                <span className="block truncate text-[0.9rem]" style={{ color: 'var(--ink)' }}>
+                  {t.title}
+                </span>
                 <span className="font-mono block truncate text-[0.6rem]" style={{ color: 'var(--dim)' }}>
                   {t.artist}
                   {t.artist && plat ? ' · ' : ''}
@@ -106,8 +118,8 @@ export default function TapeView({ id }: Props) {
       {tape.sealed && <SaveCard tape={tape} />}
 
       <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-        Die Titel öffnen sich in dem Dienst, aus dem der Link stammt. Kliqtape speichert keine
-        Musik und ist an keine Plattform gebunden.
+        Die Titel öffnen sich in dem Dienst, aus dem der Link stammt. Kliqtape speichert keine Musik und ist an keine
+        Plattform gebunden.
       </p>
     </div>
   );
@@ -148,12 +160,28 @@ function SaveCard({ tape }: { tape: Mixtape }) {
       className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm disabled:opacity-60"
       style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
     >
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
         <rect x="2" y="2" width="12" height="12" rx="1.5" />
         <circle cx="6" cy="6" r="1.3" />
         <path d="M2.5 12l3.5-3.5 2.5 2.5 2-2 3 3" />
       </svg>
-      {state === 'busy' ? 'Karte wird gezeichnet …' : state === 'done' ? 'Gespeichert' : state === 'error' ? 'Ging nicht — nochmal?' : 'Als Bild speichern'}
+      {state === 'busy'
+        ? 'Karte wird gezeichnet …'
+        : state === 'done'
+          ? 'Gespeichert'
+          : state === 'error'
+            ? 'Ging nicht — nochmal?'
+            : 'Als Bild speichern'}
     </button>
   );
 }

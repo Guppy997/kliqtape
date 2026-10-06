@@ -70,7 +70,9 @@ cassettesRouter.get('/api/cassettes/:id/members', (req, res) => {
 });
 
 cassettesRouter.post('/api/cassettes', (req, res) => {
-  const name = String(req.body?.name ?? '').trim().slice(0, 40);
+  const name = String(req.body?.name ?? '')
+    .trim()
+    .slice(0, 40);
   const by = String(req.body?.by ?? '').trim();
   const colorSeed = req.body?.colorSeed ? String(req.body.colorSeed) : null;
   if (!name) throw new HttpError(400, 'Die Kassette braucht eine Beschriftung');
@@ -80,12 +82,19 @@ cassettesRouter.post('/api/cassettes', (req, res) => {
   const id = randomUUID();
   const now = Date.now();
   db.transaction(() => {
-    db.prepare(
-      `INSERT INTO cassettes (id, name, created_by, created_at, color_seed) VALUES (?, ?, ?, ?, ?)`,
-    ).run(id, name, by, now, colorSeed);
-    db.prepare(
-      `INSERT INTO cassette_members (cassette_id, member, added_by, joined_at) VALUES (?, ?, ?, ?)`,
-    ).run(id, by, by, now);
+    db.prepare(`INSERT INTO cassettes (id, name, created_by, created_at, color_seed) VALUES (?, ?, ?, ?, ?)`).run(
+      id,
+      name,
+      by,
+      now,
+      colorSeed,
+    );
+    db.prepare(`INSERT INTO cassette_members (cassette_id, member, added_by, joined_at) VALUES (?, ?, ?, ?)`).run(
+      id,
+      by,
+      by,
+      now,
+    );
   })();
 
   res.status(201).json({ id, name, createdBy: by, colorSeed, colorIndex: null, memberCount: 1, sideA: 0, sideB: 0 });
@@ -136,7 +145,9 @@ cassettesRouter.patch('/api/cassettes/:id', (req, res) => {
 // ohne dass die geholte Person je gefragt wurde.
 cassettesRouter.post('/api/cassettes/:id/invites', (req, res) => {
   const by = String(req.body?.by ?? '').trim();
-  const invitee = String(req.body?.invitee ?? '').trim().slice(0, 40);
+  const invitee = String(req.body?.invitee ?? '')
+    .trim()
+    .slice(0, 40);
   if (!invitee) throw new HttpError(400, 'Wen denn?');
   requireMember(req, req.params.id, by);
 
@@ -179,7 +190,14 @@ function loadInvite(id: string) {
         WHERE ci.id = ?`,
     )
     .get(id) as
-    | { id: string; cassette_id: string; invitee: string; invited_by: string; created_at: number; cassette_name: string }
+    | {
+        id: string;
+        cassette_id: string;
+        invitee: string;
+        invited_by: string;
+        created_at: number;
+        cassette_name: string;
+      }
     | undefined;
   if (!row) throw new HttpError(404, 'Einladung nicht gefunden');
   return row;
@@ -295,9 +313,9 @@ cassettesRouter.delete('/api/cassettes/:id/members/:member', (req, res) => {
 
   // Leere Kassetten verschwinden mitsamt ihren Beiträgen — sonst blieben
   // verwaiste Runden liegen, die niemand mehr sehen kann.
-  const rest = db
-    .prepare(`SELECT COUNT(*) AS n FROM cassette_members WHERE cassette_id = ?`)
-    .get(req.params.id) as { n: number };
+  const rest = db.prepare(`SELECT COUNT(*) AS n FROM cassette_members WHERE cassette_id = ?`).get(req.params.id) as {
+    n: number;
+  };
   if (rest.n === 0) {
     for (const p of db
       .prepare(`SELECT media_id FROM posts WHERE cassette_id = ? AND media_id IS NOT NULL`)

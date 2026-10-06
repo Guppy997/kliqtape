@@ -95,7 +95,10 @@ export default function FilmBag({ cassette, onChanged }: { cassette: Cassette; o
           </span>
         </button>
       ) : (
-        <div className="my-3 flex items-center gap-3 rounded-xl px-3.5 py-3" style={{ border: '1px dashed var(--line)' }}>
+        <div
+          className="my-3 flex items-center gap-3 rounded-xl px-3.5 py-3"
+          style={{ border: '1px dashed var(--line)' }}
+        >
           <Canister />
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
@@ -186,7 +189,12 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
 
   const shot = shots[index]!;
   const opening = phase === 'opening';
-  const date = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(at));
+  const date = new Intl.DateTimeFormat('de-DE', {
+    timeZone: 'Europe/Berlin',
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+  }).format(new Date(at));
 
   return createPortal(
     <div
@@ -245,7 +253,9 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
             <span className="font-disp text-[0.7rem] font-bold uppercase tracking-[0.3em]">Kliqtape · Foto</span>
             <span className="mt-1 h-px w-24" style={{ background: KRAFT_INK, opacity: 0.4 }} />
             <span className="font-hand mt-2 text-[1.15rem] leading-tight">Entwickelt {date}</span>
-            <span className="font-mono mt-1 text-[0.5rem] uppercase tracking-[0.2em] opacity-70">Bitte nicht knicken</span>
+            <span className="font-mono mt-1 text-[0.5rem] uppercase tracking-[0.2em] opacity-70">
+              Bitte nicht knicken
+            </span>
           </div>
           {/* Lasche: klappt um die Oberkante der Vorderseite nach oben. Wechselt
               mitten in der Drehung (hochkant, unsichtbar) hinter die Abzuege. */}
@@ -281,7 +291,11 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
             style={{ transform: `rotate(${index % 2 === 0 ? -1 : 0.8}deg)` }}
           >
             <div className="relative">
-              <img src={mediaUrl(shot.mediaId)} alt={shot.caption || `Filmbild von ${shot.author}`} className="aspect-square object-cover" />
+              <img
+                src={mediaUrl(shot.mediaId)}
+                alt={shot.caption || `Filmbild von ${shot.author}`}
+                className="aspect-square object-cover"
+              />
               <span
                 className="font-mono absolute bottom-2 right-2.5 text-[0.8rem] font-bold tracking-[0.12em]"
                 style={{ color: '#FF9A3C', textShadow: '0 0 4px rgba(255,120,30,.7)' }}

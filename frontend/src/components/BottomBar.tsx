@@ -58,7 +58,17 @@ export default function BottomBar({ onHome }: Props) {
           icon={
             // Kassette statt Haussymbol — passt zum Rest der App, ein Haus
             // wirkte hier wie ein Fremdkoerper.
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+            <svg
+              width="16"
+              height="12"
+              viewBox="0 0 16 12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
               <rect x="0.65" y="0.65" width="14.7" height="10.7" rx="1.5" />
               <circle cx="4.5" cy="6" r="1.6" />
               <circle cx="11.5" cy="6" r="1.6" />

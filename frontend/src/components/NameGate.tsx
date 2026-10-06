@@ -106,8 +106,8 @@ export default function NameGate({ prefill }: { prefill?: string }) {
           {busy ? 'Einen Moment …' : 'Band einlegen'}
         </button>
         <p className="font-mono text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-          Dein Zugangscode liegt danach in den Einstellungen — kopier ihn dort, um dich auf einem
-          zweiten Gerät anzumelden. Achtung: Inhalte sind noch nicht Ende-zu-Ende-verschlüsselt.
+          Dein Zugangscode liegt danach in den Einstellungen — kopier ihn dort, um dich auf einem zweiten Gerät
+          anzumelden. Achtung: Inhalte sind noch nicht Ende-zu-Ende-verschlüsselt.
         </p>
       </form>
     </div>

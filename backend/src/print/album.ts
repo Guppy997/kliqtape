@@ -144,29 +144,60 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
   doc.roundedRect(cx, cy, cw, ch, 10).stroke();
   doc.rect(cx + 16, cy + 14, cw - 32, 54).fillAndStroke(PRINT, INK);
   doc.rect(cx + 16, cy + 14, cw - 32, 13).fill(STRIPE);
-  doc.fillColor(PAPER).font('Helvetica-Bold').fontSize(7).text('KLIQTAPE', cx + 24, cy + 17.5, { characterSpacing: 1.5 });
-  doc.fillColor(INK).font('Times-Italic').fontSize(15).text(album.cassetteName, cx + 24, cy + 35, { width: cw - 48, lineBreak: false, ellipsis: true });
+  doc
+    .fillColor(PAPER)
+    .font('Helvetica-Bold')
+    .fontSize(7)
+    .text('KLIQTAPE', cx + 24, cy + 17.5, { characterSpacing: 1.5 });
+  doc
+    .fillColor(INK)
+    .font('Times-Italic')
+    .fontSize(15)
+    .text(album.cassetteName, cx + 24, cy + 35, { width: cw - 48, lineBreak: false, ellipsis: true });
   doc.roundedRect(cx + 40, cy + 80, cw - 80, 34, 4).stroke();
   doc.circle(cx + 70, cy + 97, 10).stroke();
   doc.circle(cx + cw - 70, cy + 97, 10).stroke();
-  doc.moveTo(cx + 40, cy + ch).lineTo(cx + 56, cy + ch - 18).lineTo(cx + cw - 56, cy + ch - 18).lineTo(cx + cw - 40, cy + ch).stroke();
+  doc
+    .moveTo(cx + 40, cy + ch)
+    .lineTo(cx + 56, cy + ch - 18)
+    .lineTo(cx + cw - 56, cy + ch - 18)
+    .lineTo(cx + cw - 40, cy + ch)
+    .stroke();
   doc.restore();
 
   const first = album.tapes[0];
   const last = album.tapes.at(-1);
-  doc.fillColor(DIM).font('Helvetica-Bold').fontSize(8).text('ALBUM', M, cy + ch + 46, { width: inner, align: 'center', characterSpacing: 3 });
-  doc.fillColor(INK).font('Times-Bold').fontSize(26).text(album.cassetteName, M, cy + ch + 62, { width: inner, align: 'center' });
+  doc
+    .fillColor(DIM)
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .text('ALBUM', M, cy + ch + 46, { width: inner, align: 'center', characterSpacing: 3 });
+  doc
+    .fillColor(INK)
+    .font('Times-Bold')
+    .fontSize(26)
+    .text(album.cassetteName, M, cy + ch + 62, { width: inner, align: 'center' });
   if (first && last) {
     const range = first === last ? first.date : `${first.date} – ${last.date}`;
-    doc.fillColor(DIM).font('Helvetica').fontSize(9).text(
-      `${range} · ${album.tapes.length} ${album.tapes.length === 1 ? 'Tape' : 'Tapes'}`,
-      M, doc.y + 6, { width: inner, align: 'center' },
-    );
+    doc
+      .fillColor(DIM)
+      .font('Helvetica')
+      .fontSize(9)
+      .text(`${range} · ${album.tapes.length} ${album.tapes.length === 1 ? 'Tape' : 'Tapes'}`, M, doc.y + 6, {
+        width: inner,
+        align: 'center',
+      });
   }
-  doc.fillColor(DIM).font('Helvetica').fontSize(7).text(
-    'Nur Seite A. Clips und O-Töne lassen sich nicht drucken. Wer seine Beiträge nicht in Alben haben möchte, fehlt hier bewusst.',
-    M + 30, H - M - 30, { width: inner - 60, align: 'center' },
-  );
+  doc
+    .fillColor(DIM)
+    .font('Helvetica')
+    .fontSize(7)
+    .text(
+      'Nur Seite A. Clips und O-Töne lassen sich nicht drucken. Wer seine Beiträge nicht in Alben haben möchte, fehlt hier bewusst.',
+      M + 30,
+      H - M - 30,
+      { width: inner - 60, align: 'center' },
+    );
 
   // ---- Tapes ----------------------------------------------------------------
   const ensure = (needed: number) => {
@@ -176,9 +207,22 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
   for (const tape of album.tapes) {
     doc.addPage();
     doc.fillColor(STRIPE).rect(M, M, 28, 3).fill();
-    doc.fillColor(DIM).font('Helvetica-Bold').fontSize(8).text(tapeLabel(tape).toUpperCase(), M, M + 10, { characterSpacing: 2 });
-    doc.fillColor(INK).font('Times-Italic').fontSize(20).text(tape.name ?? tape.date, M, doc.y + 2, { width: inner });
-    if (tape.name) doc.fillColor(DIM).font('Helvetica').fontSize(9).text(tape.date, M, doc.y + 1);
+    doc
+      .fillColor(DIM)
+      .font('Helvetica-Bold')
+      .fontSize(8)
+      .text(tapeLabel(tape).toUpperCase(), M, M + 10, { characterSpacing: 2 });
+    doc
+      .fillColor(INK)
+      .font('Times-Italic')
+      .fontSize(20)
+      .text(tape.name ?? tape.date, M, doc.y + 2, { width: inner });
+    if (tape.name)
+      doc
+        .fillColor(DIM)
+        .font('Helvetica')
+        .fontSize(9)
+        .text(tape.date, M, doc.y + 1);
     doc.moveDown(1.2);
 
     for (const post of tape.posts) {
@@ -193,46 +237,104 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
         const scale = Math.min(maxW / img.width, 170 / img.height);
         const iw = img.width * scale;
         const ih = img.height * scale;
-        const captionH = post.body ? doc.font('Times-Italic').fontSize(11).heightOfString(post.body, { width: iw }) + 6 : 0;
+        const captionH = post.body
+          ? doc.font('Times-Italic').fontSize(11).heightOfString(post.body, { width: iw }) + 6
+          : 0;
         const frameH = ih + 16 + captionH + 18;
         ensure(frameH + 14);
         const x = (W - iw) / 2 - 8;
         const y = doc.y;
         // pdfkit kennt keine Hex-Farben mit Alpha — Deckkraft separat.
-        doc.save().fillColor('#000000', 0.07).rect(x + 2.5, y + 3, iw + 16, frameH).fill().restore();
-        doc.fillColor(PRINT).rect(x, y, iw + 16, frameH).fill();
+        doc
+          .save()
+          .fillColor('#000000', 0.07)
+          .rect(x + 2.5, y + 3, iw + 16, frameH)
+          .fill()
+          .restore();
+        doc
+          .fillColor(PRINT)
+          .rect(x, y, iw + 16, frameH)
+          .fill();
         doc.image(img as unknown as string, x + 8, y + 8, { width: iw, height: ih });
         if (post.stamp) {
-          doc.fillColor(FILM_STAMP).font('Courier-Bold').fontSize(9).text(post.stamp, x + 8, y + 8 + ih - 14, { width: iw - 6, align: 'right' });
+          doc
+            .fillColor(FILM_STAMP)
+            .font('Courier-Bold')
+            .fontSize(9)
+            .text(post.stamp, x + 8, y + 8 + ih - 14, { width: iw - 6, align: 'right' });
         }
         let ty = y + 8 + ih + 6;
         if (post.body) {
-          doc.fillColor(INK).font('Times-Italic').fontSize(11).text(post.body, x + 8, ty, { width: iw, align: 'center' });
+          doc
+            .fillColor(INK)
+            .font('Times-Italic')
+            .fontSize(11)
+            .text(post.body, x + 8, ty, { width: iw, align: 'center' });
           ty = doc.y + 2;
         }
-        doc.fillColor(DIM).font('Helvetica').fontSize(7).text(meta, x + 8, ty, { width: iw, align: 'center' });
+        doc
+          .fillColor(DIM)
+          .font('Helvetica')
+          .fontSize(7)
+          .text(meta, x + 8, ty, { width: iw, align: 'center' });
         doc.y = y + frameH + 16;
         doc.x = M;
       } else if (post.kind === 'text') {
-        const textH = doc.font('Times-Roman').fontSize(12).heightOfString(post.body, { width: inner - 30 });
+        const textH = doc
+          .font('Times-Roman')
+          .fontSize(12)
+          .heightOfString(post.body, { width: inner - 30 });
         ensure(textH + 34);
         const y = doc.y;
-        doc.fillColor(PRINT).rect(M + 6, y, inner - 12, textH + 26).fill();
-        doc.fillColor(STRIPE).rect(M + 6, y, 3, textH + 26).fill();
-        doc.fillColor(INK).font('Times-Roman').fontSize(12).text(post.body, M + 18, y + 8, { width: inner - 30 });
-        doc.fillColor(DIM).font('Helvetica').fontSize(7).text(meta, M + 18, doc.y + 3);
+        doc
+          .fillColor(PRINT)
+          .rect(M + 6, y, inner - 12, textH + 26)
+          .fill();
+        doc
+          .fillColor(STRIPE)
+          .rect(M + 6, y, 3, textH + 26)
+          .fill();
+        doc
+          .fillColor(INK)
+          .font('Times-Roman')
+          .fontSize(12)
+          .text(post.body, M + 18, y + 8, { width: inner - 30 });
+        doc
+          .fillColor(DIM)
+          .font('Helvetica')
+          .fontSize(7)
+          .text(meta, M + 18, doc.y + 3);
         doc.y = y + textH + 26 + 14;
         doc.x = M;
       } else if (post.kind === 'tape' && post.mixtape) {
         ensure(78);
         const y = doc.y;
-        doc.fillColor(PRINT).rect(M + 6, y, inner - 12, 64).fill();
+        doc
+          .fillColor(PRINT)
+          .rect(M + 6, y, inner - 12, 64)
+          .fill();
         const cover = post.mixtape.coverId ? source.mediaFile(post.mixtape.coverId) : null;
         if (cover && /jpeg|png/.test(cover.mime)) doc.image(cover.path, M + 14, y + 8, { fit: [48, 48] });
-        else doc.fillColor('#D8CFBB').rect(M + 14, y + 8, 48, 48).fill();
-        doc.fillColor(DIM).font('Helvetica-Bold').fontSize(7).text('MIXTAPE', M + 74, y + 12, { characterSpacing: 1.5 });
-        doc.fillColor(INK).font('Times-Italic').fontSize(14).text(post.mixtape.title || 'Ohne Titel', M + 74, y + 23, { width: inner - 92 });
-        doc.fillColor(DIM).font('Helvetica').fontSize(7).text(meta, M + 74, y + 44);
+        else
+          doc
+            .fillColor('#D8CFBB')
+            .rect(M + 14, y + 8, 48, 48)
+            .fill();
+        doc
+          .fillColor(DIM)
+          .font('Helvetica-Bold')
+          .fontSize(7)
+          .text('MIXTAPE', M + 74, y + 12, { characterSpacing: 1.5 });
+        doc
+          .fillColor(INK)
+          .font('Times-Italic')
+          .fontSize(14)
+          .text(post.mixtape.title || 'Ohne Titel', M + 74, y + 23, { width: inner - 92 });
+        doc
+          .fillColor(DIM)
+          .font('Helvetica')
+          .fontSize(7)
+          .text(meta, M + 74, y + 44);
         doc.y = y + 64 + 14;
         doc.x = M;
       }
@@ -245,10 +347,11 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
     doc.switchToPage(range.start + i);
     // Unterhalb des Rands schreiben, ohne dass pdfkit eine neue Seite anlegt.
     doc.page.margins.bottom = 0;
-    doc.fillColor(DIM).font('Helvetica').fontSize(7).text(
-      `${album.cassetteName} · ${i + 1}`,
-      M, H - M + 14, { width: inner, align: 'center', lineBreak: false },
-    );
+    doc
+      .fillColor(DIM)
+      .font('Helvetica')
+      .fontSize(7)
+      .text(`${album.cassetteName} · ${i + 1}`, M, H - M + 14, { width: inner, align: 'center', lineBreak: false });
   }
 
   doc.end();

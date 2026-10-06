@@ -51,7 +51,14 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, max: number, maxLines
   return lines;
 }
 
-function spaced(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, spacing: number, align: 'left' | 'right' = 'left') {
+function spaced(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  spacing: number,
+  align: 'left' | 'right' = 'left',
+) {
   // letterSpacing gibt es nicht ueberall — Zeichen fuer Zeichen setzen.
   const widths = [...text].map((ch) => ctx.measureText(ch).width + spacing);
   const total = widths.reduce((a, b) => a + b, 0) - spacing;

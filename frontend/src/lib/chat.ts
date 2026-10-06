@@ -100,11 +100,16 @@ function tempId(): string {
  *  die Vorschau bei Foto/Video/O-Ton/Mixtape. */
 export function previewFor(kind: Kind, body: string | null): string {
   switch (kind) {
-    case 'photo': return 'Foto';
-    case 'video': return 'Video';
-    case 'voice': return 'O-Ton';
-    case 'tape': return 'Mixtape';
-    default: return body ?? '';
+    case 'photo':
+      return 'Foto';
+    case 'video':
+      return 'Video';
+    case 'voice':
+      return 'O-Ton';
+    case 'tape':
+      return 'Mixtape';
+    default:
+      return body ?? '';
   }
 }
 
@@ -197,8 +202,18 @@ export function useHotlineChat(
       const previous = qc.getQueryData<HotlineThreadDetail>(threadKey);
       if (previous) {
         const optimistic: HotlineMessage = {
-          id: tempId(), from: me, body, kind: 'text', mediaId: null, durationMs: null,
-          tapeId: null, tape: null, source: null, createdAt: Date.now(), heard: true, pending: true,
+          id: tempId(),
+          from: me,
+          body,
+          kind: 'text',
+          mediaId: null,
+          durationMs: null,
+          tapeId: null,
+          tape: null,
+          source: null,
+          createdAt: Date.now(),
+          heard: true,
+          pending: true,
         };
         qc.setQueryData<HotlineThreadDetail>(threadKey, { ...previous, messages: [...previous.messages, optimistic] });
       }
@@ -227,7 +242,14 @@ export function useHotlineChat(
       source: 'camera' | 'upload';
     }) => {
       const mediaId = await uploadMedia(input.blob, input.durationMs);
-      return sendHotlineMessage({ from: me, to: to(), kind: input.kind, mediaId, body: input.caption, source: input.source });
+      return sendHotlineMessage({
+        from: me,
+        to: to(),
+        kind: input.kind,
+        mediaId,
+        body: input.caption,
+        source: input.source,
+      });
     },
     onSuccess: handleSent,
   });
@@ -313,7 +335,15 @@ export function useCassetteChat(cassetteId: string | undefined, me: string): Cha
   const sendVoice = useMutation({
     mutationFn: async ({ blob, durationMs, caption }: { blob: Blob; durationMs: number; caption: string }) => {
       const mediaId = await uploadMedia(blob, durationMs);
-      return createPost({ cassetteId: cassetteId!, side: 'b', author: me, kind: 'voice', mediaId, body: caption, source: 'camera' });
+      return createPost({
+        cassetteId: cassetteId!,
+        side: 'b',
+        author: me,
+        kind: 'voice',
+        mediaId,
+        body: caption,
+        source: 'camera',
+      });
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey }),
   });
@@ -328,8 +358,13 @@ export function useCassetteChat(cassetteId: string | undefined, me: string): Cha
     }) => {
       const mediaId = await uploadMedia(input.blob, input.durationMs);
       return createPost({
-        cassetteId: cassetteId!, side: 'b', author: me, kind: input.kind,
-        mediaId, body: input.caption, source: input.source,
+        cassetteId: cassetteId!,
+        side: 'b',
+        author: me,
+        kind: input.kind,
+        mediaId,
+        body: input.caption,
+        source: input.source,
       });
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey }),

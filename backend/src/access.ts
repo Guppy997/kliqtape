@@ -23,8 +23,7 @@ export function identityOf(req: Request): string {
   const token = req.header('X-Auth-Token');
   const row = token
     ? (db.prepare(`SELECT name FROM person_tokens WHERE token_hash = ?`).get(hashToken(token)) as
-        | { name: string }
-        | undefined)
+        { name: string } | undefined)
     : undefined;
   if (!row) throw new HttpError(401, 'Nicht angemeldet');
   return row.name;
@@ -37,17 +36,14 @@ export function requireIdentity(req: Request, claimedName: string): void {
 
 export function requireMember(req: Request, cassetteId: string, person: string): void {
   requireIdentity(req, person);
-  const ok = db
-    .prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`)
-    .get(cassetteId, person);
+  const ok = db.prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`).get(cassetteId, person);
   if (!ok) throw new HttpError(403, 'Du bist nicht in dieser Runde');
 }
 
 /** Wer eine Kassette angelegt hat — nur diese Person darf sie loeschen. */
 export function creatorOf(cassetteId: string): string {
   const row = db.prepare(`SELECT created_by FROM cassettes WHERE id = ?`).get(cassetteId) as
-    | { created_by: string }
-    | undefined;
+    { created_by: string } | undefined;
   if (!row) throw new HttpError(404, 'Kassette nicht gefunden');
   return row.created_by;
 }

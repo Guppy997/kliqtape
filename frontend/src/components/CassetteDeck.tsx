@@ -257,7 +257,10 @@ export default function CassetteDeck() {
                           stammen von einem festen Vorschau-Band, die Farben
                           stimmen aber exakt mit dem spaeteren Ergebnis. */}
                       <MiniCassette id="neu" pairIndex={idx} active side="b" label={newName.trim() || undefined} />
-                      <span className="font-mono text-center text-[0.52rem] uppercase tracking-[0.06em]" style={{ color: 'var(--dim)' }}>
+                      <span
+                        className="font-mono text-center text-[0.52rem] uppercase tracking-[0.06em]"
+                        style={{ color: 'var(--dim)' }}
+                      >
                         {c.name}
                       </span>
                     </button>
@@ -266,7 +269,11 @@ export default function CassetteDeck() {
               </div>
             </div>
 
-            {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+            {error && (
+              <p className="text-sm" style={{ color: '#F0B5A5' }}>
+                {error}
+              </p>
+            )}
 
             <button
               type="button"
@@ -279,8 +286,7 @@ export default function CassetteDeck() {
             </button>
 
             <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
-              Du bist danach allein auf dem Band und kannst Leute einladen. Jedes Mitglied darf
-              weitere einladen.
+              Du bist danach allein auf dem Band und kannst Leute einladen. Jedes Mitglied darf weitere einladen.
             </p>
           </div>
         ) : manage && cassettes.some((c) => c.id === manage) ? (
@@ -397,8 +403,16 @@ export default function CassetteDeck() {
                   className="ml-auto grid size-9 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
                   style={{ background: 'var(--accent)', color: '#17130E' }}
                 >
-                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor"
-                       strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    aria-hidden="true"
+                  >
                     <path d="M7 1v12M1 7h12" />
                   </svg>
                 </button>
@@ -426,89 +440,102 @@ export default function CassetteDeck() {
                 const { type, case: plastic } = lookFor(c.id, looks.get(c.id));
                 const glow = rowSide === 'b' ? plastic.glow : type.stripe;
                 return (
-                <div
-                  key={c.id}
-                  className="flex items-center gap-2 rounded-xl p-2.5"
-                  style={{
-                    background: 'var(--card)',
-                    border: `1px solid ${c.id === cassetteId ? 'var(--accent)' : 'var(--line)'}`,
-                    // Nur die eingelegte Kassette leuchtet — das ist jetzt das
-                    // einzige "ausgewaehlt"-Signal im Fach.
-                    boxShadow:
-                      c.id === cassetteId
-                        ? '0 0 0.9rem color-mix(in srgb, var(--accent) 28%, transparent)'
-                        : undefined,
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCassette(c.id);
-                      setActiveNav(null);
-                      window.scrollTo({ top: 0 });
+                  <div
+                    key={c.id}
+                    className="flex items-center gap-2 rounded-xl p-2.5"
+                    style={{
+                      background: 'var(--card)',
+                      border: `1px solid ${c.id === cassetteId ? 'var(--accent)' : 'var(--line)'}`,
+                      // Nur die eingelegte Kassette leuchtet — das ist jetzt das
+                      // einzige "ausgewaehlt"-Signal im Fach.
+                      boxShadow:
+                        c.id === cassetteId
+                          ? '0 0 0.9rem color-mix(in srgb, var(--accent) 28%, transparent)'
+                          : undefined,
                     }}
-                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
                   >
-                    {/* Dieselbe Zeichnung wie der grosse Kopf und das Symbol
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCassette(c.id);
+                        setActiveNav(null);
+                        window.scrollTo({ top: 0 });
+                      }}
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    >
+                      {/* Dieselbe Zeichnung wie der grosse Kopf und das Symbol
                         oben links (CassetteHeader.tsx) — keine dritte,
                         vereinfachte Nachbildung mehr. Ohne echtes Tape-Datum
                         (das haette pro Zeile eine eigene Abfrage gebraucht)
                         faellt die Vorschau auf "Position NNN" und
                         "Seite X — ..." zurueck, genau wie beim Kopf, bevor
                         ein Tape geladen ist. */}
-                    <span
-                      className="shrink-0"
-                      style={{
-                        opacity: c.id === cassetteId ? 1 : 0.72,
-                        filter: `drop-shadow(0 0.2rem 0.4rem rgba(0,0,0,.5)) drop-shadow(0 0 0.35rem ${glow}70)`,
-                      }}
-                    >
-                      <CassetteFacePreview
-                        side={rowSide}
-                        cassetteId={c.id}
-                        pairIndex={looks.get(c.id)}
-                        label={c.name}
-                        count={c.sideA + c.sideB}
-                        currentTape={null}
-                        createdAt={c.createdAt}
-                        width={60}
-                      />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
-                        {c.name}
-                      </span>
                       <span
-                        className="font-mono block truncate text-[0.58rem] uppercase tracking-[0.1em]"
-                        style={{ color: 'var(--dim)' }}
+                        className="shrink-0"
+                        style={{
+                          opacity: c.id === cassetteId ? 1 : 0.72,
+                          filter: `drop-shadow(0 0.2rem 0.4rem rgba(0,0,0,.5)) drop-shadow(0 0 0.35rem ${glow}70)`,
+                        }}
                       >
-                        {c.memberCount} {c.memberCount === 1 ? 'Person' : 'Leute'} · A {c.sideA} · B {c.sideB}
+                        <CassetteFacePreview
+                          side={rowSide}
+                          cassetteId={c.id}
+                          pairIndex={looks.get(c.id)}
+                          label={c.name}
+                          count={c.sideA + c.sideB}
+                          currentTape={null}
+                          createdAt={c.createdAt}
+                          width={60}
+                        />
                       </span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInviteFirst(false);
-                      setManage(c.id);
-                    }}
-                    aria-label={`${c.name} bearbeiten`}
-                    title="Bearbeiten"
-                    className="grid size-7 shrink-0 place-items-center rounded-full"
-                    style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                         strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M11 2l3 3-8 8-3.5.5.5-3.5z" />
-                      <path d="M9.5 3.5l3 3" />
-                    </svg>
-                  </button>
-                </div>
+                      <span className="min-w-0 flex-1">
+                        <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
+                          {c.name}
+                        </span>
+                        <span
+                          className="font-mono block truncate text-[0.58rem] uppercase tracking-[0.1em]"
+                          style={{ color: 'var(--dim)' }}
+                        >
+                          {c.memberCount} {c.memberCount === 1 ? 'Person' : 'Leute'} · A {c.sideA} · B {c.sideB}
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInviteFirst(false);
+                        setManage(c.id);
+                      }}
+                      aria-label={`${c.name} bearbeiten`}
+                      title="Bearbeiten"
+                      className="grid size-7 shrink-0 place-items-center rounded-full"
+                      style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M11 2l3 3-8 8-3.5.5.5-3.5z" />
+                        <path d="M9.5 3.5l3 3" />
+                      </svg>
+                    </button>
+                  </div>
                 );
               })}
             </div>
 
-            {error && <p className="text-sm" style={{ color: '#F0B5A5' }}>{error}</p>}
+            {error && (
+              <p className="text-sm" style={{ color: '#F0B5A5' }}>
+                {error}
+              </p>
+            )}
           </div>
         )}
       </Sheet>
@@ -560,21 +587,40 @@ function MiniFoot({ fill, hole }: { fill: string; hole: string }) {
  *  wirklich beschrifteten Etiketts, nicht um Text zum Lesen. Der ueberge-
  *  ordnete clipPath jeder Kassette schneidet zu lange Namen sauber ab, ganz
  *  ohne eigene Kuerzungslogik. */
-function MiniLabelText({ band, body, bandColor, bodyColor }:
-  { band?: string; body?: string; bandColor: string; bodyColor: string }) {
+function MiniLabelText({
+  band,
+  body,
+  bandColor,
+  bodyColor,
+}: {
+  band?: string;
+  body?: string;
+  bandColor: string;
+  bodyColor: string;
+}) {
   return (
     <>
       {band && (
-        <text x={MINI.label.x + 1.6} y={MINI.label.y + MINI.label.bandH - 0.9}
-              fontSize="2.3" fontWeight="700" letterSpacing="0.02"
-              fill={bandColor} style={{ fontFamily: 'var(--font-disp)' }}>
+        <text
+          x={MINI.label.x + 1.6}
+          y={MINI.label.y + MINI.label.bandH - 0.9}
+          fontSize="2.3"
+          fontWeight="700"
+          letterSpacing="0.02"
+          fill={bandColor}
+          style={{ fontFamily: 'var(--font-disp)' }}
+        >
           {band}
         </text>
       )}
       {body && (
-        <text x={MINI.label.x + 1.6} y={MINI.label.y + MINI.label.bandH + 5.7}
-              fontSize="4.6"
-              fill={bodyColor} style={{ fontFamily: 'var(--font-hand)' }}>
+        <text
+          x={MINI.label.x + 1.6}
+          y={MINI.label.y + MINI.label.bandH + 5.7}
+          fontSize="4.6"
+          fill={bodyColor}
+          style={{ fontFamily: 'var(--font-hand)' }}
+        >
           {body}
         </text>
       )}
@@ -615,12 +661,28 @@ function StoryCassetteIcon() {
         <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.bandH} fill="#E0568C" />
         <MiniLabelText band="STORY" body="24H" bandColor="#FFF6E9" bodyColor="#7A3E58" />
       </g>
-      <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} rx="1"
-            fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="0.5" />
+      <rect
+        x={MINI.label.x}
+        y={MINI.label.y}
+        width={MINI.label.w}
+        height={MINI.label.h}
+        rx="1"
+        fill="none"
+        stroke="rgba(255,255,255,.35)"
+        strokeWidth="0.5"
+      />
 
       {/* Sichtfenster mit den Spulen */}
-      <rect x={MINI.window.x} y={MINI.window.y} width={MINI.window.w} height={MINI.window.h} rx="1"
-            fill="rgba(52,20,62,.55)" stroke="rgba(255,255,255,.35)" strokeWidth="0.5" />
+      <rect
+        x={MINI.window.x}
+        y={MINI.window.y}
+        width={MINI.window.w}
+        height={MINI.window.h}
+        rx="1"
+        fill="rgba(52,20,62,.55)"
+        stroke="rgba(255,255,255,.35)"
+        strokeWidth="0.5"
+      />
       <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.r} fill="#F5C86B" />
       <circle cx={MINI.reel.right} cy={MINI.reel.cy} r={MINI.reel.r} fill="#E0568C" />
       <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.hub} fill="url(#story-label)" />
@@ -650,19 +712,37 @@ function KliqtapeCassetteIcon() {
 
       <g clipPath="url(#kliqtape-label-clip)">
         <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} fill="var(--screen)" />
-        <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.bandH}
-              fill="var(--ink)" opacity="0.35" />
+        <rect
+          x={MINI.label.x}
+          y={MINI.label.y}
+          width={MINI.label.w}
+          height={MINI.label.bandH}
+          fill="var(--ink)"
+          opacity="0.35"
+        />
         <MiniLabelText band="KLIQTAPE" body="NEWS" bandColor="var(--screen)" bodyColor="var(--ink)" />
       </g>
 
-      <rect x={MINI.window.x} y={MINI.window.y} width={MINI.window.w} height={MINI.window.h} rx="1"
-            fill="var(--screen)" />
+      <rect
+        x={MINI.window.x}
+        y={MINI.window.y}
+        width={MINI.window.w}
+        height={MINI.window.h}
+        rx="1"
+        fill="var(--screen)"
+      />
       {/* linke Spule — voll, wie "Kliq" */}
       <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.r} fill="var(--ink)" />
       <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.hub} fill="var(--screen)" />
       {/* rechte Spule — nur Kontur, wie "tape" */}
-      <circle cx={MINI.reel.right} cy={MINI.reel.cy} r={MINI.reel.r - 0.4} fill="none"
-              stroke="var(--ink)" strokeWidth="1.1" />
+      <circle
+        cx={MINI.reel.right}
+        cy={MINI.reel.cy}
+        r={MINI.reel.r - 0.4}
+        fill="none"
+        stroke="var(--ink)"
+        strokeWidth="1.1"
+      />
 
       <MiniFoot fill="var(--ink)" hole="var(--screen)" />
     </svg>
@@ -675,8 +755,21 @@ function KliqtapeCassetteIcon() {
  *  `label` ist der Name der Kassette (oder beim Anlegen der gerade
  *  eingetippte Name) — steht in echt-klein auf dem Etikett, genau wie am
  *  grossen Kopf, nur ohne Anspruch auf Lesbarkeit bei der Groesse. */
-export function MiniCassette({ id, pairIndex, active, side, pop, label }:
-  { id: string; pairIndex?: number; active: boolean; side: 'a' | 'b'; pop?: boolean; label?: string }) {
+export function MiniCassette({
+  id,
+  pairIndex,
+  active,
+  side,
+  pop,
+  label,
+}: {
+  id: string;
+  pairIndex?: number;
+  active: boolean;
+  side: 'a' | 'b';
+  pop?: boolean;
+  label?: string;
+}) {
   const uid = useId();
   const { type, case: plastic, wear } = lookFor(id, pairIndex);
   const onB = active && side === 'b';
@@ -694,15 +787,21 @@ export function MiniCassette({ id, pairIndex, active, side, pop, label }:
   const labelClip = `mini-label-${uid}`;
 
   return (
-    <svg width="46" height="32" viewBox="0 0 46 32" aria-hidden="true" className="shrink-0"
-         style={{
-           opacity: active ? 1 : 0.72,
-           // Nur in der eigentlichen Fach-Liste (nicht im Farb-Auswahlraster,
-           // das waere mit vielen kleinen Glueh-Schatten nebeneinander zu
-           // unruhig) — echter Schlagschatten + Akzentfarb-Glow, damit die
-           // Kassette sich vom Hintergrund abhebt statt drin zu verschwimmen.
-           filter: pop ? `drop-shadow(0 0.2rem 0.4rem rgba(0,0,0,.5)) drop-shadow(0 0 0.35rem ${stripe}70)` : undefined,
-         }}>
+    <svg
+      width="46"
+      height="32"
+      viewBox="0 0 46 32"
+      aria-hidden="true"
+      className="shrink-0"
+      style={{
+        opacity: active ? 1 : 0.72,
+        // Nur in der eigentlichen Fach-Liste (nicht im Farb-Auswahlraster,
+        // das waere mit vielen kleinen Glueh-Schatten nebeneinander zu
+        // unruhig) — echter Schlagschatten + Akzentfarb-Glow, damit die
+        // Kassette sich vom Hintergrund abhebt statt drin zu verschwimmen.
+        filter: pop ? `drop-shadow(0 0.2rem 0.4rem rgba(0,0,0,.5)) drop-shadow(0 0 0.35rem ${stripe}70)` : undefined,
+      }}
+    >
       <defs>
         {/* Gleiche Lichtrichtung wie beim grossen Kassetten-Kopf — oben
             links hell, unten rechts dunkler, macht aus der flachen Flaeche
@@ -725,10 +824,20 @@ export function MiniCassette({ id, pairIndex, active, side, pop, label }:
       {/* Marmor-/Konfetti-Sprenkel, nur bei gemusterten Sorten (plastic.fleck)
           und nur auf Seite B — sitzen unter dem Etikett, das Etikett-Rechteck
           deckt die Mitte ab, am Rand bleiben sie sichtbar. */}
-      {onB && plastic.fleck && wear.specks.slice(0, 7).map(([x, y, r], i) => (
-        <circle key={i} cx={x * 0.46} cy={y * 0.32} r={Math.max(1, r * 0.9)}
-                fill={plastic.fleck![i % plastic.fleck!.length]} opacity={0.88} />
-      ))}
+      {onB &&
+        plastic.fleck &&
+        wear.specks
+          .slice(0, 7)
+          .map(([x, y, r], i) => (
+            <circle
+              key={i}
+              cx={x * 0.46}
+              cy={y * 0.32}
+              r={Math.max(1, r * 0.9)}
+              fill={plastic.fleck![i % plastic.fleck!.length]}
+              opacity={0.88}
+            />
+          ))}
       <rect width="46" height="32" rx="3" fill={`url(#${shellGrad})`} />
 
       {/* Etikett: Papier mit dem Farbband der Bandsorte obendrauf — dieselbe
@@ -740,12 +849,28 @@ export function MiniCassette({ id, pairIndex, active, side, pop, label }:
         <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.bandH} fill={stripe} />
         <MiniLabelText band={sortName} body={label} bandColor={bandInk} bodyColor={ink} />
       </g>
-      <rect x={MINI.label.x} y={MINI.label.y} width={MINI.label.w} height={MINI.label.h} rx="1"
-            fill="none" stroke="rgba(255,255,255,.22)" strokeWidth="0.5" />
+      <rect
+        x={MINI.label.x}
+        y={MINI.label.y}
+        width={MINI.label.w}
+        height={MINI.label.h}
+        rx="1"
+        fill="none"
+        stroke="rgba(255,255,255,.22)"
+        strokeWidth="0.5"
+      />
 
       {/* Sichtfenster mit den Spulen */}
-      <rect x={MINI.window.x} y={MINI.window.y} width={MINI.window.w} height={MINI.window.h} rx="1"
-            fill={windowBg} stroke="rgba(255,255,255,.22)" strokeWidth="0.5" />
+      <rect
+        x={MINI.window.x}
+        y={MINI.window.y}
+        width={MINI.window.w}
+        height={MINI.window.h}
+        rx="1"
+        fill={windowBg}
+        stroke="rgba(255,255,255,.22)"
+        strokeWidth="0.5"
+      />
       <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.r} fill={tape} />
       <circle cx={MINI.reel.right} cy={MINI.reel.cy} r={MINI.reel.r} fill={tape} />
       <circle cx={MINI.reel.left} cy={MINI.reel.cy} r={MINI.reel.r} fill={`url(#${reelGrad})`} />
@@ -755,8 +880,15 @@ export function MiniCassette({ id, pairIndex, active, side, pop, label }:
 
       {/* dieselben Gebrauchsspuren wie am grossen Band */}
       {wear.scratches.slice(0, 2).map(([x, y, len], i) => (
-        <line key={i} x1={x * 0.46} y1={y * 0.32} x2={(x + len) * 0.46} y2={y * 0.32 - 1}
-              stroke="rgba(255,255,255,.25)" strokeWidth="0.4" />
+        <line
+          key={i}
+          x1={x * 0.46}
+          y1={y * 0.32}
+          x2={(x + len) * 0.46}
+          y2={y * 0.32 - 1}
+          stroke="rgba(255,255,255,.25)"
+          strokeWidth="0.4"
+        />
       ))}
 
       <MiniFoot fill={shell} hole="rgba(0,0,0,.6)" />

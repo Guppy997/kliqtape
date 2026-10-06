@@ -40,8 +40,7 @@ newsRouter.get('/api/news', (req, res) => {
   }[];
 
   const funding = db.prepare(`SELECT balance, note, updated_at FROM project_funding WHERE id = 1`).get() as
-    | { balance: string; note: string; updated_at: number }
-    | undefined;
+    { balance: string; note: string; updated_at: number } | undefined;
 
   res.json({
     canPost: Boolean(ADMIN_NAME) && me === ADMIN_NAME,
@@ -72,8 +71,12 @@ newsRouter.put('/api/news/funding', (req, res) => {
     throw new HttpError(403, 'Nur der Kliqtape-Kanal-Account darf hier aendern');
   }
 
-  const balance = String(req.body?.balance ?? '').trim().slice(0, 40);
-  const note = String(req.body?.note ?? '').trim().slice(0, 300);
+  const balance = String(req.body?.balance ?? '')
+    .trim()
+    .slice(0, 40);
+  const note = String(req.body?.note ?? '')
+    .trim()
+    .slice(0, 300);
 
   db.prepare(
     `INSERT INTO project_funding (id, balance, note, updated_at) VALUES (1, ?, ?, ?)
@@ -100,9 +103,14 @@ newsRouter.post('/api/news', (req, res) => {
   }
 
   const id = randomUUID();
-  db.prepare(
-    `INSERT INTO news_posts (id, author, kind, body, media_id, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, author.trim().slice(0, 40), kind, String(body).slice(0, 1000), mediaId, Date.now());
+  db.prepare(`INSERT INTO news_posts (id, author, kind, body, media_id, created_at) VALUES (?, ?, ?, ?, ?, ?)`).run(
+    id,
+    author.trim().slice(0, 40),
+    kind,
+    String(body).slice(0, 1000),
+    mediaId,
+    Date.now(),
+  );
 
   res.status(201).json({ id });
 });
@@ -116,8 +124,7 @@ newsRouter.delete('/api/news/:id', (req, res) => {
   }
 
   const row = db.prepare(`SELECT media_id FROM news_posts WHERE id = ?`).get(req.params.id) as
-    | { media_id: string | null }
-    | undefined;
+    { media_id: string | null } | undefined;
   if (!row) throw new HttpError(404, 'Beitrag nicht gefunden');
 
   db.prepare(`DELETE FROM news_posts WHERE id = ?`).run(req.params.id);
