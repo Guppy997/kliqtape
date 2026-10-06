@@ -23,6 +23,8 @@ import UpdateNotification from '@/components/UpdateNotification';
 import { EmptyBand, NoCassette } from '@/components/EmptyState';
 import FilmBag from '@/components/FilmBag';
 import ImposterCard from '@/components/ImposterCard';
+import LetterRedeemer from '@/components/LetterRedeemer';
+import { pendingLetterToken } from '@/lib/letter';
 
 export default function App() {
   const me = useApp((s) => s.me);
@@ -488,6 +490,7 @@ function Deck() {
         </div>
       </div>
 
+      <LetterRedeemer />
       <StoryView open={viewMode === 'story'} onClose={() => setViewMode('cassette')} />
       <NewsView open={viewMode === 'news'} onClose={() => setViewMode('cassette')} />
 
@@ -660,7 +663,9 @@ function NameGate({ prefill }: { prefill?: string }) {
         <p className="text-sm" style={{ color: 'var(--dim)' }}>
           {prefill
             ? 'Diesem Gerät fehlt noch der Zugangscode zu diesem Namen — einmal bestätigen.'
-            : 'Tipp deinen Namen ein — beim ersten Mal wird er für dich reserviert.'}
+            : pendingLetterToken()
+              ? 'Du hast einen Einladungsbrief bekommen. Tipp deinen Namen ein, dann kannst du zustimmen.'
+              : 'Tipp deinen Namen ein — beim ersten Mal wird er für dich reserviert.'}
         </p>
         <input
           value={value}

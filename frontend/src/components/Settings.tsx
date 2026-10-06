@@ -24,6 +24,7 @@ const SERVER_SEES_EXTRA: [string, string][] = [
   ['Film', 'im Klartext. Bis Sonntagabend gibt der Server das Bild an niemanden heraus, auch nicht an dich — gespeichert ist es aber sofort'],
   ['Imposter-Woche', 'im Klartext: Aufgabe, wer Imposter ist, alle Beiträge und wer auf wen getippt hat. Andere sehen vor der Auflösung nur ihre eigene Karte'],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
+  ['Einladungsbrief', 'wer wann einen Brief für welche Kassette gedruckt hat und wer ihn einlöst. Den Code im QR-Code selbst speichert der Server nicht, nur einen Fingerabdruck davon'],
   ['Album-Export', 'das PDF entsteht auf dem Server aus Seite A — Seite B und Hot Line kann der Export-Code gar nicht lesen. Gespeichert wird das PDF nicht'],
 ];
 

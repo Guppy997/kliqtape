@@ -790,6 +790,29 @@ export function saveBlob(blob: Blob, filename: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
+/* --- Einladung als Brief ----------------------------------------------------- */
+
+/** Erzeugt einen neuen Brief (einmal gueltig, 14 Tage) und speichert das PDF.
+ *  Gibt die Adresse aus dem QR-Code zurueck, fuer "Link kopieren". */
+export async function requestLetter(cassetteId: string, by: string): Promise<string | null> {
+  const res = await apiFetch(`/api/cassettes/${cassetteId}/letter.pdf`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ by }),
+  });
+  if (!res.ok) await unwrap(res);
+  saveBlob(await res.blob(), 'kliqtape-einladung.pdf');
+  return res.headers.get('X-Letter-Url');
+}
+
+export function redeemLetter(me: string, token: string): Promise<{ inviteId: string; cassetteName: string; invitedBy: string }> {
+  return apiFetch('/api/letters/redeem', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me, token }),
+  }).then(unwrap<{ inviteId: string; cassetteName: string; invitedBy: string }>);
+}
+
 /* --- Album-Export -----------------------------------------------------------
  * Nur Seite A. Was im Album landet, entscheidet der Server (View album_posts):
  * nichts Unentwickeltes, nichts von Leuten mit "Meine Beitraege nicht in Alben". */

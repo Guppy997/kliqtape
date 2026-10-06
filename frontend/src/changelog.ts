@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.41.0',
+    date: '2026-10-06',
+    changes: [
+      'Neu: Einladung als Brief — ein druckbares Blatt mit QR-Code, zu finden in der Kassetten-Ansicht',
+      'Der Code im Brief gilt einmal, 14 Tage lang und nur für diese eine Kassette',
+      'Wer ihn scannt, wählt einen Namen und stimmt der Einladung wie gewohnt zu',
+    ],
+  },
+  {
     version: '0.40.0',
     date: '2026-10-06',
     changes: [

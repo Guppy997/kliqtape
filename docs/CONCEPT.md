@@ -183,6 +183,22 @@ automatisch in jedem Album, das irgendwer exportiert.
 
 Das PDF entsteht auf dem Server (pdfkit) und wird nicht gespeichert.
 
+## 5d. Einladung als Brief
+
+Für Leute, die man lieber mit Papier einlädt als mit einem Link: In der Kassetten-Ansicht
+erzeugt jedes Mitglied ein druckbares A5-Blatt mit QR-Code („Du bist eingeladen.“). Der Code
+enthält einen **neuen Einladungs-Token**, unabhängig vom Zugangscode:
+
+- **einmal gültig**, **14 Tage** lang, führt **nur auf diese eine Kassette**
+- gespeichert wird nur sein Hash; der Klartext steht ausschließlich im PDF
+- Einlösen (QR scannen, Namen wählen) legt eine **normale Einladung** an. Dabei ist man erst
+  nach dem bestehenden Zustimmen in der Benachrichtigung, die dafür gleich aufgeht.
+- Wer schon Mitglied ist, verbraucht den Brief nicht.
+
+Die Adresse im QR-Code ist `PUBLIC_URL` oder, falls leer, die Adresse, von der aus der Brief
+angefordert wurde. Das Druck-Modul `backend/src/print/letter.ts` hat wie das Album keinen
+Datenbankzugang.
+
 ## 6. Das Mixtape — der eigentliche USP
 
 Ein Mixtape ist ein **Geschenk an genau eine Person**. Du baust es über Tage: bis zu **12 Titel**,
@@ -303,6 +319,7 @@ mixtapes(id, from_name, to_name, title, note, cover_id, sealed_at, created_at)
 mixtape_tracks(id, mixtape_id, position, title, artist, url)
 profiles(name, avatar_id, album_opt_out, updated_at)
 album_posts   -- VIEW: einzige Quelle für den Album-Export (Abschnitt 5c)
+invite_letters(id, cassette_id, token_hash, created_by, created_at, expires_at, used_by, used_at)
 person_tokens(name, token_hash, created_at)
 media(id, mime, bytes, duration_ms, created_at)
 ```

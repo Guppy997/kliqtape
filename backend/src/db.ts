@@ -265,6 +265,21 @@ db.exec(`
     PRIMARY KEY (week_id, voter)
   );
 
+  -- Einladung als Brief: ein Token im QR-Code, einmal gueltig, mit Ablauf,
+  -- nur fuer genau diese Kassette. Gespeichert wird nur der Hash — der
+  -- Klartext steht ausschliesslich auf dem gedruckten Brief. Einloesen
+  -- erzeugt eine normale cassette_invites-Zeile, zugestimmt wird wie immer.
+  CREATE TABLE IF NOT EXISTS invite_letters (
+    id          TEXT PRIMARY KEY,
+    cassette_id TEXT NOT NULL REFERENCES cassettes(id) ON DELETE CASCADE,
+    token_hash  TEXT NOT NULL UNIQUE,
+    created_by  TEXT NOT NULL,
+    created_at  INTEGER NOT NULL,
+    expires_at  INTEGER NOT NULL,
+    used_by     TEXT,
+    used_at     INTEGER
+  );
+
   CREATE INDEX IF NOT EXISTS idx_imposter_cassette ON imposter_weeks(cassette_id, started_at);
   CREATE INDEX IF NOT EXISTS idx_posts_side_time ON posts(side, created_at);
   CREATE INDEX IF NOT EXISTS idx_members_person ON cassette_members(member);

@@ -5,6 +5,7 @@ import { mkdirSync, createReadStream, writeFileSync, statSync, existsSync, unlin
 import { join } from 'node:path';
 import { db, type PostRow, type Side, type Kind, type StoryKind, type NewsKind } from './db.js';
 import { buildAlbum, renderAlbumPdf, type AlbumSource } from './print/album.js';
+import { renderLetterPdf } from './print/letter.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const MEDIA_DIR = process.env.MEDIA_DIR ?? './media';
@@ -371,6 +372,8 @@ app.post('/api/auth/rename', (req, res) => {
     db.prepare(`UPDATE imposter_entries SET author = ? WHERE author = ?`).run(next, from);
     db.prepare(`UPDATE imposter_votes SET voter = ? WHERE voter = ?`).run(next, from);
     db.prepare(`UPDATE imposter_votes SET suspect = ? WHERE suspect = ?`).run(next, from);
+    db.prepare(`UPDATE invite_letters SET created_by = ? WHERE created_by = ?`).run(next, from);
+    db.prepare(`UPDATE invite_letters SET used_by = ? WHERE used_by = ?`).run(next, from);
   })();
 
   res.json({ name: next });
@@ -539,6 +542,87 @@ app.post('/api/cassettes/:id/invites', (req, res) => {
         ).id;
 
   res.status(201).json({ id: finalId, invitee, invitedBy: by });
+});
+
+/* -------------------------------------------------------------------------
+ * Einladung als Brief — druckbares PDF mit QR-Code. Der Token ist neu und
+ * unabhaengig vom Zugangscode: einmal gueltig, LETTER_TTL_MS lang, nur fuer
+ * genau diese Kassette. Gespeichert wird nur sein Hash; der Klartext steht
+ * ausschliesslich im PDF dieser einen Antwort. Einloesen legt eine normale
+ * Einladung an — dabei ist man erst nach dem bestehenden Zustimmen.
+ * ---------------------------------------------------------------------- */
+
+const LETTER_TTL_MS = 14 * 86_400_000;
+/** Oeffentliche Adresse fuer den QR-Code. Ohne Angabe die, von der aus der
+ *  Brief angefordert wurde (Origin-Header). */
+const PUBLIC_URL = (process.env.PUBLIC_URL ?? '').replace(/\/$/, '');
+
+app.post('/api/cassettes/:id/letter.pdf', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  requireMember(req, req.params.id, by);
+  const cassette = db.prepare(`SELECT name FROM cassettes WHERE id = ?`).get(req.params.id) as { name: string };
+
+  const token = randomBytes(24).toString('base64url');
+  const now = Date.now();
+  const expiresAt = now + LETTER_TTL_MS;
+  db.prepare(
+    `INSERT INTO invite_letters (id, cassette_id, token_hash, created_by, created_at, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(randomUUID(), req.params.id, hashToken(token), by, now, expiresAt);
+
+  // Origin schickt der Browser bei POST ohnehin mit und zeigt auf die App,
+  // nicht auf den Backend-Port hinter einem Proxy.
+  const origin = req.get('origin');
+  const base = PUBLIC_URL || (origin && /^https?:\/\/[^/\s]+$/.test(origin) ? origin : `${req.protocol}://${req.get('host')}`);
+  const url = `${base}/?brief=${token}`;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="kliqtape-einladung.pdf"');
+  res.setHeader('Cache-Control', 'no-store');
+  // Fuer "Link kopieren" in der App — die Person haelt ihn mit dem PDF ohnehin.
+  res.setHeader('X-Letter-Url', url);
+  renderLetterPdf(
+    { cassetteName: cassette.name, from: by, url, validUntil: UTC_DATE.format(new Date(berlinCivilDay(expiresAt))) },
+    res,
+  );
+});
+
+app.post('/api/letters/redeem', (req, res) => {
+  const me = String(req.body?.me ?? '').trim();
+  const token = String(req.body?.token ?? '').trim();
+  requireIdentity(req, me);
+  if (!token) throw new HttpError(400, 'Token fehlt');
+
+  const letter = db
+    .prepare(
+      `SELECT l.id, l.cassette_id, l.created_by, l.expires_at, l.used_at, c.name AS cassette_name
+         FROM invite_letters l JOIN cassettes c ON c.id = l.cassette_id
+        WHERE l.token_hash = ?`,
+    )
+    .get(hashToken(token)) as
+    | { id: string; cassette_id: string; created_by: string; expires_at: number; used_at: number | null; cassette_name: string }
+    | undefined;
+  if (!letter) throw new HttpError(404, 'Diesen Brief kennt der Server nicht');
+  if (letter.used_at) throw new HttpError(410, 'Dieser Brief wurde schon eingelöst');
+  if (Date.now() > letter.expires_at) throw new HttpError(410, 'Dieser Brief ist abgelaufen');
+  if (db.prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`).get(letter.cassette_id, me)) {
+    // Token bleibt gueltig — vielleicht ist er fuer jemand anderen gedacht.
+    throw new HttpError(409, `Du bist schon auf »${letter.cassette_name}«`);
+  }
+
+  const inviteId = db.transaction(() => {
+    db.prepare(`UPDATE invite_letters SET used_by = ?, used_at = ? WHERE id = ?`).run(me, Date.now(), letter.id);
+    const existing = db
+      .prepare(`SELECT id FROM cassette_invites WHERE cassette_id = ? AND invitee = ?`)
+      .get(letter.cassette_id, me) as { id: string } | undefined;
+    if (existing) return existing.id;
+    const id = randomUUID();
+    db.prepare(
+      `INSERT INTO cassette_invites (id, cassette_id, invitee, invited_by, created_at) VALUES (?, ?, ?, ?, ?)`,
+    ).run(id, letter.cassette_id, me, letter.created_by, Date.now());
+    return id;
+  })();
+
+  res.status(201).json({ inviteId, cassetteName: letter.cassette_name, invitedBy: letter.created_by });
 });
 
 /** Wirft 404, wenn die Einladung nicht existiert. */
@@ -2454,6 +2538,10 @@ app.delete('/api/me', (req, res) => {
     db.prepare(`DELETE FROM imposter_votes WHERE voter = ? OR suspect = ?`).run(me, me);
     db.prepare(`UPDATE imposter_weeks SET imposter = '(gelöscht)' WHERE imposter = ?`).run(me);
     db.prepare(`UPDATE imposter_weeks SET started_by = '(gelöscht)' WHERE started_by = ?`).run(me);
+    // Offene Briefe der Person verfallen mit ihr; eingeloeste bleiben anonym stehen.
+    db.prepare(`DELETE FROM invite_letters WHERE created_by = ? AND used_at IS NULL`).run(me);
+    db.prepare(`UPDATE invite_letters SET created_by = '(gelöscht)' WHERE created_by = ?`).run(me);
+    db.prepare(`UPDATE invite_letters SET used_by = '(gelöscht)' WHERE used_by = ?`).run(me);
     handOverCassettesOf(me);
     db.prepare(`DELETE FROM cassette_members WHERE member = ?`).run(me);
     db.prepare(`DELETE FROM cassette_tape_favorites WHERE member = ?`).run(me);

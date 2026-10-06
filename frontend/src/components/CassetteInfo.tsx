@@ -8,6 +8,7 @@ import {
   KIND_LABEL,
   removeMember,
   renameCassette,
+  requestLetter,
   startImposter,
   type Cassette,
   type FeedItem,
@@ -146,6 +147,16 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
   });
   const [reporting, setReporting] = useState(false);
   const [albumOpen, setAlbumOpen] = useState(false);
+  const [letterUrl, setLetterUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const letter = useMutation({
+    mutationFn: () => requestLetter(cassette.id, me),
+    onSuccess: (url) => {
+      setLetterUrl(url);
+      setCopied(false);
+    },
+    onError: fail,
+  });
 
   function leave() {
     const others = members.filter((m) => m.name !== me);
@@ -442,6 +453,36 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
             </span>
           </span>
         </button>
+        <button
+          type="button"
+          onClick={() => letter.mutate()}
+          disabled={letter.isPending}
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left disabled:opacity-60"
+          style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+        >
+          <LetterIcon />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm" style={{ color: 'var(--ink)' }}>
+              {letter.isPending ? 'Brief wird gedruckt …' : 'Einladung als Brief'}
+            </span>
+            <span className="font-mono block text-[0.56rem]" style={{ color: 'var(--dim)' }}>
+              PDF mit QR-Code · gilt einmal, 14 Tage
+            </span>
+          </span>
+        </button>
+        {letterUrl && (
+          <p className="font-mono flex flex-wrap items-center gap-x-2 px-1 text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+            Brief gespeichert. Wer ihn einlöst, muss noch zustimmen.
+            <button
+              type="button"
+              onClick={() => void navigator.clipboard?.writeText(letterUrl).then(() => setCopied(true))}
+              className="underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              {copied ? 'Link kopiert' : 'Link kopieren'}
+            </button>
+          </p>
+        )}
       </section>
       <AlbumExport open={albumOpen} cassette={cassette} onClose={() => setAlbumOpen(false)} />
 
@@ -599,6 +640,15 @@ function AlbumIcon() {
       <rect x="2.5" y="2" width="11" height="12" rx="1" />
       <path d="M5.5 2v12" />
       <rect x="7.5" y="5" width="4" height="3.5" />
+    </svg>
+  );
+}
+
+function LetterIcon() {
+  return (
+    <svg {...iconProps} width={18} height={18} style={{ color: 'var(--accent)' }}>
+      <rect x="1.5" y="3.5" width="13" height="9" rx="1" />
+      <path d="M2 4l6 4.5L14 4" />
     </svg>
   );
 }
