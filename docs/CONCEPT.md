@@ -502,6 +502,14 @@ DSA-Pflichten (Meldeverfahren, Moderationsregeln, Kontaktstelle) · Mindestalter
 Dazu die Produktseite davon: **Melden** gibt es seit v0.35 (speichern und bestätigen, siehe
 Abschnitt 1), **Blockieren** und eine Moderationsoberfläche noch nicht.
 
+### 16.6a API-Form: Name und Zugangscode doppelt
+
+Fast jede Anfrage schickt den handelnden Namen mit (`me`, `by`, `author`, `from`) **und** den
+Zugangscode im Header; der Server prüft, dass beides zusammenpasst (`access.ts`). Das ist
+sicher, aber redundant — gewachsen aus der Zeit, als der Name allein die Identität war. Mit dem
+Kontomodell (16.2) kommt die Identität nur noch aus dem Token, die Namensfelder entfallen.
+Bewusst nicht im Prototyp umgebaut: es hätte jede Route und jeden Aufruf im Client berührt.
+
 ### 16.7 Qualitätssicherung
 
 **Eingerichtet (2026-10-06):** API-Tests mit vitest in `backend/tests/`, dazu Unit-Tests für die

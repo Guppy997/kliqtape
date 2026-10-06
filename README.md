@@ -1,5 +1,14 @@
 # Kliqtape
 
+[![CI](https://github.com/Guppy997/kliqtape/actions/workflows/ci.yml/badge.svg)](https://github.com/Guppy997/kliqtape/actions/workflows/ci.yml)
+[![Lizenz: AGPL-3.0](https://img.shields.io/badge/Lizenz-AGPL--3.0-blue.svg)](LICENSE)
+
+> **In short (English):** Kliqtape is an ad-free, algorithm-free social app for small, fixed
+> groups of friends. Every group is a cassette: side A is the group's lasting archive, side B
+> its ongoing group chat. No follower counts, no likes, no feed ranking. This repository is a
+> working web prototype (PWA, React + Express + SQLite); the target platform is React Native.
+> Documentation is in German.
+
 Ein Regal voller Kassetten. **Jede Kassette ist eine Runde von Leuten** — du legst die
 ein, mit der du gerade redest. Man hat nicht *einen* Freundeskreis, sondern mehrere,
 und die zu vermischen funktioniert nicht.
@@ -167,6 +176,12 @@ einen Test „Fremder darf das nicht“. GitHub Actions führt dasselbe bei jede
 **Retro sind die Materialien, modern ist alles andere.** Bandkorn, Filzstift, Fotoabzug — aber
 saubere Typografie, großzügige Abstände, flüssige Bewegung. Kein Sepia über allem, keine
 Holzoptik, keine künstlichen Kratzer.
+
+## Mitmachen
+
+Wie man das Projekt lokal startet, welche Prüfungen vor einem Commit laufen und welche Regeln im
+Code gelten, steht in [CONTRIBUTING.md](CONTRIBUTING.md). Sicherheitslücken bitte nicht als
+öffentliches Issue melden, sondern wie in [SECURITY.md](SECURITY.md) beschrieben.
 
 ## Lizenz
 
