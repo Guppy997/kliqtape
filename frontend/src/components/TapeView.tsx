@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchMixtape, mediaUrl, platformOf } from '@/lib/api';
+import { fetchMixtape, mediaUrl, platformOf, saveBlob, type Mixtape } from '@/lib/api';
+import { renderMixtapeCard } from '@/lib/mixtapeCard';
 import { useApp } from '@/store/appStore';
 
 interface Props {
@@ -101,10 +103,57 @@ export default function TapeView({ id }: Props) {
         })}
       </ol>
 
+      {tape.sealed && <SaveCard tape={tape} />}
+
       <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
         Die Titel öffnen sich in dem Dienst, aus dem der Link stammt. Kliqtape speichert keine
         Musik und ist an keine Plattform gebunden.
       </p>
     </div>
+  );
+}
+
+/** Mixtape als Bild fuer die Galerie. Auf dem Handy ueber das Teilen-Menue
+ *  (dort heisst es "Bild sichern"), sonst als PNG-Download. */
+function SaveCard({ tape }: { tape: Mixtape }) {
+  const [state, setState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
+
+  async function save() {
+    setState('busy');
+    try {
+      const blob = await renderMixtapeCard(tape);
+      const name = `mixtape-${(tape.title || 'ohne-titel').replace(/[^\p{L}\p{N}]+/gu, '-')}.png`;
+      const file = new File([blob], name, { type: 'image/png' });
+      if (navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: tape.title });
+        } catch (e) {
+          // Abbrechen im Teilen-Menue ist kein Fehler.
+          if ((e as Error).name !== 'AbortError') throw e;
+        }
+      } else {
+        saveBlob(blob, name);
+      }
+      setState('done');
+    } catch {
+      setState('error');
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void save()}
+      disabled={state === 'busy'}
+      className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm disabled:opacity-60"
+      style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+    >
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="2" y="2" width="12" height="12" rx="1.5" />
+        <circle cx="6" cy="6" r="1.3" />
+        <path d="M2.5 12l3.5-3.5 2.5 2.5 2-2 3 3" />
+      </svg>
+      {state === 'busy' ? 'Karte wird gezeichnet …' : state === 'done' ? 'Gespeichert' : state === 'error' ? 'Ging nicht — nochmal?' : 'Als Bild speichern'}
+    </button>
   );
 }

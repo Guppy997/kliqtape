@@ -205,6 +205,11 @@ Ein Mixtape ist ein **Geschenk an genau eine Person**. Du baust es über Tage: b
 Cover, handgeschriebene Widmung. Der Empfänger sieht **nichts**, solange es ein Entwurf ist —
 erst das **Versiegeln** überreicht es, danach ist es unveränderlich.
 
+**Als Bild speichern:** Ein versiegeltes Tape lässt sich als Karte (1080 × 1350) speichern, im
+Stil einer J-Card: Cover, Titel, von/für, Titelliste, die Widmung als aufgeklebter Zettel. Die
+Karte entsteht im Browser (Canvas, `frontend/src/lib/mixtapeCard.ts`), auf dem Handy über das
+Teilen-Menü („Bild sichern“), sonst als PNG. Der Server ist daran nicht beteiligt.
+
 Das Regal ist **persönlich**, nicht an eine Kassette gebunden. Ein fertiges Tape kann man
 zusätzlich auf Seite A einer Runde teilen.
 

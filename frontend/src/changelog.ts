@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.43.0',
+    date: '2026-10-06',
+    changes: [
+      'Neu: Mixtape als Bild speichern — eine Karte wie die Einlegekarte einer Kassette, mit Cover, Titel, Titelliste und Widmung',
+      'Auf dem Handy über das Teilen-Menü direkt in die Galerie, sonst als PNG',
+    ],
+  },
+  {
     version: '0.42.0',
     date: '2026-10-06',
     changes: [
