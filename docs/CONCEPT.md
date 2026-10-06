@@ -4,8 +4,8 @@
 > Du legst eine ein — **Seite A** ist das Archiv, **Seite B** das laufende Gespräch.
 > Chronologisch, ohne Algorithmus, ohne Werbung, ohne Zahlen.
 
-**Stand:** 2026-08-10 · lauffähiger Web-Prototyp mit Zugangscode-Identität, noch ohne
-Verschlüsselung · Zielplattform ist eine React-Native-App, zentral gehostet auf Hetzner
+**Stand:** 2026-10-06 · v0.43 · lauffähiger Web-Prototyp (PWA) mit Zugangscode-Identität, noch
+ohne Verschlüsselung · Zielplattform ist eine React-Native-App, zentral gehostet auf Hetzner
 (siehe Abschnitt 16)
 **Design-Richtung:** [Entwurf 01](https://claude.ai/code/artifact/256c8199-6b83-4916-b1e9-a30f88ea53c4)
 **Repo:** https://github.com/Guppy997/kliqtape (privat)
@@ -334,12 +334,14 @@ media(id, mime, bytes, duration_ms, created_at)
 **Erledigt:** Kassetten als Gruppen · Seite A als Archiv, Seite B als dauerhafter Gruppenchat ·
 Mixtapes bauen, verschenken, teilen · O-Ton mit Bandquietschen · Kamera und Galerie · Hot Line mit
 Anrufbeantworter · Profil mit Export und Löschung · Testdaten-Skript · Storys (24 h) ·
-Kliqtape-Kanal mit Förderstand · Zugangscode-Identität
+Kliqtape-Kanal mit Förderstand · Zugangscode-Identität · Einladungen mit Zustimmen ·
+Kassetten-Ansicht mit Suche · Melden · Entwickelter Film · Imposter-Woche · Album-PDF ·
+Einladung als Brief · Kassette altert · Mixtape als Bild · Tests und CI
 
 > Der ursprünglich geplante 24-Stunden-Verfall auf Seite B wurde **verworfen** — Seite B ist ein
 > dauerhafter Gruppenchat. Das Verfalls-Modell lebt stattdessen in den Storys weiter.
 
-**Als Nächstes:** Konto-/Namensmodell (Abschnitt 16) · Einladungen · Push-Benachrichtigungen ·
+**Als Nächstes:** Konto-/Namensmodell (Abschnitt 16) · Push-Benachrichtigungen ·
 E2EE für Seite B über das Signal-Protokoll · Onboarding für neue Nutzer
 
 **Bewusst nicht geplant:** Föderation, Suche über fremde Inhalte, öffentliche Profile,
@@ -486,7 +488,8 @@ die Mitgliedschaft gebunden werden — oder an kurzlebige signierte Links.
 
 **Teilweise behoben (2026-10-06):** Das *Hochladen* (`POST /api/media`) verlangt jetzt einen
 gültigen Zugangscode. Vorher konnte jeder, der die URL kannte, Dateien auf die Platte schreiben.
-Der *Abruf* bleibt wie beschrieben offen.
+Der *Abruf* bleibt wie beschrieben offen — mit einer Ausnahme: Medien von Film und
+Imposter-Beiträgen liefert der Server vor ihrer Freigabe an niemanden aus (Abschnitt 5a).
 
 ### 16.6 Rechtliches vor der öffentlichen Registrierung
 

@@ -12,6 +12,11 @@ Jede Kassette hat zwei Seiten:
 Tippen auf die Kassette dreht sie um. Chronologisch, ohne Algorithmus, ohne Werbung,
 ohne Zahlen.
 
+**Plattform:** Dieser Prototyp ist eine **PWA** (React + Vite, im Browser und als installierte
+Web-App). Die **Zielplattform ist React Native** — der Web-Client hier dient dazu, das Konzept
+anfassbar zu machen und mit echten Freundeskreisen zu testen, er ist nicht die Endarchitektur.
+Das Backend (Express + SQLite) bleibt davon unberührt.
+
 **Hosting-Modell:** Kliqtape läuft als **zentral betriebener Dienst auf Hetzner** und wird von
 dort aus skaliert — wie ein normaler Social-Media-Server. Das ist der Standard für alle:
 Nutzer:innen legen keinen eigenen Server an, sie melden sich einfach an. Zielgruppe sind
@@ -36,12 +41,12 @@ Kamera-Beschränkung Spaß oder nervt sie?
 
 **Absichtlich noch nicht drin:**
 
-| Fehlt | Warum |
+| Fehlt | Stand im Prototyp |
 |---|---|
-| Login / Passkeys | Du tippst beim Start einfach einen Namen ein |
-| Ende-zu-Ende-Verschlüsselung | Seite B ist hier **nicht** verschlüsselt |
-| Freundschaften, Einladungen | jeder sieht alles |
-| Löschkonzept, Datenexport | kommt mit v0.1 |
+| Ende-zu-Ende-Verschlüsselung | **Nichts** ist verschlüsselt, auch Seite B nicht. Die App sagt das selbst (Profil → „Was der Server sieht“). |
+| Konten mit Passkey | Ein Name plus Zugangscode pro Gerät, kein Passwort, keine E-Mail |
+| Moderationsoberfläche | Melden speichert die Meldung nur, niemand bearbeitet sie automatisch |
+| Medien nur für Mitglieder | Bilder sind über ihre zufällige ID abrufbar — außer Film und Imposter-Beiträgen vor der Freigabe |
 
 **Also:** nur im eigenen Tailnet betreiben, keine echten privaten Inhalte reinstellen.
 
@@ -69,6 +74,20 @@ Ohne Tailscale testest du am besten direkt auf dem Rechner, auf dem Docker läuf
 
 ---
 
+## Für die Demo
+
+Neben Seite A, Seite B, Storys, Mixtapes und Hot Line gibt es ein paar Funktionen, die das
+Konzept in wenigen Minuten erklären (Details in `docs/CONCEPT.md`, Abschnitte 5a–5d):
+
+- **Entwickelter Film** — ein Bild pro Woche und Kassette, sichtbar erst Sonntag 19 Uhr für alle
+- **Imposter-Woche** — ein Special ab vier Leuten, mit Auflösung, ohne Punkte
+- **Album als PDF**, **Einladung als Brief** mit QR-Code, **Mixtape als Bild**
+- **Die Kassette altert** alle 10 Tage ein wenig
+
+Damit man in einer Vorführung nicht bis Sonntag warten muss: `DEMO_TOOLS=1` in der `.env`.
+Dann kann die Person, die eine Kassette angelegt hat, den Film sofort entwickeln und die
+Imposter-Woche auf Sonntagabend vorziehen. Im Betrieb bleibt das leer.
+
 ## Testdaten
 
 Damit sich jede Funktion ansehen lässt, ohne alles von Hand anzulegen:
@@ -83,11 +102,14 @@ unterschiedlichen Besetzungen** — Alle Freunde, Freitagsrunde, Die Kliqe —, 
 sichtbar wird, dass sich die Kreise nicht vermischen. Füllt beide Seiten mit Zetteln,
 Schnappschüssen und O-Tönen, baut drei Mixtapes (eines geschenkt, eines geteilt, eines
 als Entwurf), setzt Reaktionen und legt zwei Hotlines auf den Anrufbeantworter.
-Danach in der App als **Aaron** anmelden.
+Danach in der App als **Aaron** anmelden — das Skript gibt am Ende den Zugangscode aus.
+Die Codes aller Testpersonen merkt es sich in `scripts/.seed-tokens.json` (nicht im Repo),
+damit `--reset` sie wieder löschen kann. Ist der Name auf dem Server schon vergeben:
+`--me-token <Zugangscode>`.
 
 Bilder werden mit Pillow erzeugt, Ton als echtes WAV — beides muss abspielbar
 sein, weil der O-Ton-Spieler das Audio tatsächlich dekodiert.
-Voraussetzung: `python3 -m pip install --user Pillow`.
+Voraussetzung: Pillow, z. B. in einer venv: `python3 -m venv .venv && .venv/bin/pip install Pillow`.
 
 **Clips fehlen in den Testdaten** — dafür bräuchte es ffmpeg. Videos lassen sich
 in der App direkt mit der Kamera aufnehmen.
