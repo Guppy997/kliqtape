@@ -6,6 +6,7 @@ import {
   imposterNow,
   mediaUrl,
   revealImposter,
+  startImposter,
   submitImposterEntry,
   uploadMedia,
   voteImposter,
@@ -13,7 +14,7 @@ import {
   type ImposterEntry,
   type ImposterWeek,
 } from '@/lib/api';
-import { filmReleaseLabel } from '@/lib/berlinDay';
+import { berlinDateLabel, filmReleaseLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import Avatar from './Avatar';
 import CameraCapture from './CameraCapture';
@@ -518,5 +519,74 @@ function MaskIcon() {
       <ellipse cx="8.2" cy="8" rx="2.3" ry="1.5" fill={STAMP_RED} />
       <ellipse cx="17.8" cy="8" rx="2.3" ry="1.5" fill={STAMP_RED} />
     </svg>
+  );
+}
+
+/** Start der Imposter-Woche. Hier statt auf Seite A, weil es eine
+ *  Entscheidung fuer die ganze Runde ist und bewusst selten vorkommt. */
+export function ImposterSpecial({
+  cassette,
+  onStarted,
+  onError,
+}: {
+  cassette: Cassette;
+  onStarted: () => void;
+  onError: (e: Error) => void;
+}) {
+  const me = useApp((s) => s.me);
+  const qc = useQueryClient();
+  const { data } = useImposter(cassette.id);
+  const start = useMutation({
+    mutationFn: () => startImposter(cassette.id, me),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['imposter', cassette.id] });
+      const { cassetteId, setCassette, setSide } = useApp.getState();
+      if (cassetteId !== cassette.id) setCassette(cassette.id);
+      setSide('a');
+      onStarted();
+    },
+    onError,
+  });
+  if (!data) return null;
+  const running = data.week && data.week.phase !== 'revealed';
+
+  let status: string;
+  if (running) status = 'Läuft gerade — Aufgabe und Abgabe stehen am Ende von Seite A.';
+  else if (cassette.memberCount < data.minMembers) status = `Geht ab ${data.minMembers} Leuten auf dem Band.`;
+  else if (!data.canStart && data.nextStartAt)
+    status = `Die nächste geht frühestens am ${berlinDateLabel(data.nextStartAt)}.`;
+  else status = '';
+
+  return (
+    <section className="flex flex-col gap-2 rounded-xl p-3.5" style={{ border: '1px dashed var(--line)' }}>
+      <h3 className="font-disp text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+        Special
+      </h3>
+      <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+        Imposter-Woche
+      </p>
+      <p className="text-[0.8rem] leading-snug" style={{ color: 'var(--dim)' }}>
+        Alle bekommen dieselbe Aufgabe, eine Person nur einen vagen Hinweis. Sonntagabend zeigen alle, was sie gemacht
+        haben, und ihr tippt, wer es war. Kein Punktestand, nur der Spaß.
+      </p>
+      {status ? (
+        <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+          {status}
+        </p>
+      ) : (
+        <button
+          type="button"
+          disabled={start.isPending}
+          onClick={() => {
+            if (confirm(`Imposter-Woche auf "${cassette.name}" starten? Alle auf dem Band bekommen ihre Karte.`))
+              start.mutate();
+          }}
+          className="font-mono self-start rounded-full px-3.5 py-1.5 text-[0.62rem] uppercase tracking-[0.12em] disabled:opacity-50"
+          style={{ background: '#C8402A', color: '#FFF4EC' }}
+        >
+          Imposter-Woche starten
+        </button>
+      )}
+    </section>
   );
 }
