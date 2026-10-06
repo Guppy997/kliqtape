@@ -15,3 +15,5 @@ media/
 coverage/
 *.tsbuildinfo
 scripts/.seed-tokens.json
+__pycache__/
+*.pyc
