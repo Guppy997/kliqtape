@@ -114,6 +114,10 @@ app.get('/api/media/:id', (req, res) => {
     .prepare(`SELECT id, mime FROM media WHERE id = ?`)
     .get(req.params.id) as { id: string; mime: string } | undefined;
   if (!row) throw new HttpError(404, 'Medium nicht gefunden');
+  // Ein Film, der noch entwickelt wird, geht an NIEMANDEN raus — auch nicht
+  // an die Person, die ihn belichtet hat. Gleiches 404 wie "gibt es nicht",
+  // damit nicht einmal die Existenz verraten wird.
+  if (isUnreleasedMedia(row.id)) throw new HttpError(404, 'Medium nicht gefunden');
 
   const path = join(MEDIA_DIR, `${row.id}.${ALLOWED_MIME[row.mime]}`);
   if (!existsSync(path)) throw new HttpError(404, 'Datei fehlt auf der Platte');
@@ -166,6 +170,17 @@ app.put('/api/profiles/:name', (req, res) => {
   res.json({ name, avatarId });
 });
 
+/** Haengt dieses Medium an einem Beitrag, der noch nicht freigegeben ist
+ *  (Film in der Entwicklung, verdeckter Imposter-Beitrag)? */
+function isUnreleasedMedia(mediaId: string): boolean {
+  return Boolean(
+    db.prepare(`SELECT 1 FROM posts WHERE media_id = ? AND develop_at > ? LIMIT 1`).get(mediaId, Date.now()),
+  );
+}
+
+/** Wie SELECT ... FROM posts p, nur ohne noch nicht freigegebene Beitraege. */
+const RELEASED = `(p.develop_at IS NULL OR p.develop_at <= ?)`;
+
 function dropMedia(id: string): void {
   const m = db.prepare(`SELECT mime FROM media WHERE id = ?`).get(id) as { mime: string } | undefined;
   if (!m) return;
@@ -202,6 +217,51 @@ function tapeIndexOf(cassetteCreatedAt: number, postedAt: number): number {
   const days = Math.round((berlinCivilDay(postedAt) - berlinCivilDay(cassetteCreatedAt)) / 86_400_000);
   return days + 1;
 }
+
+const BERLIN_CLOCK = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Berlin',
+  hourCycle: 'h23',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+});
+
+/** Wie weit Berliner Ortszeit zu diesem Zeitpunkt vor UTC liegt (1 h / 2 h). */
+function berlinOffsetMs(ms: number): number {
+  const parts = BERLIN_CLOCK.formatToParts(new Date(ms));
+  const n = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+  const asUtc = Date.UTC(n('year'), n('month') - 1, n('day'), n('hour'), n('minute'), n('second'));
+  return asUtc - Math.floor(ms / 1000) * 1000;
+}
+
+/** Berliner Ortszeit (Kalendertag als UTC-Mitternacht + Stunde) → echter
+ *  Zeitpunkt. Zweimal korrigiert, damit es auch am Umstellungstag stimmt. */
+function berlinWallClock(civilDay: number, hour: number): number {
+  const wall = civilDay + hour * 3_600_000;
+  const first = wall - berlinOffsetMs(wall);
+  return wall - berlinOffsetMs(first);
+}
+
+/** Sonntagabend: dann wird der Film der Woche fuer alle zugleich entwickelt
+ *  (Spiegel in frontend/src/lib/berlinDay.ts). */
+const FILM_RELEASE_HOUR = 19;
+
+/** Naechste Film-Freigabe NACH `ms` — Sonntag 19:00 Europe/Berlin. Wer
+ *  Sonntag um 19:01 belichtet, landet im Film der folgenden Woche. */
+function filmReleaseAfter(ms: number): number {
+  const today = berlinCivilDay(ms);
+  const weekday = new Date(today).getUTCDay(); // 0 = Sonntag
+  let release = berlinWallClock(today + ((7 - weekday) % 7) * 86_400_000, FILM_RELEASE_HOUR);
+  if (release <= ms) release = berlinWallClock(today + (((7 - weekday) % 7) + 7) * 86_400_000, FILM_RELEASE_HOUR);
+  return release;
+}
+
+/** Nur fuer Vorfuehrungen (DEMO_TOOLS=1): Film und Imposter-Woche lassen
+ *  sich sofort aufloesen statt bis Sonntagabend zu warten. */
+const DEMO_TOOLS = process.env.DEMO_TOOLS === '1';
 
 /* -------------------------------------------------------------------------
  * Minimale Identitaet — ein Token pro Name statt eines vollen Login-Systems.
@@ -322,19 +382,20 @@ app.get('/api/cassettes', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   if (!me) throw new HttpError(400, 'me fehlt');
   requireIdentity(req, me);
+  const now = Date.now();
 
   const rows = db
     .prepare(
       `SELECT c.id, c.name, c.created_by, c.created_at, c.color_seed, c.color_index,
               (SELECT COUNT(*) FROM cassette_members m2 WHERE m2.cassette_id = c.id) AS members,
-              (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'a') AS side_a,
-              (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'b') AS side_b,
-              (SELECT MAX(p.created_at) FROM posts p WHERE p.cassette_id = c.id) AS last_at
+              (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'a' AND ${RELEASED}) AS side_a,
+              (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'b' AND ${RELEASED}) AS side_b,
+              (SELECT MAX(p.created_at) FROM posts p WHERE p.cassette_id = c.id AND ${RELEASED}) AS last_at
          FROM cassettes c
          JOIN cassette_members m ON m.cassette_id = c.id AND m.member = ?
         ORDER BY COALESCE(last_at, c.created_at) DESC`,
     )
-    .all(me) as {
+    .all(now, now, now, me) as {
     id: string;
     name: string;
     created_by: string;
@@ -679,7 +740,7 @@ app.post('/api/reports', (req, res) => {
   if (cassetteId) {
     requireMember(req, cassetteId, by);
   } else {
-    const post = db.prepare(`SELECT cassette_id, author FROM posts WHERE id = ?`).get(postId) as
+    const post = db.prepare(`SELECT cassette_id, author FROM posts p WHERE id = ? AND ${RELEASED}`).get(postId, Date.now()) as
       | { cassette_id: string; author: string }
       | undefined;
     if (!post) throw new HttpError(404, 'Beitrag nicht gefunden');
@@ -697,12 +758,129 @@ app.post('/api/reports', (req, res) => {
 });
 
 /* -------------------------------------------------------------------------
+ * Entwickelter Film — ein Schnappschuss pro Person, Kassette und Woche, nur
+ * Kamera. Er wird "entwickelt": bis Sonntag 19:00 (Europe/Berlin) sieht ihn
+ * niemand, danach alle Mitglieder gleichzeitig. Technisch ein normaler
+ * Seite-A-Beitrag mit develop_at; created_at = develop_at, damit er nach der
+ * Freigabe im Tape des Sonntags steht (siehe RELEASED, isUnreleasedMedia).
+ * ---------------------------------------------------------------------- */
+
+const FILM_MIME = ['image/jpeg', 'image/webp'];
+
+/** Wird das Medium schon irgendwo verwendet? Sonst koennte jemand die ID
+ *  eines fremden, sichtbaren Fotos als Film einreichen und es damit bis
+ *  Sonntag fuer alle sperren. */
+function mediaInUse(mediaId: string): boolean {
+  return Boolean(
+    db
+      .prepare(
+        `SELECT 1 WHERE EXISTS (SELECT 1 FROM posts WHERE media_id = ?)
+            OR EXISTS (SELECT 1 FROM stories WHERE media_id = ?)
+            OR EXISTS (SELECT 1 FROM profiles WHERE avatar_id = ?)
+            OR EXISTS (SELECT 1 FROM mixtapes WHERE cover_id = ?)
+            OR EXISTS (SELECT 1 FROM hotline_messages WHERE media_id = ?)
+            OR EXISTS (SELECT 1 FROM news_posts WHERE media_id = ?)
+            OR EXISTS (SELECT 1 FROM reactions WHERE media_id = ?)`,
+      )
+      .get(mediaId, mediaId, mediaId, mediaId, mediaId, mediaId, mediaId),
+  );
+}
+
+app.get('/api/cassettes/:id/film', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  requireMember(req, req.params.id, me);
+  const now = Date.now();
+  const next = filmReleaseAfter(now);
+
+  const iShot = Boolean(
+    db
+      .prepare(`SELECT 1 FROM posts WHERE cassette_id = ? AND author = ? AND source = 'film' AND develop_at = ?`)
+      .get(req.params.id, me, next),
+  );
+  const last = db
+    .prepare(`SELECT MAX(develop_at) AS at FROM posts WHERE cassette_id = ? AND source = 'film' AND develop_at <= ?`)
+    .get(req.params.id, now) as { at: number | null };
+  const shots = last.at
+    ? (db
+        .prepare(
+          `SELECT id, author, media_id, body, taken_at FROM posts
+            WHERE cassette_id = ? AND source = 'film' AND develop_at = ?
+            ORDER BY taken_at ASC`,
+        )
+        .all(req.params.id, last.at) as { id: string; author: string; media_id: string; body: string; taken_at: number }[])
+    : [];
+
+  // Bewusst KEINE Angabe, wer diese Woche schon belichtet hat oder wie
+  // viele — nur, ob man selbst schon. Der Film soll eine Ueberraschung sein.
+  res.json({
+    nextRelease: next,
+    iShot,
+    developed: last.at
+      ? {
+          at: last.at,
+          shots: shots.map((r) => ({ id: r.id, author: r.author, mediaId: r.media_id, caption: r.body, takenAt: r.taken_at })),
+        }
+      : null,
+    demoTools: DEMO_TOOLS,
+  });
+});
+
+app.post('/api/cassettes/:id/film', (req, res) => {
+  const author = String(req.body?.author ?? '').trim();
+  const mediaId = String(req.body?.mediaId ?? '').trim();
+  const caption = String(req.body?.caption ?? '').trim().slice(0, 120);
+  requireMember(req, req.params.id, author);
+  if (!mediaId) throw new HttpError(400, 'Aufnahme fehlt');
+  const media = db.prepare(`SELECT mime FROM media WHERE id = ?`).get(mediaId) as { mime: string } | undefined;
+  if (!media) throw new HttpError(400, 'Medium unbekannt');
+  if (!FILM_MIME.includes(media.mime)) throw new HttpError(400, 'Auf den Film passt nur ein Foto');
+  if (mediaInUse(mediaId)) throw new HttpError(400, 'Dieses Bild hängt schon woanders');
+
+  const now = Date.now();
+  const developAt = filmReleaseAfter(now);
+  const already = db
+    .prepare(`SELECT 1 FROM posts WHERE cassette_id = ? AND author = ? AND source = 'film' AND develop_at = ?`)
+    .get(req.params.id, author, developAt);
+  if (already) throw new HttpError(409, 'Diese Woche hast du deinen Film schon belichtet');
+
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO posts (id, cassette_id, side, author, kind, body, media_id, source, develop_at, taken_at, created_at)
+     VALUES (?, ?, 'a', ?, 'photo', ?, ?, 'film', ?, ?, ?)`,
+  ).run(id, req.params.id, author, caption, mediaId, developAt, now, developAt);
+
+  res.status(201).json({ id, developAt });
+});
+
+// Nur mit DEMO_TOOLS=1: fuer eine Vorfuehrung nicht bis Sonntag warten. Nur
+// wer die Kassette angelegt hat, und nur fuer diese eine Kassette.
+app.post('/api/cassettes/:id/film/develop-now', (req, res) => {
+  if (!DEMO_TOOLS) throw new HttpError(404, 'Nicht verfügbar');
+  const by = String(req.body?.by ?? '').trim();
+  requireMember(req, req.params.id, by);
+  if (creatorOf(req.params.id) !== by) throw new HttpError(403, 'Nur wer die Kassette angelegt hat');
+  const now = Date.now();
+  const n = db
+    .prepare(
+      `UPDATE posts SET develop_at = ?, created_at = ?
+        WHERE cassette_id = ? AND source = 'film' AND develop_at > ?`,
+    )
+    .run(now, now, req.params.id, now).changes;
+  res.json({ developed: n });
+});
+
+/* -------------------------------------------------------------------------
  * Posts
  * ---------------------------------------------------------------------- */
 
 interface FeedItem
-  extends Omit<PostRow, 'media_id' | 'tape_id' | 'cassette_id' | 'expires_at' | 'note_style' | 'quoted_post_id'> {
+  extends Omit<
+    PostRow,
+    'media_id' | 'tape_id' | 'cassette_id' | 'expires_at' | 'note_style' | 'quoted_post_id' | 'develop_at' | 'taken_at'
+  > {
   cassetteId: string;
+  /** Nur beim Film: wann wirklich belichtet wurde (created_at ist die Freigabe). */
+  takenAt: number | null;
   mediaId: string | null;
   durationMs: number | null;
   tapeId: string | null;
@@ -744,10 +922,10 @@ app.get('/api/posts', (req, res) => {
          LEFT JOIN media m ON m.id = p.media_id
          LEFT JOIN mixtapes t ON t.id = p.tape_id
          LEFT JOIN posts q ON q.id = p.quoted_post_id
-        WHERE p.side = ? AND p.cassette_id = ?
+        WHERE p.side = ? AND p.cassette_id = ? AND ${RELEASED}
         ORDER BY p.created_at ASC`,
     )
-    .all(side, cassetteId) as (PostRow & {
+    .all(side, cassetteId, Date.now()) as (PostRow & {
     duration_ms: number | null;
     tape_title: string | null;
     tape_cover: string | null;
@@ -803,6 +981,7 @@ app.get('/api/posts', (req, res) => {
       mediaId: row.media_id,
       durationMs: row.duration_ms,
       source: row.source ?? 'camera',
+      takenAt: row.taken_at,
       tapeId: row.tape_id,
       tape: row.tape_id
         ? { title: row.tape_title ?? '', coverId: row.tape_cover, trackCount: row.tape_tracks ?? 0 }
@@ -1007,8 +1186,8 @@ app.post('/api/posts', (req, res) => {
   if (quotedPostId != null) {
     if (side !== 'b') throw new HttpError(400, 'Beziehen kann man sich nur in Seite B auf einen Beitrag');
     const quoted = db
-      .prepare(`SELECT cassette_id, side FROM posts WHERE id = ?`)
-      .get(quotedPostId) as { cassette_id: string | null; side: Side } | undefined;
+      .prepare(`SELECT cassette_id, side FROM posts p WHERE id = ? AND ${RELEASED}`)
+      .get(quotedPostId, Date.now()) as { cassette_id: string | null; side: Side } | undefined;
     if (!quoted) throw new HttpError(404, 'Beitrag nicht gefunden');
     if (quoted.cassette_id !== cassetteId) throw new HttpError(400, 'Beitrag gehört zu einer anderen Kassette');
     if (quoted.side !== 'a') throw new HttpError(400, 'Nur Beiträge von Seite A lassen sich aufgreifen');
@@ -1074,9 +1253,9 @@ app.post('/api/posts/:id/react', (req, res) => {
   if (!author) throw new HttpError(400, 'Name fehlt');
   if (!mediaId) throw new HttpError(400, 'Aufnahme fehlt');
 
-  const post = db.prepare(`SELECT cassette_id, author AS post_author FROM posts WHERE id = ?`).get(
-    req.params.id,
-  ) as { cassette_id: string; post_author: string } | undefined;
+  const post = db
+    .prepare(`SELECT cassette_id, author AS post_author FROM posts p WHERE id = ? AND ${RELEASED}`)
+    .get(req.params.id, Date.now()) as { cassette_id: string; post_author: string } | undefined;
   if (!post) throw new HttpError(404, 'Post nicht gefunden');
   if (post.post_author === author) throw new HttpError(400, 'Kein Tonfetzen auf den eigenen Beitrag');
   requireMember(req, post.cassette_id, author);

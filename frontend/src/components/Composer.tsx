@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createPost, fetchMixtapes, mediaUrl, uploadMedia, NOTE_STYLES, type Kind, type NoteStyle } from '@/lib/api';
+import { createPost, fetchFilm, fetchMixtapes, mediaUrl, uploadMedia, NOTE_STYLES, type Kind, type NoteStyle } from '@/lib/api';
+import { filmReleaseLabel } from '@/lib/berlinDay';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
 import MixtapeRecorder from './MixtapeRecorder';
 import CameraCapture from './CameraCapture';
+import FilmShoot from './FilmShoot';
 import Sheet from './Sheet';
 import Zettel, { NOTE_STYLE_LABEL } from './Zettel';
 
@@ -79,6 +81,14 @@ export default function Composer({ onPosted }: Props) {
   const [noteStyle, setNoteStyle] = useState<NoteStyle>('tape');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filmOpen, setFilmOpen] = useState(false);
+
+  // Ob der Film dieser Woche schon belichtet ist — dann ist der Eintrag zu.
+  const { data: film } = useQuery({
+    queryKey: ['film', cassetteId, me],
+    queryFn: () => fetchFilm(cassetteId!, me),
+    enabled: step === 'choose' && side === 'a' && Boolean(cassetteId),
+  });
 
   // Nur eigene, versiegelte Tapes lassen sich teilen — ein Entwurf ist privat.
   const { data: tapes = [] } = useQuery({
@@ -163,6 +173,37 @@ export default function Composer({ onPosted }: Props) {
           was ist, statt nur die 5 Namen hinzuwerfen. */}
       <Sheet open={pageOpen} onClose={() => setStep(null)} variant="full" title="Aufnehmen">
         <div className="flex flex-col gap-2">
+          {/* Film nur auf Seite A: er landet nach dem Entwickeln im Archiv. */}
+          {side === 'a' && cassetteId && (
+            <button
+              type="button"
+              onClick={() => setFilmOpen(true)}
+              disabled={film?.iShot}
+              className="flex items-start gap-3 rounded-xl p-3 text-left disabled:opacity-60"
+              style={{ background: 'var(--card)', border: '1px dashed var(--accent)' }}
+            >
+              <span
+                className="grid size-9 shrink-0 place-items-center rounded-full"
+                style={{ background: 'rgba(0,0,0,.18)', color: 'var(--accent)' }}
+              >
+                <svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="1" y="3" width="9" height="12" rx="1.3" />
+                  <rect x="3" y="0.8" width="5" height="2.2" rx=".5" />
+                  <path d="M10 6h3v6h-3" />
+                </svg>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="font-disp block text-sm font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--ink)' }}>
+                  Film
+                </span>
+                <span className="font-mono block text-[0.66rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+                  {film?.iShot
+                    ? `Diese Woche schon belichtet. Entwickelt wird ${filmReleaseLabel(film.nextRelease)}.`
+                    : 'Ein Foto pro Woche, nur Kamera. Es wird entwickelt — Sonntagabend sehen es alle gleichzeitig.'}
+                </span>
+              </span>
+            </button>
+          )}
           {choices.map((c) => (
             <button
               key={c.kind}
@@ -321,6 +362,18 @@ export default function Composer({ onPosted }: Props) {
           />
         )}
       </Sheet>
+
+      {cassetteId && (
+        <FilmShoot
+          open={filmOpen}
+          cassetteId={cassetteId}
+          onClose={() => setFilmOpen(false)}
+          onShot={() => {
+            setStep(null);
+            onPosted();
+          }}
+        />
+      )}
 
       <Sheet open={step === 'voice'} onClose={() => setStep(null)} variant="full" title="O-Ton">
         {step === 'voice' && (

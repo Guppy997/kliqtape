@@ -48,3 +48,43 @@ export function berlinTimeLabel(ms: number): string {
     minute: '2-digit',
   }).format(new Date(ms));
 }
+
+/* --- Entwickelter Film ------------------------------------------------------
+ * Spiegel zu filmReleaseAfter() in backend/src/server.ts. Der Server liefert
+ * den Freigabezeitpunkt mit (GET /api/cassettes/:id/film) und ist die
+ * Wahrheit; hier wird nur gerechnet, um Daten lesbar zu machen. */
+
+/** Sonntagabend, an dem der Film der Woche fuer alle zugleich entwickelt wird. */
+export const FILM_RELEASE_HOUR = 19;
+
+const BERLIN_WEEKDAY = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'long' });
+const BERLIN_SHORT_DATE = new Intl.DateTimeFormat('de-DE', {
+  timeZone: 'Europe/Berlin',
+  day: '2-digit',
+  month: '2-digit',
+});
+
+/** "Sonntag, 11.10. um 19 Uhr" — fuer Freigabe-Hinweise. */
+export function filmReleaseLabel(ms: number): string {
+  const d = new Date(ms);
+  return `${BERLIN_WEEKDAY.format(d)}, ${BERLIN_SHORT_DATE.format(d)} um ${FILM_RELEASE_HOUR} Uhr`;
+}
+
+/** "Mi, 14:32" — wann ein Filmbild belichtet wurde. */
+export function takenLabel(ms: number): string {
+  const d = new Date(ms);
+  const wd = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short' }).format(d).replace('.', '');
+  return `${wd}, ${berlinTimeLabel(ms)}`;
+}
+
+/** Datumsaufdruck wie bei einer Einwegkamera: "'26 10 07". */
+export function filmStampLabel(ms: number): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Berlin',
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(ms));
+  const v = (t: string) => parts.find((p) => p.type === t)!.value;
+  return `'${v('year')} ${v('month')} ${v('day')}`;
+}

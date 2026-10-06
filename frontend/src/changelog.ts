@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.38.0',
+    date: '2026-10-06',
+    changes: [
+      'Neu: Entwickelter Film. Pro Woche und Kassette ein Bild, nur mit der Kamera — es wird entwickelt und erst Sonntag um 19 Uhr für alle gleichzeitig sichtbar, auch für dich selbst erst dann',
+      'Sonntagabend liegt auf Seite A eine Fototüte: öffnen, Abzüge einzeln durchblättern, danach liegen sie im Tape vom Sonntag',
+      'Filmbilder tragen den orangen Datumsaufdruck einer Einwegkamera',
+    ],
+  },
+  {
     version: '0.37.1',
     date: '2026-10-06',
     changes: [

@@ -29,7 +29,7 @@ export interface ChatMessage {
   durationMs: number | null;
   tapeId: string | null;
   tape: { title: string; coverId: string | null; trackCount: number } | null;
-  source: 'camera' | 'upload' | null;
+  source: 'camera' | 'upload' | 'film' | null;
   /** Nur Seite B — Bruecke zu einem Seite-A-Beitrag, auf den diese Nachricht
    *  eingeht. Bei Hot Line immer undefined, das Konzept gibt es dort nicht. */
   quotedPost?: { id: string; author: string; kind: Kind; body: string; mediaId: string | null } | null;
@@ -278,6 +278,7 @@ export function useCassetteChat(cassetteId: string | undefined, me: string): Cha
         kind: 'text',
         body,
         created_at: Date.now(),
+        takenAt: null,
         mediaId: null,
         durationMs: null,
         source: 'camera',

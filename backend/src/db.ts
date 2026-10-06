@@ -451,6 +451,12 @@ addColumn('hotline_messages', 'source', 'source TEXT', 'Kamera oder Galerie, wie
 // vermischen — die Referenz ist rein optional und aendert nichts an dem,
 // worauf sie zeigt. NULL bei allen bisherigen Nachrichten (kein Backfill noetig).
 addColumn('posts', 'quoted_post_id', 'quoted_post_id TEXT REFERENCES posts(id)', 'Bezug auf einen Seite-A-Beitrag aus einer Seite-B-Nachricht');
+// Entwickelter Film (server.ts, /api/cassettes/:id/film): bis develop_at ist
+// der Beitrag fuer NIEMANDEN sichtbar und sein Bild wird nicht ausgeliefert.
+// created_at = develop_at, damit er nach der Freigabe im Tape des Sonntags
+// steht; taken_at haelt fest, wann wirklich belichtet wurde.
+addColumn('posts', 'develop_at', 'develop_at INTEGER', 'Film: ab wann der Beitrag sichtbar ist');
+addColumn('posts', 'taken_at', 'taken_at INTEGER', 'Film: wann belichtet wurde');
 
 /**
  * Bestehende Beitraege haben noch keine Kassette. Damit nichts verlorengeht,
@@ -521,9 +527,11 @@ export interface PostRow {
   body: string;
   media_id: string | null;
   tape_id: string | null;
-  source: 'camera' | 'upload' | null;
+  source: 'camera' | 'upload' | 'film' | null;
   note_style: string | null;
   quoted_post_id: string | null;
+  develop_at: number | null;
+  taken_at: number | null;
   created_at: number;
 }
 

@@ -47,6 +47,8 @@ export default async function setup(project: TestProject) {
       MEDIA_DIR: path.join(tmpDir, 'media'),
       ADMIN_NAME: ADMIN,
       RATE_LIMIT_PER_MIN: '100000',
+      // Sofort-Entwickeln fuer Film/Imposter, damit die Freigabe testbar ist.
+      DEMO_TOOLS: '1',
     },
     stdio: ['ignore', 'ignore', 'inherit'],
   });

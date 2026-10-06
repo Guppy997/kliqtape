@@ -123,6 +123,26 @@ saubere Typografie, großzügige Abstände, flüssige Bewegung. Kein Sepia über
 | **Clip** | Video, maximal 10 Sekunden |
 | **Zettel** | ein paar Zeilen Text |
 
+## 5a. Entwickelter Film
+
+Jede Person kann pro Kassette und Woche **ein** Bild auf den Film belichten, nur mit der Kamera.
+Danach sieht es niemand, auch die Person selbst nicht: Der Film wird entwickelt. **Sonntag um
+19 Uhr (Europe/Berlin)** ist er für alle Mitglieder gleichzeitig fertig. Auf Seite A liegt dann
+eine Fototüte, beim Öffnen klappt die Lasche hoch, die Abzüge rutschen heraus, man blättert sie
+einzeln durch. Danach liegen sie als normale Beiträge im Tape des Sonntags, mit dem orangen
+Datumsaufdruck einer Einwegkamera (Tag der Belichtung).
+
+**Technisch:** ein Seite-A-Beitrag mit `source = 'film'`, `develop_at` (Freigabe) und
+`taken_at` (Belichtung); `created_at = develop_at`, damit er im Tape des Sonntags steht. Bis zur
+Freigabe filtert der Server ihn aus Feed, Zählern, Tonfetzen, Zitaten und Meldungen, und
+`GET /api/media/:id` antwortet mit 404, auch der Person, die belichtet hat. Wer Sonntag nach
+19 Uhr belichtet, landet im Film der nächsten Woche. Der Status verrät nur, ob man selbst schon
+belichtet hat, nicht wer sonst oder wie viele. Ein Film nimmt nur frisch hochgeladene Bilder
+an; sonst ließe sich ein fremdes, sichtbares Foto per ID bis Sonntag sperren.
+
+**Vorführung:** Mit `DEMO_TOOLS=1` kann die Person, die die Kassette angelegt hat, den Film
+sofort entwickeln. Im Betrieb bleibt das aus.
+
 ## 6. Das Mixtape — der eigentliche USP
 
 Ein Mixtape ist ein **Geschenk an genau eine Person**. Du baust es über Tage: bis zu **12 Titel**,
@@ -219,6 +239,8 @@ cassettes(id, name, created_by, created_at, color_index)
 cassette_members(cassette_id, member, added_by, joined_at)
 cassette_invites(id, cassette_id, invitee, invited_by, created_at)
 reports(id, cassette_id | post_id, reported_by, reason, note, created_at)
+posts.develop_at, posts.taken_at
+      -- Film: unsichtbar bis develop_at (Sonntag 19:00 Berlin), created_at = develop_at
       -- ohne Fremdschlüssel: Meldungen überleben das Löschen des Gemeldeten
 
 posts(id, cassette_id, side, author, kind, body, media_id, tape_id, source,

@@ -12,6 +12,7 @@ import { VERSION } from '@/changelog';
 /** Was der Server bei Funktionen sieht, die nicht an eine Seite gebunden
  *  sind. Ehrlich halten: lieber unangenehm als geschoent (CONCEPT.md §3). */
 const SERVER_SEES_EXTRA: [string, string][] = [
+  ['Film', 'im Klartext. Bis Sonntagabend gibt der Server das Bild an niemanden heraus, auch nicht an dich — gespeichert ist es aber sofort'],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
 ];
 

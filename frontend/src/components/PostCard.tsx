@@ -8,7 +8,7 @@ import {
   type FeedItem,
   type Tonfetzen,
 } from '@/lib/api';
-import { berlinDateLabel, berlinTimeLabel } from '@/lib/berlinDay';
+import { berlinDateLabel, berlinTimeLabel, filmStampLabel, takenLabel } from '@/lib/berlinDay';
 import { baseMime, pickAudioMime } from '@/lib/tapeAudio';
 import { useApp, type Side } from '@/store/appStore';
 import { useQuote } from '@/store/quoteStore';
@@ -65,7 +65,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
           {item.author}
         </span>
         <span className="font-mono text-[0.58rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
-          {KIND_LABEL[item.kind]}
+          {item.source === 'film' ? 'Film' : KIND_LABEL[item.kind]}
         </span>
         {/* Track-Nummer — Position innerhalb des Tapes. Auf Seite A zusaetzlich
             Datum+Uhrzeit, weil ein Tape mehrere Tracks an verschiedenen
@@ -119,10 +119,32 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
         {/* Live aufgenommen: Fotoabzug mit weissem Rand und Filzstiftzeile.
             Aus der Galerie: schlichter Rahmen, gedruckte Bildunterschrift.
             Kein Verbot — aber man sieht, was gerade passiert ist und was nicht. */}
-        {item.kind === 'photo' && item.mediaId && item.source !== 'upload' && (
+        {item.kind === 'photo' && item.mediaId && item.source === 'camera' && (
           <div className="print mx-auto w-full max-w-[17rem]">
             <img src={mediaUrl(item.mediaId)} alt={item.body || 'Schnappschuss'} loading="lazy" />
             {item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}
+          </div>
+        )}
+
+        {/* Entwickelter Film: Abzug mit dem orangen Datumsaufdruck einer
+            Einwegkamera — das Datum der Belichtung, nicht der Freigabe. */}
+        {item.kind === 'photo' && item.mediaId && item.source === 'film' && (
+          <div className="print mx-auto w-full max-w-[17rem]">
+            <div className="relative">
+              <img src={mediaUrl(item.mediaId)} alt={item.body || 'Filmbild'} loading="lazy" />
+              {item.takenAt && (
+                <span
+                  className="font-mono absolute bottom-1.5 right-2 text-[0.7rem] font-bold tracking-[0.12em]"
+                  style={{ color: '#FF9A3C', textShadow: '0 0 4px rgba(255,120,30,.7)' }}
+                >
+                  {filmStampLabel(item.takenAt)}
+                </span>
+              )}
+            </div>
+            {item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}
+            <p className="font-mono mt-1 text-center text-[0.5rem] uppercase tracking-[0.14em] text-[#3B3226]/60">
+              Film{item.takenAt ? ` · belichtet ${takenLabel(item.takenAt)}` : ''}
+            </p>
           </div>
         )}
 

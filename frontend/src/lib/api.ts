@@ -242,8 +242,11 @@ export interface FeedItem {
   created_at: number;
   mediaId: string | null;
   durationMs: number | null;
-  /** Live aufgenommen oder aus der Galerie — wird unterschiedlich dargestellt. */
-  source: 'camera' | 'upload';
+  /** Live aufgenommen, aus der Galerie oder entwickelter Film — wird
+   *  jeweils anders dargestellt. */
+  source: 'camera' | 'upload' | 'film';
+  /** Nur beim Film: wann belichtet wurde. created_at ist die Freigabe. */
+  takenAt: number | null;
   tapeId: string | null;
   tape: { title: string; coverId: string | null; trackCount: number } | null;
   track: string;
@@ -326,6 +329,49 @@ export function fetchFeed(cassetteId: string, side: Side, me: string): Promise<F
   return apiFetch(`/api/posts?cassette=${cassetteId}&side=${side}&me=${encodeURIComponent(me)}`).then(
     unwrap<FeedItem[]>,
   );
+}
+
+/* --- Entwickelter Film ------------------------------------------------------
+ * Ein Bild pro Person, Kassette und Woche. Bis Sonntagabend liefert der
+ * Server es an niemanden aus (siehe server.ts, isUnreleasedMedia). */
+
+export interface FilmShot {
+  id: string;
+  author: string;
+  mediaId: string;
+  caption: string;
+  takenAt: number;
+}
+
+export interface FilmStatus {
+  /** Wann der laufende Film entwickelt wird (Sonntag 19:00 Berlin). */
+  nextRelease: number;
+  /** Ob ich diese Woche schon belichtet habe — mehr verraet der Server nicht. */
+  iShot: boolean;
+  /** Der zuletzt entwickelte Film dieser Kassette, falls es einen gibt. */
+  developed: { at: number; shots: FilmShot[] } | null;
+  demoTools: boolean;
+}
+
+export function fetchFilm(cassetteId: string, me: string): Promise<FilmStatus> {
+  return apiFetch(`/api/cassettes/${cassetteId}/film?me=${encodeURIComponent(me)}`).then(unwrap<FilmStatus>);
+}
+
+export function shootFilm(cassetteId: string, author: string, mediaId: string, caption: string): Promise<{ id: string; developAt: number }> {
+  return apiFetch(`/api/cassettes/${cassetteId}/film`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ author, mediaId, caption }),
+  }).then(unwrap<{ id: string; developAt: number }>);
+}
+
+/** Nur mit DEMO_TOOLS=1 auf dem Server, nur fuer die Gruenderin. */
+export function developFilmNow(cassetteId: string, by: string): Promise<{ developed: number }> {
+  return apiFetch(`/api/cassettes/${cassetteId}/film/develop-now`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ by }),
+  }).then(unwrap<{ developed: number }>);
 }
 
 /** Laedt einen Blob hoch und gibt die Medien-ID zurueck. */

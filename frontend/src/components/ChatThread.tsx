@@ -116,8 +116,8 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
       return;
     }
     bottomRef.current?.scrollIntoView({ block: 'end' });
-    // Bewusst nur an der Anzahl: das Polling auf Seite B liefert alle 15 s
-    // ein neues Array — haengt der Effekt daran, springt der Chat jedes Mal
+    // Bewusst nur an der Anzahl: das Polling auf Seite B liefert alle paar
+    // Sekunden ein neues Array — haengt der Effekt daran, springt der Chat jedes Mal
     // ans Ende, auch wenn man gerade weiter oben liest.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.messages.length, variant]);

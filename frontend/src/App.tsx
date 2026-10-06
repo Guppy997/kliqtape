@@ -21,6 +21,7 @@ import StoryView from '@/components/StoryView';
 import TapeHeader, { defaultTapeName, tapeDisplayName } from '@/components/TapeHeader';
 import UpdateNotification from '@/components/UpdateNotification';
 import { EmptyBand, NoCassette } from '@/components/EmptyState';
+import FilmBag from '@/components/FilmBag';
 
 export default function App() {
   const me = useApp((s) => s.me);
@@ -563,6 +564,12 @@ function Deck() {
                         onDelete={(id) => remove.mutate(id)}
                       />
                     ))}
+
+                {/* Film der Woche: am Ende von Seite A, dort wo man beim
+                    Einlegen landet (neuester Stand). Nur ohne Filter. */}
+                {side === 'a' && filter === 'all' && current && !isLoading && (
+                  <FilmBag cassette={current} onChanged={invalidate} />
+                )}
 
                 {shown.length > 0 && (
                   <div className="flex flex-col items-center gap-1.5 pt-8">
