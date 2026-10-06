@@ -15,8 +15,9 @@ const PHOTO_MS = 5000;
 const VIDEO_FALLBACK_MS = 10_000;
 
 /**
- * Storys — kassettenuebergreifend, nur Foto/Video, 24h. Eine Reihe aus
- * Avataren (eigene "+"-Kachel zuerst), Antippen einer Person oeffnet einen
+ * Storys — kassettenuebergreifend, nur Foto/Video, 24h. Ein Raster aus
+ * quadratischen Kacheln, drei pro Reihe, mit der neuesten Aufnahme jeder
+ * Person (eigene "+"-Kachel oben links). Antippen einer Person oeffnet einen
  * Ablauf-Betrachter mit Fortschrittsbalken, wie man es von echten Stories
  * kennt — dafuer bewusst ein eigenes, volles Overlay statt Sheet.tsx' Kopf
  * mit Titel+X: der Betrachter braucht ein eigenes Schliessen (zurueck zur
@@ -174,45 +175,71 @@ export default function StoryView({ open, onClose }: Props) {
         />
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="flex gap-3 overflow-x-auto pb-1">
-            {/* Eigene Story hinzufuegen */}
+          {/* Raster statt Avatar-Reihe: das Bild ist der Inhalt, nicht das
+              Profilfoto. Drei pro Reihe, quadratisch; die eigene "+"-Kachel
+              steht immer oben links. */}
+          <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               onClick={() => setAddMode('photo')}
-              className="flex shrink-0 flex-col items-center gap-1.5"
+              aria-label="Eigene Story aufnehmen"
+              className="flex aspect-square flex-col items-center justify-center gap-2 rounded-lg"
+              style={{ border: '1.5px dashed var(--accent)', background: 'color-mix(in srgb, var(--accent) 8%, transparent)' }}
             >
-              <span className="relative block">
-                <Avatar name={me} side={side} size={3.4} />
-                <span
-                  className="absolute -bottom-0.5 -right-0.5 grid size-5 place-items-center rounded-full text-xs font-bold"
-                  style={{ background: 'var(--accent)', color: '#17130E' }}
-                >
-                  +
-                </span>
+              <span
+                className="grid size-9 place-items-center rounded-full"
+                style={{ background: 'var(--accent)', color: '#17130E' }}
+                aria-hidden="true"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M7 1v12M1 7h12" />
+                </svg>
               </span>
-              <span className="font-mono text-[0.58rem] uppercase tracking-[0.08em]" style={{ color: 'var(--dim)' }}>
-                Du
+              <span className="font-mono text-[0.56rem] uppercase tracking-[0.1em]" style={{ color: 'var(--accent)' }}>
+                Deine Story
               </span>
             </button>
 
-            {groups.map((g, i) => (
-              <button
-                key={g.author}
-                type="button"
-                onClick={() => openViewer(i)}
-                className="flex shrink-0 flex-col items-center gap-1.5"
-              >
-                <span className="block rounded-full" style={{ boxShadow: '0 0 0 2px var(--accent)' }}>
-                  <Avatar name={g.author} side={side} size={3.4} />
-                </span>
-                <span
-                  className="font-mono max-w-[3.4rem] truncate text-[0.58rem] uppercase tracking-[0.08em]"
-                  style={{ color: 'var(--dim)' }}
+            {groups.map((g, i) => {
+              const latest = g.stories[0]!;
+              return (
+                <button
+                  key={g.author}
+                  type="button"
+                  onClick={() => openViewer(i)}
+                  aria-label={`Story von ${g.author}`}
+                  className="relative aspect-square overflow-hidden rounded-lg text-left"
+                  style={{ background: 'var(--card)', boxShadow: '0 0 0 1.5px var(--accent)' }}
                 >
-                  {g.author}
-                </span>
-              </button>
-            ))}
+                  {latest.kind === 'photo' ? (
+                    <img src={mediaUrl(latest.mediaId)} alt="" loading="lazy" className="size-full object-cover" />
+                  ) : (
+                    // #t=0.1: zeigt das erste Bild statt einer schwarzen Flaeche.
+                    <video
+                      src={`${mediaUrl(latest.mediaId)}#t=0.1`}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="size-full object-cover"
+                    />
+                  )}
+                  <span
+                    className="absolute inset-x-0 bottom-0 flex items-end gap-1.5 px-1.5 pb-1.5 pt-6"
+                    style={{ background: 'linear-gradient(transparent, rgba(0,0,0,.72))' }}
+                  >
+                    <Avatar name={g.author} side={side} size={1.15} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[0.72rem] font-semibold leading-tight text-white">
+                        {g.author === me ? 'Du' : g.author}
+                      </span>
+                      <span className="font-mono block text-[0.5rem] uppercase tracking-[0.06em] text-white/70">
+                        {agoLabel(latest.createdAt)}
+                      </span>
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {groups.length === 0 && (
@@ -231,4 +258,12 @@ export default function StoryView({ open, onClose }: Props) {
       )}
     </Sheet>
   );
+}
+
+/** Grobe Zeitangabe fuer die Kachel — Storys leben ohnehin nur 24 Stunden. */
+function agoLabel(createdAt: number): string {
+  const min = Math.floor((Date.now() - createdAt) / 60_000);
+  if (min < 1) return 'gerade eben';
+  if (min < 60) return `vor ${min} Min.`;
+  return `vor ${Math.floor(min / 60)} Std.`;
 }

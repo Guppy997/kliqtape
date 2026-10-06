@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.37.0',
+    date: '2026-10-06',
+    changes: [
+      'Storys als Raster: quadratische Bilder, drei pro Reihe, statt runder Profilbilder in einer Zeile — das Bild ist der Inhalt',
+      'Oben links steht immer das Feld mit Plus für die eigene Story',
+    ],
+  },
+  {
     version: '0.36.0',
     date: '2026-10-06',
     changes: [

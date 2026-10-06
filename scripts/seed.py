@@ -515,6 +515,15 @@ def main() -> None:
 
     print("2 offene Leitungen mit Verlauf")
 
+    # --- Storys -------------------------------------------------------------
+    # Kassettenuebergreifend, 24 Stunden sichtbar — damit das Raster nicht leer ist.
+    print("Storys …", end="", flush=True)
+    for person, scene in [("Mira", scene_kitchen), ("Tarek", scene_sunset),
+                          ("Lena", scene_night), ("Jonas", scene_sunset)]:
+        sid = upload(as_jpeg(scene()), "image/jpeg", as_=person)
+        call("POST", "/api/stories", {"author": person, "kind": "photo", "mediaId": sid})
+    print(" 4 Stück")
+
     print(f"\nFertig. Melde dich in der App als »{me}« an.")
     print(f"Zugangscode für »{me}«: {TOKENS[me]}")
     print("Zum Aufräumen:  python3 scripts/seed.py --reset")
