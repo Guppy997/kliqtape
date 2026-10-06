@@ -31,7 +31,7 @@ export interface Cassette {
   createdAt: number;
   /** Manueller Override fuer die Bandsorte — normalerweise null, dann zaehlt die ID. */
   colorSeed: string | null;
-  /** Fest gewaehlte Bandsorte (0-5) — anders als colorSeed kein Hash-Zufall,
+  /** Fest gewaehlte Bandsorte (0 bis PAIR_COUNT-1) — anders als colorSeed kein Hash-Zufall,
    *  sondern die IMMER angezeigte Sorte. Null = weiterhin automatisch. */
   colorIndex: number | null;
   memberCount: number;
@@ -105,19 +105,7 @@ export function renameCassette(id: string, name: string, by: string): Promise<{ 
   }).then(unwrap<{ id: string }>);
 }
 
-export function setCassetteColorSeed(
-  id: string,
-  colorSeed: string | null,
-  by: string,
-): Promise<{ id: string; colorSeed: string | null }> {
-  return apiFetch(`/api/cassettes/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ colorSeed, by }),
-  }).then(unwrap<{ id: string; colorSeed: string | null }>);
-}
-
-/** Feste Wahl einer der 6 Bandsorten (0-5), oder null fuer zurueck zu automatisch. */
+/** Feste Wahl einer Bandsorte (0 bis PAIR_COUNT-1, siehe cassetteLook.ts), oder null fuer automatisch. */
 export function setCassetteColorIndex(
   id: string,
   colorIndex: number | null,
@@ -187,20 +175,8 @@ export interface TapeOverride {
   favoritedByMe: boolean;
 }
 
-export interface FavoriteTape {
-  tapeIndex: number;
-  name: string | null;
-  favoritedAt: number;
-}
-
 export function fetchTapes(cassetteId: string, me: string): Promise<TapeOverride[]> {
   return apiFetch(`/api/cassettes/${cassetteId}/tapes?me=${encodeURIComponent(me)}`).then(unwrap<TapeOverride[]>);
-}
-
-export function fetchFavoriteTapes(cassetteId: string, me: string): Promise<FavoriteTape[]> {
-  return apiFetch(`/api/cassettes/${cassetteId}/tapes/favorites?me=${encodeURIComponent(me)}`).then(
-    unwrap<FavoriteTape[]>,
-  );
 }
 
 /** Leerer Name loescht die Benennung wieder. */

@@ -28,7 +28,7 @@ const R_MIN = 10;
  * Geschwindigkeit genau im unsichtbaren Moment. Vorher drehte die Kassette
  * in 180 ms auf 90° und auf demselben Weg zurueck — das las sich als
  * Wackeln, nicht als Umdrehen, und war in beide Richtungen identisch. */
-export const FLIP_OUT_MS = 230;
+const FLIP_OUT_MS = 230;
 export const FLIP_IN_MS = 320;
 const EASE_OUT_HALF = 'cubic-bezier(.45,0,.9,.55)';
 const EASE_IN_HALF = 'cubic-bezier(.1,.45,.55,1)';
