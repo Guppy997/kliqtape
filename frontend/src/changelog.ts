@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.46.0',
+    date: '2026-10-07',
+    changes: [
+      'Neu: dein eigenes Regal im Profil — mit dem Stern im Band legst du ein Tape hinein, es liegt dort als Abzug mit dem ersten Foto des Tages',
+      'Gesammelte Tapes beschriftest du selbst mit Filzstift. Die Beschriftung sieht nur du, die Runde merkt davon nichts',
+      'Ein Tipp auf den Abzug legt die Kassette ein und springt zum Tape — die Überschrift landet jetzt sichtbar unter der oberen Leiste',
+      'Der Server verrät der Runde nicht mehr, wie viele ein Tape gesammelt haben',
+    ],
+  },
+  {
     version: '0.45.0',
     date: '2026-10-07',
     changes: [

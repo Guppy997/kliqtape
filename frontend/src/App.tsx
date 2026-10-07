@@ -283,7 +283,11 @@ function Deck() {
     enabled: Boolean(cassetteId) && side === 'a',
   });
   const tapeByIndex = useMemo(() => new Map(tapeOverrides.map((t) => [t.tapeIndex, t])), [tapeOverrides]);
-  const invalidateTapes = () => void qc.invalidateQueries({ queryKey: tapesKey });
+  // Der Stern legt ein Tape ins eigene Regal — das Profil soll es sofort zeigen.
+  const invalidateTapes = () => {
+    void qc.invalidateQueries({ queryKey: tapesKey });
+    void qc.invalidateQueries({ queryKey: ['shelf', me] });
+  };
 
   // Filter gilt je Seite fuer sich — ein Filter aus Seite A soll nicht
   // unsichtbar auf Seite B weiterlaufen, wo er zufaellig alles ausblendet.

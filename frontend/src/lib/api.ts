@@ -175,7 +175,7 @@ export function deleteCassette(id: string, by: string): Promise<{ geloescht: { p
 export interface TapeOverride {
   tapeIndex: number;
   name: string | null;
-  favoriteCount: number;
+  /** Nur die eigene Sammlung — wer sonst gesammelt hat, liefert der Server nicht. */
   favoritedByMe: boolean;
 }
 
@@ -197,11 +197,13 @@ export function setTapeName(
   }).then(unwrap<{ tapeIndex: number; name: string | null }>);
 }
 
-export function favoriteTape(cassetteId: string, tapeIndex: number, by: string): Promise<void> {
+/** Ins eigene Regal legen. Mit `label` zugleich (um)beschriften — die
+ *  Beschriftung sieht nur man selbst; leer entfernt sie wieder. */
+export function favoriteTape(cassetteId: string, tapeIndex: number, by: string, label?: string): Promise<void> {
   return apiFetch(`/api/cassettes/${cassetteId}/tapes/${tapeIndex}/favorite`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ by }),
+    body: JSON.stringify(label === undefined ? { by } : { by, label }),
   }).then(unwrap<void>);
 }
 
@@ -209,6 +211,25 @@ export function unfavoriteTape(cassetteId: string, tapeIndex: number, by: string
   return apiFetch(`/api/cassettes/${cassetteId}/tapes/${tapeIndex}/favorite?by=${encodeURIComponent(by)}`, {
     method: 'DELETE',
   }).then(unwrap<void>);
+}
+
+/** Ein Tape im eigenen Regal (Profil), ueber alle eigenen Kassetten. */
+export interface ShelfEntry {
+  cassetteId: string;
+  cassetteName: string;
+  tapeIndex: number;
+  /** Eigene Beschriftung — nur fuer einen selbst. */
+  label: string | null;
+  /** Kassettenweiter Name, falls jemand das Tape benannt hat. */
+  tapeName: string | null;
+  /** Kalendertag als UTC-Mitternacht (wie dateOfTapeIndex). */
+  dayMs: number;
+  previewMediaId: string | null;
+  savedAt: number;
+}
+
+export function fetchMyShelf(me: string): Promise<ShelfEntry[]> {
+  return apiFetch(`/api/me/shelf?me=${encodeURIComponent(me)}`).then(unwrap<ShelfEntry[]>);
 }
 
 export interface FeedItem {

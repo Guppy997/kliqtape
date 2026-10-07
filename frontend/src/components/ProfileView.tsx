@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
 import Avatar from './Avatar';
+import CollectedTapes from './CollectedTapes';
 import MixtapeList from './MixtapeShelf';
 import NavButton from './NavButton';
 import SettingsSheet from './Settings';
@@ -16,7 +17,8 @@ type Tab = 'regal' | 'mixtapes';
  * ueber alle Runden hinweg teilt, sonst vermischen sich die Kreise
  * (CONCEPT.md, "Bewusst nicht geplant").
  *
- * Regal: Tapes aus den eigenen Kassetten (und spaeter eigene). Mixtapes:
+ * Regal: oben das Gesammelte (mit dem Stern hineingelegt, selbst
+ * beschriftet), darunter alle Tapes aus den eigenen Kassetten. Mixtapes:
  * bauen, verschenken, erhaltene. Einstellungen hinter dem Zahnrad.
  */
 export default function ProfileView() {
@@ -99,12 +101,20 @@ export default function ProfileView() {
           </div>
 
           {tab === 'regal' ? (
-            <section className="flex flex-col gap-2">
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
-                Aus deinen Kassetten
-              </h3>
-              <ShelfList me={me} active={open && tab === 'regal'} onJump={() => setActiveNav(null)} />
-            </section>
+            <>
+              <section className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                  Gesammelt
+                </h3>
+                <CollectedTapes me={me} active={open && tab === 'regal'} onJump={() => setActiveNav(null)} />
+              </section>
+              <section className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                  Aus deinen Kassetten
+                </h3>
+                <ShelfList me={me} active={open && tab === 'regal'} onJump={() => setActiveNav(null)} />
+              </section>
+            </>
           ) : (
             <MixtapeList />
           )}

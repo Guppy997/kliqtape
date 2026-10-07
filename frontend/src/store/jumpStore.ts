@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useApp } from './appStore';
 
 interface JumpState {
   /** Beitrag, zu dem nach dem Einlegen gesprungen werden soll — gesetzt von
@@ -31,4 +32,23 @@ export function jumpTo(postId: string): boolean {
     );
   }
   return true;
+}
+
+/** Legt die Kassette ein, dreht auf Seite A und scrollt zum Tape — fuer das
+ *  Regal im Profil. Bei einem Kassettenwechsel muss der Feed erst laden,
+ *  bevor der Anker existiert; deshalb kurz nachsehen, bis er da ist. */
+export function jumpToTape(cassetteId: string, tapeIndex: number): void {
+  const { setCassette, setSide } = useApp.getState();
+  setCassette(cassetteId);
+  setSide('a');
+  let tries = 0;
+  const check = () => {
+    const el = document.getElementById(`tape-${tapeIndex}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (tries++ < 60) requestAnimationFrame(check);
+  };
+  requestAnimationFrame(check);
 }

@@ -1,13 +1,15 @@
 import { Router } from 'express';
-import { requireMember } from '../access.js';
+import { requireIdentity, requireMember } from '../access.js';
 import { db } from '../db.js';
 import { HttpError } from '../http.js';
-import { tapeIndexOf } from '../time.js';
+import { RELEASED } from '../media.js';
+import { berlinCivilDay, berlinWallClock, tapeIndexOf } from '../time.js';
 
 /* -------------------------------------------------------------------------
  * Tapes — Seite A in Kalendertage gegliedert, siehe tapeIndexOf() in time.ts.
- * Kassettenweit benennbar, pro Person favorisierbar. Sparse: eine Zeile
- * existiert nur, wenn jemand tatsaechlich benannt oder favorisiert hat.
+ * Kassettenweit benennbar, pro Person ins eigene Regal zu legen (Favorit,
+ * mit eigener Beschriftung). Sparse: eine Zeile existiert nur, wenn jemand
+ * tatsaechlich benannt oder gesammelt hat.
  * ---------------------------------------------------------------------- */
 
 export const tapesRouter = Router();
@@ -34,12 +36,8 @@ tapesRouter.get('/api/cassettes/:id/tapes', (req, res) => {
     tape_index: number;
     name: string;
   }[];
-  const favCounts = db
-    .prepare(
-      `SELECT tape_index, COUNT(*) AS n FROM cassette_tape_favorites
-        WHERE cassette_id = ? GROUP BY tape_index`,
-    )
-    .all(req.params.id) as { tape_index: number; n: number }[];
+  // Nur die EIGENEN Favoriten — wer sonst ein Tape ins Regal gelegt hat (und
+  // wie viele), erfaehrt die Runde nicht. Frueher lag hier ein Zaehler bei.
   const mine = new Set(
     (
       db
@@ -48,23 +46,14 @@ tapesRouter.get('/api/cassettes/:id/tapes', (req, res) => {
     ).map((r) => r.tape_index),
   );
 
-  const byIndex = new Map<number, { name: string | null; favoriteCount: number }>();
-  for (const n of names) byIndex.set(n.tape_index, { name: n.name, favoriteCount: 0 });
-  for (const f of favCounts) {
-    const cur = byIndex.get(f.tape_index) ?? { name: null, favoriteCount: 0 };
-    cur.favoriteCount = f.n;
-    byIndex.set(f.tape_index, cur);
-  }
+  const byIndex = new Map<number, string | null>();
+  for (const n of names) byIndex.set(n.tape_index, n.name);
+  for (const idx of mine) if (!byIndex.has(idx)) byIndex.set(idx, null);
 
   res.json(
     [...byIndex.entries()]
       .sort((a, b) => a[0] - b[0])
-      .map(([tapeIndex, v]) => ({
-        tapeIndex,
-        name: v.name,
-        favoriteCount: v.favoriteCount,
-        favoritedByMe: mine.has(tapeIndex),
-      })),
+      .map(([tapeIndex, name]) => ({ tapeIndex, name, favoritedByMe: mine.has(tapeIndex) })),
   );
 });
 
@@ -121,11 +110,88 @@ tapesRouter.post('/api/cassettes/:id/tapes/:tapeIndex/favorite', (req, res) => {
     throw new HttpError(400, 'Ungueltiges Tape');
   }
 
-  db.prepare(
-    `INSERT OR IGNORE INTO cassette_tape_favorites (cassette_id, tape_index, member, favorited_at) VALUES (?, ?, ?, ?)`,
-  ).run(req.params.id, tapeIndex, by, Date.now());
+  // Ins eigene Regal legen. Mit `label` zugleich (um)beschriften — die
+  // Beschriftung ist persoenlich, die Runde sieht sie nie (anders als der
+  // kassettenweite Tape-Name ueber PUT).
+  if (req.body?.label === undefined) {
+    db.prepare(
+      `INSERT OR IGNORE INTO cassette_tape_favorites (cassette_id, tape_index, member, favorited_at) VALUES (?, ?, ?, ?)`,
+    ).run(req.params.id, tapeIndex, by, Date.now());
+  } else {
+    const label =
+      String(req.body.label ?? '')
+        .trim()
+        .slice(0, 60) || null;
+    db.prepare(
+      `INSERT INTO cassette_tape_favorites (cassette_id, tape_index, member, favorited_at, label) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(cassette_id, tape_index, member) DO UPDATE SET label = excluded.label`,
+    ).run(req.params.id, tapeIndex, by, Date.now(), label);
+  }
 
   res.status(201).json({ ok: true });
+});
+
+/* -------------------------------------------------------------------------
+ * Das eigene Regal im Profil: alle Tapes, die man sich aus seinen Kassetten
+ * hineingelegt hat — nur aus Runden, in denen man noch Mitglied ist. Mit
+ * eigener Beschriftung, Datum und dem ersten Foto des Tages als Vorschau.
+ * Die Bandfarbe rechnet das Frontend selbst (useLookIndex), wie im Fach.
+ * ---------------------------------------------------------------------- */
+tapesRouter.get('/api/me/shelf', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  requireIdentity(req, me);
+  const rows = db
+    .prepare(
+      `SELECT f.cassette_id, f.tape_index, f.label, f.favorited_at,
+              c.name AS cassette_name, c.created_at AS cassette_created,
+              t.name AS tape_name
+         FROM cassette_tape_favorites f
+         JOIN cassettes c ON c.id = f.cassette_id
+         JOIN cassette_members m ON m.cassette_id = f.cassette_id AND m.member = f.member
+         LEFT JOIN cassette_tapes t ON t.cassette_id = f.cassette_id AND t.tape_index = f.tape_index
+        WHERE f.member = ?
+        ORDER BY f.favorited_at DESC`,
+    )
+    .all(me) as {
+    cassette_id: string;
+    tape_index: number;
+    label: string | null;
+    favorited_at: number;
+    cassette_name: string;
+    cassette_created: number;
+    tape_name: string | null;
+  }[];
+
+  const firstPhoto = db.prepare(
+    `SELECT media_id FROM posts p
+      WHERE p.cassette_id = ? AND p.side = 'a' AND p.kind = 'photo' AND p.media_id IS NOT NULL
+        AND p.created_at >= ? AND p.created_at < ? AND ${RELEASED}
+      ORDER BY p.created_at LIMIT 1`,
+  );
+  const now = Date.now();
+
+  res.json(
+    rows.map((r) => {
+      const day = berlinCivilDay(r.cassette_created) + (r.tape_index - 1) * 86_400_000;
+      const photo = firstPhoto.get(
+        r.cassette_id,
+        berlinWallClock(day, 0),
+        berlinWallClock(day + 86_400_000, 0),
+        now,
+      ) as { media_id: string } | undefined;
+      return {
+        cassetteId: r.cassette_id,
+        cassetteName: r.cassette_name,
+        tapeIndex: r.tape_index,
+        label: r.label,
+        tapeName: r.tape_name,
+        // Kalendertag als UTC-Mitternacht, wie dateOfTapeIndex() im Frontend
+        dayMs: day,
+        previewMediaId: photo?.media_id ?? null,
+        savedAt: r.favorited_at,
+      };
+    }),
+  );
 });
 
 tapesRouter.delete('/api/cassettes/:id/tapes/:tapeIndex/favorite', (req, res) => {

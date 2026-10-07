@@ -52,14 +52,16 @@ export default function TapeHeader({ cassetteId, cassetteCreatedAt, tapeIndex, o
   });
 
   return (
-    <div id={`tape-${tapeIndex}`} className="pt-4 first:pt-0">
+    // Sprungziel aus dem Regal: nicht unter der festen oberen Leiste landen.
+    <div id={`tape-${tapeIndex}`} className="scroll-mt-[calc(var(--topbar-h,6rem)+0.5rem)] pt-4 first:pt-0">
       <DateDividerLabel label={dateLabel} />
       <div className="mt-1 flex items-center justify-center gap-1.5">
         <button
           type="button"
           onClick={() => favorite.mutate()}
           disabled={favorite.isPending}
-          aria-label={override?.favoritedByMe ? 'Favorit entfernen' : 'Als Favorit markieren'}
+          aria-label={override?.favoritedByMe ? 'Aus deinem Regal nehmen' : 'In dein Regal legen'}
+          title={override?.favoritedByMe ? 'Liegt in deinem Regal' : 'In dein Regal legen'}
           className="shrink-0 text-meta leading-none disabled:opacity-50"
           style={{ color: override?.favoritedByMe ? 'var(--accent)' : 'var(--dim)' }}
         >

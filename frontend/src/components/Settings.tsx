@@ -34,6 +34,10 @@ const SERVER_SEES_EXTRA: [string, string][] = [
     'Einladungsbrief',
     'wer wann einen Brief für welche Kassette gedruckt hat und wer ihn einlöst. Den Code im QR-Code selbst speichert der Server nicht, nur einen Fingerabdruck davon',
   ],
+  [
+    'Eigenes Regal',
+    'im Klartext: welche Tapes du gesammelt und wie du sie beschriftet hast. Die Runde sieht davon nichts, auch nicht, dass oder wie viele gesammelt haben',
+  ],
   ['Mixtape als Bild', 'nichts Neues — die Karte entsteht nur auf deinem Gerät aus dem, was du ohnehin siehst'],
   [
     'Album-Export',

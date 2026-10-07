@@ -568,6 +568,12 @@ repairReference(
    );`,
 );
 
+addColumn(
+  'cassette_tape_favorites',
+  'label',
+  'label TEXT',
+  'eigene Beschriftung im persoenlichen Regal (Profil) — sieht nur diese Person',
+);
 addColumn('profiles', 'album_opt_out', 'album_opt_out INTEGER NOT NULL DEFAULT 0', 'Meine Beiträge nicht in Alben');
 
 /**

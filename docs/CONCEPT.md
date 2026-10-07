@@ -315,6 +315,8 @@ posts(id, cassette_id, side, author, kind, body, media_id, tape_id, source,
       -- quoted_post_id: Seite-B-Nachricht greift einen Seite-A-Beitrag auf
 cassette_tapes(cassette_id, tape_index, name, named_by, named_at)
       -- Tape = Berlin-Kalendertag seit Gründung, tape_index wird berechnet, nie gespeichert
+cassette_tape_favorites(cassette_id, tape_index, member, favorited_at, label)
+      -- eigenes Regal im Profil; label = eigene Beschriftung, nur für member sichtbar
 reactions(post_id, author, media_id, created_at)
       -- Tonfetzen: hörbar nur für posts.author, sonst nur "iSentTonfetzen" (ja/nein)
 
@@ -339,7 +341,8 @@ Mixtapes bauen, verschenken, teilen · O-Ton mit Bandquietschen · Kamera und Ga
 Anrufbeantworter · Profil mit Export und Löschung · Testdaten-Skript · Storys (24 h) ·
 Kliqtape-Kanal mit Förderstand · Zugangscode-Identität · Einladungen mit Zustimmen ·
 Kassetten-Ansicht mit Suche · Melden · Entwickelter Film · Imposter-Woche · Album-PDF ·
-Einladung als Brief · Kassette altert · Mixtape als Bild · Tests und CI
+Einladung als Brief · Kassette altert · Mixtape als Bild · Tests und CI · Profil als eigene
+Sammlung mit Regal (gesammelte Tapes, selbst beschriftet)
 
 > Der ursprünglich geplante 24-Stunden-Verfall auf Seite B wurde **verworfen** — Seite B ist ein
 > dauerhafter Gruppenchat. Das Verfalls-Modell lebt stattdessen in den Storys weiter.
@@ -391,6 +394,13 @@ Regeln, damit beides sich nicht in die Quere kommt:
   kleine Symbole mit winziger Beschriftung, das aktive in der Akzentfarbe.
 - **Profil** ist die eigene Sammlung, **nur für einen selbst sichtbar** (kein öffentliches
   Profil): Regal, Mixtapes, Einstellungen hinter dem Zahnrad.
+- **Regal im Profil, „Gesammelt“:** Der Stern an einem Tape legt es ins eigene Regal. Dort liegt
+  es als Abzug mit dem ersten Foto des Tages (ohne Foto: die Kassette auf ihrem Etikettpapier) und
+  bekommt eine **eigene Beschriftung mit Filzstift** — nur für einen selbst, getrennt vom
+  kassettenweiten Tape-Namen. Die Runde erfährt weder die Beschriftung noch, *dass* oder *wie
+  viele* gesammelt haben (bis v0.45 lieferte die API einen Zähler mit, jetzt nicht mehr). Wer
+  eine Kassette verlässt, findet ihre Tapes nicht mehr im Regal. Ein Tipp auf den Abzug legt die
+  Kassette ein und springt zum Tape. Darunter, „Aus deinen Kassetten“: alle Tapes mit Inhalt.
 
 **Seite A — Type I, klassisch.** Mattes schwarzes Gehäuse `#23201C`, Papieretikett `#E4DAC4`,
 Oxidbraun `#5C3A21`, roter Type-I-Streifen `#B8462C`, Handschrift auf dem Etikett.

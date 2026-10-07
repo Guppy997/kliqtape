@@ -50,7 +50,7 @@ function berlinOffsetMs(ms: number): number {
 
 /** Berliner Ortszeit (Kalendertag als UTC-Mitternacht + Stunde) → echter
  *  Zeitpunkt. Zweimal korrigiert, damit es auch am Umstellungstag stimmt. */
-function berlinWallClock(civilDay: number, hour: number): number {
+export function berlinWallClock(civilDay: number, hour: number): number {
   const wall = civilDay + hour * 3_600_000;
   const first = wall - berlinOffsetMs(wall);
   return wall - berlinOffsetMs(first);

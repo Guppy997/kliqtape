@@ -11,6 +11,7 @@ import {
 } from '@/lib/api';
 import { berlinDateLabel, dateOfTapeIndex } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
+import { jumpToTape } from '@/store/jumpStore';
 import { MiniCassette, useCassettes, useLookIndex } from './CassetteDeck';
 import { defaultTapeName, tapeDisplayName } from './TapeHeader';
 
@@ -41,8 +42,6 @@ export default function ShelfList({ me, active: open, onJump }: { me: string; ac
   const { data: cassettes = [] } = useCassettes();
   const looks = useLookIndex();
   const cassetteId = useApp((s) => s.cassetteId);
-  const setCassette = useApp((s) => s.setCassette);
-  const setSide = useApp((s) => s.setSide);
 
   // Pro Kassette einmal den Seite-A-Feed (fuer "hat dieses Tape ueberhaupt
   // etwas") und die Tape-Namen/Favoriten holen — nur wenn das Regal offen
@@ -102,25 +101,12 @@ export default function ShelfList({ me, active: open, onJump }: { me: string; ac
 
   function invalidateTapesOf(id: string) {
     void qc.invalidateQueries({ queryKey: ['tapes', id, me] });
+    void qc.invalidateQueries({ queryKey: ['shelf', me] });
   }
 
   function jumpTo(row: TapeRow) {
-    setCassette(row.cassette.id);
-    setSide('a');
     onJump();
-    // Bei einem Kassettenwechsel muss der Feed erst laden, bevor der Anker
-    // existiert — kurz nachschauen, bis er da ist (bei der schon eingelegten
-    // Kassette meist schon beim ersten Versuch).
-    let tries = 0;
-    const check = () => {
-      const el = document.getElementById(`tape-${row.tapeIndex}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-      }
-      if (tries++ < 60) requestAnimationFrame(check);
-    };
-    requestAnimationFrame(check);
+    jumpToTape(row.cassette.id, row.tapeIndex);
   }
 
   return (
@@ -306,7 +292,8 @@ function TapeRowItem({
           type="button"
           onClick={() => favorite.mutate()}
           disabled={favorite.isPending}
-          aria-label={override?.favoritedByMe ? 'Favorit entfernen' : 'Als Favorit markieren'}
+          aria-label={override?.favoritedByMe ? 'Aus deinem Regal nehmen' : 'In dein Regal legen'}
+          title={override?.favoritedByMe ? 'Liegt in deinem Regal' : 'In dein Regal legen'}
           className="text-meta leading-none disabled:opacity-50"
           style={{ color: override?.favoritedByMe ? 'var(--accent)' : 'var(--dim)' }}
         >
