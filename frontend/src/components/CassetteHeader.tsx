@@ -17,15 +17,15 @@ interface Props {
   currentTape?: { dateLabel: string; shortName: string; fullName: string } | null;
   /** Gruendung — daraus die Altersstufe (ageStageOf, berlinDay.ts). */
   createdAt?: number;
+  /** Gezeichnete Breite in px. Die Kassette entsteht immer auf
+   *  DECK_REF_WIDTH und wird per zoom auf diese Breite gebracht. */
+  width: number;
 }
 
-/** Wie gross die ausgeklappte Kassette gezeichnet wird (siehe CassetteHeader):
- *  rund 270 px breit — deutlich groesser als das Symbol oben links, aber nicht
- *  bildschirmfuellend. Gezeichnet wird auf 24rem, per zoom verkleinert. */
-const HEADER_ZOOM = 0.7;
-/** Tatsaechliche Breite der ausgeklappten Kassette in px — App.tsx rechnet
- *  damit die Startgroesse beim Herauswachsen aus dem Symbol. */
-export const DECK_WIDTH = 24 * 16 * HEADER_ZOOM;
+/** Zeichenbreite der ausgeklappten Kassette (24rem). Wie gross sie wirklich
+ *  erscheint, bestimmt App.tsx ueber `width` — inzwischen die volle Breite
+ *  der Leiste, per zoom auf diese Breite gebracht. */
+const DECK_REF_WIDTH = 24 * 16;
 
 const R_MAX = 26;
 const R_MIN = 10;
@@ -85,7 +85,7 @@ function flipStyle(phase: FlipPhase, dir: 1 | -1): { transform: string; transiti
  * liefert nur noch Zustand (Scroll-Fuellstand, Umdrehen-Animation) und
  * Interaktivitaet drumherum.
  */
-export default function CassetteHeader({ cassetteId, pairIndex, label, count, currentTape, createdAt }: Props) {
+export default function CassetteHeader({ cassetteId, pairIndex, label, count, currentTape, createdAt, width }: Props) {
   const side = useApp((s) => s.side);
   const setSide = useApp((s) => s.setSide);
 
@@ -184,7 +184,7 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
       {/* Feste Zeichenbreite, per zoom verkleinert: zoom statt transform,
           damit auch der belegte Platz schrumpft und das schwebende Feld in
           App.tsx genau so gross wird wie die Kassette darin. */}
-      <div style={{ perspective: '1100px', zoom: HEADER_ZOOM, width: '24rem' }}>
+      <div style={{ perspective: '1100px', zoom: width / DECK_REF_WIDTH, width: DECK_REF_WIDTH }}>
         <CassetteFace
           side={side}
           cassetteId={cassetteId}

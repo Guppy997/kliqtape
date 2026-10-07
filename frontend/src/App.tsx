@@ -6,7 +6,7 @@ import { useBottomNav } from '@/store/navStore';
 import { jumpTo, useJump } from '@/store/jumpStore';
 import { useViewMode } from '@/store/viewStore';
 import { berlinDateLabel, tapeIndexOf } from '@/lib/berlinDay';
-import CassetteHeader, { CassetteFacePreview, DECK_WIDTH, FLIP_IN_MS } from '@/components/CassetteHeader';
+import CassetteHeader, { CassetteFacePreview, FLIP_IN_MS } from '@/components/CassetteHeader';
 import { useCassettes, useLookIndex } from '@/components/CassetteDeck';
 import { lookFor } from '@/lib/cassetteLook';
 import ChatThread from '@/components/ChatThread';
@@ -122,10 +122,26 @@ const FILTERS: { key: Kind | 'all'; label: string }[] = [
 const FILTERS_B = FILTERS.filter((f) => f.key !== 'text');
 
 /** Breite des Kassetten-Symbols oben links und der Innenabstand der
- *  aufgeklappten Kassette (header p-2 in CassetteHeader); deren Breite selbst
- *  kommt als DECK_WIDTH aus CassetteHeader.tsx. */
+ *  aufgeklappten Kassette (header p-2 in CassetteHeader). */
 const MINI_WIDTH = 60;
 const DECK_PAD = 8;
+/** Seitenrand der Leiste (px-3) und ihre Hoechstbreite (max-w-xl). */
+const BAR_GUTTER = 12;
+const BAR_MAX = 576;
+
+/** Aufgeklappt fuellt die Kassette die ganze Breite der Leiste — von Rand zu
+ *  Rand, auf jedem Geraet passend. Wer sie nicht mehr sehen will, klappt sie
+ *  mit einem Tipp daneben oder beim Scrollen wieder zum Symbol ein. */
+function useDeckWidth(): number {
+  const calc = () => Math.min(window.innerWidth, BAR_MAX) - 2 * BAR_GUTTER;
+  const [w, setW] = useState(calc);
+  useEffect(() => {
+    const onResize = () => setW(calc());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return w;
+}
 
 function Deck() {
   const me = useApp((s) => s.me);
@@ -155,6 +171,7 @@ function Deck() {
    *  Seitenwechsel bleibt sie zu, die App startet ruhig (Seite wechselt der
    *  A|B-Schalter, siehe SideSwitch.tsx). */
   const [deckOpen, setDeckOpen] = useState(false);
+  const deckWidth = useDeckWidth();
   // Ohne eingelegte Kassette gibt es nichts zu zeigen — die graue
   // "Kein Band"-Kassette verdeckte dort nur den Leerzustand.
   const panelShown = deckOpen && Boolean(cassetteId);
@@ -537,7 +554,7 @@ function Deck() {
                     left: -DECK_PAD,
                     top: -DECK_PAD,
                     transformOrigin: `${DECK_PAD}px ${DECK_PAD}px`,
-                    transform: panelShown ? 'scale(1)' : `scale(${MINI_WIDTH / DECK_WIDTH})`,
+                    transform: panelShown ? 'scale(1)' : `scale(${MINI_WIDTH / deckWidth})`,
                     opacity: panelShown ? 1 : 0,
                     visibility: panelShown ? 'visible' : 'hidden',
                     transition: panelShown
@@ -552,6 +569,7 @@ function Deck() {
                     count={data.length}
                     currentTape={currentTape}
                     createdAt={current?.createdAt}
+                    width={deckWidth}
                   />
                 </div>
               </span>

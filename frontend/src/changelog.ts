@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.49.3',
+    date: '2026-10-07',
+    changes: [
+      'Aufgeklappt füllt die Kassette jetzt die ganze Breite — ein Tipp daneben oder Scrollen klappt sie wieder ein',
+    ],
+  },
+  {
     version: '0.49.2',
     date: '2026-10-07',
     changes: ['Die aufgeklappte Kassette ist größer und kommt ohne Rahmen drumherum — nur die Kassette selbst'],
