@@ -380,8 +380,10 @@ Regeln, damit beides sich nicht in die Quere kommt:
   Tonfetzen und Reagieren sind Knöpfe mit Symbol und Text.
 - **Die eingelegte Kassette** klappt aus dem Symbol oben links als schwebendes Feld auf
   (rund 200 px breit) und legt sich über den Inhalt.
-- **Untere Leiste:** Fach, Band, Hot Line, Neues. **Obere Leiste:** Kassette, Aufnehmen, Regal,
-  Profilbild; darunter Suche und Filter für die eingelegte Seite.
+- **Untere Leiste:** Fach, Band, Hot Line, Neues. **Obere Leiste:** eine Zeile mit Kassette,
+  Aufnehmen, Lupe, Regal und Profilbild. Die Lupe klappt Suche und Filter für die eingelegte
+  Seite als zweite Zeile auf; beim Schließen wird beides zurückgesetzt, solange etwas aktiv ist,
+  leuchtet die Lupe.
 
 **Seite A — Type I, klassisch.** Mattes schwarzes Gehäuse `#23201C`, Papieretikett `#E4DAC4`,
 Oxidbraun `#5C3A21`, roter Type-I-Streifen `#B8462C`, Handschrift auf dem Etikett.

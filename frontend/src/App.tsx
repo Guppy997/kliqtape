@@ -131,6 +131,15 @@ function Deck() {
   const [filter, setFilter] = useState<Kind | 'all'>('all');
   const [filterOpen, setFilterOpen] = useState(false);
   const [query, setQuery] = useState('');
+  // Suche und Filter sind eine zweite Zeile, die nur ueber die Lupe aufgeht —
+  // sonst bleibt die obere Leiste einzeilig.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setQuery('');
+    setFilter('all');
+    setFilterOpen(false);
+  };
   const navActive = useBottomNav((s) => s.active);
   const setActiveNav = useBottomNav((s) => s.setActive);
   const viewMode = useViewMode((s) => s.viewMode);
@@ -205,6 +214,7 @@ function Deck() {
     setFilter('all');
     setFilterOpen(false);
     setQuery('');
+    setSearchOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -256,6 +266,7 @@ function Deck() {
     setFilter('all');
     setFilterOpen(false);
     setQuery('');
+    setSearchOpen(false);
   }, [side, cassetteId]);
 
   // Suche und Filter wirken zusammen: erst die Art, dann der Text (Inhalt,
@@ -444,6 +455,35 @@ function Deck() {
               {!isCassetteChat && navActive === null && <Composer onPosted={invalidate} />}
             </span>
             <span className="flex shrink-0 items-center gap-1.5">
+              {cassetteId && (
+                <button
+                  type="button"
+                  onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
+                  aria-expanded={searchOpen}
+                  aria-label={searchOpen ? 'Suche schließen' : 'Beiträge suchen'}
+                  title="Suchen"
+                  className="glass-chip hit grid size-9 shrink-0 place-items-center rounded-full"
+                  // Leuchtet, solange Suche oder Filter etwas ausblenden.
+                  style={{
+                    background: q || filter !== 'all' ? 'var(--accent)' : undefined,
+                    color: q || filter !== 'all' ? 'var(--on-accent)' : 'var(--dim)',
+                  }}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="7" cy="7" r="4.5" />
+                    <path d="M10.5 10.5 14 14" />
+                  </svg>
+                </button>
+              )}
               {/* Regal geht jetzt ueber alle Kassetten — holt sich seine Daten
                   selbst, unabhaengig von der gerade eingelegten. */}
               <Shelf me={me} />
@@ -451,10 +491,10 @@ function Deck() {
             </span>
           </div>
 
-          {/* Zweite Zeile: Beitraege durchsuchen, Art filtern. Gilt fuer die
-              eingelegte Seite; auf Seite B wird aus dem Chat dabei eine
-              Trefferliste. */}
-          {cassetteId && (
+          {/* Zweite Zeile, nur nach Tipp auf die Lupe: Beitraege durchsuchen,
+              Art filtern. Gilt fuer die eingelegte Seite; auf Seite B wird aus
+              dem Chat dabei eine Trefferliste. */}
+          {cassetteId && searchOpen && (
             <div className="flex items-center gap-2">
               <label
                 className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-full px-3"
@@ -477,6 +517,7 @@ function Deck() {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  autoFocus
                   placeholder={side === 'a' ? 'Auf Seite A suchen' : 'Im Gruppenchat suchen'}
                   aria-label="Beiträge suchen"
                   className="min-w-0 flex-1 bg-transparent text-sm outline-none"

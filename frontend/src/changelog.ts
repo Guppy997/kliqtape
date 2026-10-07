@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.44.2',
+    date: '2026-10-07',
+    changes: [
+      'Obere Leiste wieder einzeilig: Suche und Filter klappen erst über die Lupe auf — die Lupe leuchtet, solange etwas ausgeblendet ist',
+      'Suchfeld ohne eckigen Rahmen beim Tippen',
+    ],
+  },
+  {
     version: '0.44.1',
     date: '2026-10-07',
     changes: [
