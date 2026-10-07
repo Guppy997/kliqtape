@@ -401,6 +401,11 @@ Regeln, damit beides sich nicht in die Quere kommt:
   zurückgesetzt, solange etwas aktiv ist, leuchtet die Lupe. Die Leiste hat **denselben Grund wie
   das Board** (kein Schleier, kein Rahmen, kein Schatten), als **Milchglas** (82 % deckend plus
   Unschärfe): Beim Scrollen läuft der Inhalt weich darunter durch, dann trennt ein Haarstrich.
+- **Kopfzeilen:** Jede Seite und jedes Blatt hat dieselbe Kopfzeile wie die Titelzeile oben —
+  Titel mittig, links das **X im selben Strich wie das Plus**, ohne Kreis, an genau der Stelle
+  des Plus. Hauptseiten der unteren Leiste (Eject, Hot Line, Profil) haben kein X, gewechselt wird
+  dort über die Leiste. Bewusste Ausnahme: Storys, dort steht das X rechts neben Bild und Name
+  der Person, wie man es von Instagram kennt.
 - **Untere Leiste:** Eject, Band, Hot Line, Profil — schlank (rund 54 pt plus Home-Indikator),
   kleine Symbole mit winziger Beschriftung, das aktive in der Akzentfarbe. Das Profil zeigt nur
   das eigene Bild, ohne Beschriftung. Milchglas wie oben, mit feinem Haarstrich an der Oberkante.

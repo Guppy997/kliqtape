@@ -107,9 +107,14 @@ body {
 }
 
 /* Tippflaeche mindestens 44 x 44 pt, ohne das Element groesser zu zeichnen
-   (Designpunkt 9) — fuer kleine Icon-Knoepfe. */
-.hit {
-  position: relative;
+   (Designpunkt 9) — fuer kleine Icon-Knoepfe. position: relative in
+   @layer components: unlayered schlug es sonst `absolute` (Fototuete,
+   Imposter-Aufloesung) — das X landete mitten im Fluss statt in der Ecke.
+   Ein absolut positionierter Knopf traegt das ::after genauso. */
+@layer components {
+  .hit {
+    position: relative;
+  }
 }
 .hit::after {
   content: '';

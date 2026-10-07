@@ -5,6 +5,7 @@ import { developFilmNow, fetchFilm, mediaUrl, type Cassette, type FilmShot } fro
 import { filmReleaseLabel, filmStampLabel, takenLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import FilmShoot from './FilmShoot';
+import PlusMark from './PlusMark';
 
 /** Welche Freigabe pro Kassette schon geoeffnet wurde — rein lokal, wie der
  *  Gesehen-Stand der Seiten. Speicher kann fehlen (privates Fenster), dann
@@ -209,10 +210,11 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
         type="button"
         onClick={onClose}
         aria-label="Schließen"
-        className="hit absolute right-4 top-[max(1rem,env(safe-area-inset-top))] grid size-9 place-items-center rounded-full text-white"
-        style={{ background: 'rgba(255,255,255,.12)' }}
+        // Dasselbe X wie ueberall oben links (Sheet.tsx), an der Stelle des Plus —
+        // mt-0.5, weil die Titelzeile dort 36 px hoch ist und das Plus mittig sitzt.
+        className="hit absolute left-3 top-[max(0.5rem,env(safe-area-inset-top))] mt-0.5 grid size-8 place-items-center rounded-full text-white"
       >
-        ✕
+        <PlusMark turned />
       </button>
 
       {phase !== 'viewer' ? (

@@ -18,6 +18,7 @@ import { berlinDateLabel, filmReleaseLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import Avatar from './Avatar';
 import CameraCapture from './CameraCapture';
+import PlusMark from './PlusMark';
 import Sheet from './Sheet';
 
 const STAMP_RED = '#C8402A';
@@ -407,10 +408,11 @@ function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string;
         type="button"
         onClick={onClose}
         aria-label="Schließen"
-        className="hit absolute right-4 top-[max(1rem,env(safe-area-inset-top))] grid size-9 place-items-center rounded-full text-white"
-        style={{ background: 'rgba(255,255,255,.12)' }}
+        // Dasselbe X wie ueberall oben links (Sheet.tsx), an der Stelle des Plus —
+        // mt-0.5, weil die Titelzeile dort 36 px hoch ist und das Plus mittig sitzt.
+        className="hit absolute left-3 top-[max(0.5rem,env(safe-area-inset-top))] mt-0.5 grid size-8 place-items-center rounded-full text-white"
       >
-        ✕
+        <PlusMark turned />
       </button>
 
       <p className="text-2xs text-white/60">Imposter-Woche · Auflösung</p>

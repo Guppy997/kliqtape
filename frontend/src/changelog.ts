@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.49.0',
+    date: '2026-10-07',
+    changes: [
+      'Alle Seiten haben jetzt dieselbe Kopfzeile: Titel mittig, das X oben links — wie bei Aufnehmen',
+      'Das X ist überall dasselbe schlichte Zeichen ohne Kreis und sitzt genau dort, wo oben das Plus ist',
+      'In der Fototüte und bei der Imposter-Auflösung sitzt das X wieder in der Ecke statt mitten im Bild',
+    ],
+  },
+  {
     version: '0.48.3',
     date: '2026-10-07',
     changes: [

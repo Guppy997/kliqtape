@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import PlusMark from './PlusMark';
 
 interface Props {
   open: boolean;
@@ -15,15 +16,14 @@ interface Props {
    *  Gespraech geht (ChatThread), schaltet der jeweilige Aufrufer das wieder
    *  ab, genau wie beim Gruppenchat auf Seite B. */
   reserveBottomNav?: boolean;
-  /** Blendet das Schliessen-Kreuz aus. Fuer die Hauptseiten gedacht, die man
-   *  ohnehin ueber die untere Leiste wechselt (Fach, Hot Line, Neuigkeiten) —
+  /** Blendet das Schliessen-X links aus. Fuer die Hauptseiten gedacht, die man
+   *  ohnehin ueber die untere Leiste wechselt (Eject, Hot Line, Profil) —
    *  dort waere ein X neben der Leiste ein zweiter Weg fuer dieselbe Sache.
    *  Unterseiten behalten das X bzw. ihren eigenen Zurueck-Pfeil. */
   hideClose?: boolean;
-  /** Knopf links in der Kopfzeile statt des X rechts, Titel dann mittig —
-   *  liegt genau dort, wo in der oberen Leiste der Ausloeser sitzt. Fuer
-   *  "Aufnehmen" (Composer.tsx): das Plus dreht sich an Ort und Stelle zum X,
-   *  das die Uebersicht wieder schliesst. Nur fuer variant 'full'. */
+  /** Eigener Knopf links in der Kopfzeile statt des Standard-X. Fuer
+   *  "Aufnehmen" (Composer.tsx): dort dreht sich das Plus an Ort und Stelle
+   *  zum X, das die Uebersicht wieder schliesst. */
   leading?: ReactNode;
   children: ReactNode;
 }
@@ -58,34 +58,32 @@ export default function Sheet({
   const full = variant === 'full';
   const navAware = full && reserveBottomNav;
 
-  // Mit `leading` spiegelt die Kopfzeile die Titelzeile der oberen Leiste
-  // (App.tsx): gleiche Spalten, gleiche Hoehe, gleicher Rand (-mx-1 macht aus
-  // px-4 die px-3 der Leiste) — der Knopf links liegt so pixelgenau ueber dem
-  // Ausloeser darunter.
-  const header = leading ? (
-    <div className="-mx-1 mb-4 grid min-h-9 grid-cols-[2.75rem_1fr_2.75rem] items-center">
-      <span className="flex justify-start">{leading}</span>
+  // Eine Kopfzeile fuer alle Blaetter, wie die Titelzeile der oberen Leiste
+  // (App.tsx): Titel mittig, links das X im selben Strich wie das Plus —
+  // gleiche Spalten, gleiche Hoehe, und bei Vollbild gleicher Rand (-mx-1
+  // macht aus px-4 die px-3 der Leiste). Das X liegt so pixelgenau dort, wo
+  // oben das Plus sitzt. Die rechte Spalte bleibt leer, damit der Titel
+  // wirklich mittig steht.
+  const header = (
+    <div className={`mb-4 grid min-h-9 grid-cols-[2.75rem_1fr_2.75rem] items-center ${full ? '-mx-1' : ''}`}>
+      <span className="flex justify-start">
+        {leading ??
+          (!hideClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Schließen"
+              className="hit grid size-8 place-items-center rounded-full transition-transform active:scale-95"
+              style={{ color: 'var(--ink)' }}
+            >
+              <PlusMark turned />
+            </button>
+          ))}
+      </span>
       <h2 className="truncate text-center text-base font-semibold" style={{ color: 'var(--ink)' }}>
         {title ?? ''}
       </h2>
       <span />
-    </div>
-  ) : (
-    <div className="mb-4 flex items-center gap-3">
-      <h2 className="min-w-0 flex-1 truncate text-lg font-semibold" style={{ color: 'var(--ink)' }}>
-        {title ?? ''}
-      </h2>
-      {!hideClose && (
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Schließen"
-          className="hit grid size-9 shrink-0 place-items-center rounded-full text-base"
-          style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-        >
-          ✕
-        </button>
-      )}
     </div>
   );
 
@@ -118,9 +116,7 @@ export default function Sheet({
         onClick={(e) => e.stopPropagation()}
         className={
           full
-            ? `flex h-full w-full max-w-xl flex-col overflow-y-auto px-4 ${
-                leading ? 'pt-[max(0.5rem,env(safe-area-inset-top))]' : 'pt-[max(1rem,env(safe-area-inset-top))]'
-              }`
+            ? 'flex h-full w-full max-w-xl flex-col overflow-y-auto px-4 pt-[max(0.5rem,env(safe-area-inset-top))]'
             : 'glass max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-2xl p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]'
         }
         style={{

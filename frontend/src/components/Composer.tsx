@@ -16,6 +16,7 @@ import MixtapeRecorder from './MixtapeRecorder';
 import CameraCapture from './CameraCapture';
 import FilmShoot from './FilmShoot';
 import KindIcon from './KindIcon';
+import PlusMark from './PlusMark';
 import Sheet from './Sheet';
 import Zettel, { NOTE_STYLE_LABEL } from './Zettel';
 
@@ -131,6 +132,7 @@ export default function Composer({ onPosted }: Props) {
         // Nur das Zeichen, ohne runden Knopf darum — wie die Glocke rechts
         // gegenueber, die Titelzeile soll ruhig wirken.
         className="hit relative z-50 grid size-8 place-items-center rounded-full transition-transform active:scale-95"
+        style={{ color: 'var(--ink)' }}
       >
         {/* Liegt beim Oeffnen unter der Uebersicht und steht dort schon auf X —
             beim Schliessen dreht es sichtbar zurueck zum Plus. */}
@@ -153,6 +155,7 @@ export default function Composer({ onPosted }: Props) {
             onClick={() => setStep(null)}
             aria-label="Schließen"
             className="hit grid size-8 place-items-center rounded-full transition-transform active:scale-95"
+            style={{ color: 'var(--ink)' }}
           >
             <PlusMark turned enter />
           </button>
@@ -391,27 +394,5 @@ export default function Composer({ onPosted }: Props) {
         )}
       </Sheet>
     </div>
-  );
-}
-
-/** Plus, das sich zum X dreht. `enter`: dreht beim Erscheinen vom Plus aus
- *  herein — so sieht der Knopf in der Uebersicht aus wie das Plus der Leiste,
- *  das sich gerade umdreht. */
-function PlusMark({ turned, enter }: { turned: boolean; enter?: boolean }) {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 14 14"
-      fill="none"
-      stroke="var(--ink)"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      aria-hidden="true"
-      className={enter ? 'plus-turn' : undefined}
-      style={{ transform: turned ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}
-    >
-      <path d="M7 1v12M1 7h12" />
-    </svg>
   );
 }
