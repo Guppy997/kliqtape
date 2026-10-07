@@ -146,6 +146,12 @@ function Deck() {
   // anfangen statt verdeckt zu werden (EmptyState.tsx). ResizeObserver
   // feuert auch waehrend des Auf-/Zuklappens, die Variable gleitet also mit.
   const panelRef = useRef<HTMLDivElement>(null);
+  const panelShownRef = useRef(panelShown);
+  const updateDeckVars = useRef<() => void>(() => {});
+  useLayoutEffect(() => {
+    panelShownRef.current = panelShown;
+    updateDeckVars.current();
+  }, [panelShown]);
   const topbarRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const el = panelRef.current;
@@ -154,10 +160,13 @@ function Deck() {
     const root = document.documentElement.style;
     // --topbar-h: Hoehe der klebenden Leiste, damit der Gruppenchat seine
     // Nachrichten unten am Eingabefeld ausrichten kann (ChatThread.tsx).
+    // offsetHeight statt getBoundingClientRect: das Feld wird beim Auf- und
+    // Zuklappen skaliert, gemeint ist aber seine echte Hoehe.
     const update = () => {
-      root.setProperty('--deck-h', `${el.getBoundingClientRect().height}px`);
+      root.setProperty('--deck-h', panelShownRef.current ? `${el.offsetHeight + 8}px` : '0px');
       root.setProperty('--topbar-h', `${bar.getBoundingClientRect().height}px`);
     };
+    updateDeckVars.current = update;
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
@@ -544,35 +553,35 @@ function Deck() {
           )}
         </div>
 
-        {/* Die Kassette klappt aus der Leiste heraus und legt sich UEBER den
-            Inhalt (absolut positioniert), statt ihn nach unten zu schieben —
-            dadurch bleibt die Leseposition erhalten, egal wo im Verlauf man
-            gerade ist. Die Hoehe wird ueber grid-template-rows 0fr/1fr
-            animiert; das braucht keine gemessene Pixelhoehe und funktioniert
-            deshalb auch, wenn sich der Inhalt der Kassette aendert. */}
-        <div
-          // ease-out schob fast die ganze Bewegung an den Anfang — es wirkte
-          // dadurch weggeschnappt, obwohl die Dauer schon laenger war. Diese
-          // Kurve startet sanft und laeuft weich aus.
-          ref={panelRef}
-          className="absolute inset-x-0 top-full grid transition-[grid-template-rows,opacity] duration-[420ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
-          style={{ gridTemplateRows: panelShown ? '1fr' : '0fr', opacity: panelShown ? 1 : 0 }}
-          // inert statt aria-hidden: eingeklappt sind Spulen und Umdreh-Flaeche
-          // zwar unsichtbar, blieben aber per Tastatur erreichbar.
-          inert={!panelShown}
-        >
-          {/* Dieselbe Glas-Flaeche wie die Leiste darueber, nur ohne obere
-              Kante — dadurch wirkt das Panel wie deren Fortsetzung und nicht
-              wie ein zweites, fremdes Blatt. */}
-          <div className="glass overflow-hidden" style={{ borderTop: 'none' }}>
-            <CassetteHeader
-              cassetteId={cassetteId}
-              pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
-              label={current?.name ?? 'Kein Band'}
-              count={data.length}
-              currentTape={currentTape}
-              createdAt={current?.createdAt}
-            />
+        {/* Die Kassette klappt aus dem kleinen Symbol oben links auf — ein
+            schwebendes Feld, das von dort aus waechst (transform-origin oben
+            links), nur etwas groesser als das Symbol. Es legt sich UEBER den
+            Inhalt, statt ihn zu verschieben, damit die Leseposition bleibt.
+            Die Flaeche daneben laesst Tipps auf den Inhalt durch. */}
+        <div className="pointer-events-none absolute inset-x-0 top-full" inert={!panelShown}>
+          <div className="mx-auto max-w-xl px-3 pt-2">
+            <div
+              ref={panelRef}
+              className="glass pointer-events-auto w-fit rounded-xl"
+              style={{
+                transformOrigin: 'top left',
+                transform: panelShown ? 'scale(1)' : 'scale(0.3)',
+                opacity: panelShown ? 1 : 0,
+                visibility: panelShown ? 'visible' : 'hidden',
+                transition: panelShown
+                  ? 'transform 380ms cubic-bezier(.2,.8,.2,1), opacity 220ms ease, visibility 0s'
+                  : 'transform 280ms cubic-bezier(.4,0,1,1), opacity 220ms ease, visibility 0s 280ms',
+              }}
+            >
+              <CassetteHeader
+                cassetteId={cassetteId}
+                pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
+                label={current?.name ?? 'Kein Band'}
+                count={data.length}
+                currentTape={currentTape}
+                createdAt={current?.createdAt}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -631,7 +640,7 @@ function Deck() {
 
                 {side === 'a'
                   ? tapeGroups.map((group) => (
-                      <div key={group.tapeIndex} className="flex flex-col gap-5">
+                      <div key={group.tapeIndex} className="flex flex-col gap-1.5">
                         <TapeHeader
                           cassetteId={cassetteId!}
                           cassetteCreatedAt={current!.createdAt}

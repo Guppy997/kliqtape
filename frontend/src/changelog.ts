@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.44.1',
+    date: '2026-10-07',
+    changes: [
+      'Beiträge wieder als Karten mit Art, Track und Datum — Tonfetzen und Reagieren wieder als Knöpfe mit Text',
+      'Die Kassette klappt jetzt aus dem kleinen Symbol oben links auf und bleibt handlich, statt fast den halben Bildschirm zu füllen',
+    ],
+  },
+  {
     version: '0.44.0',
     date: '2026-10-07',
     changes: [

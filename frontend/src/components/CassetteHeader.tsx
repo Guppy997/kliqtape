@@ -19,8 +19,10 @@ interface Props {
   createdAt?: number;
 }
 
-/** Wie gross die ausgeklappte Kassette gezeichnet wird (siehe CassetteHeader). */
-const HEADER_ZOOM = 0.76;
+/** Wie gross die ausgeklappte Kassette gezeichnet wird (siehe CassetteHeader):
+ *  rund 200 px breit — etwas groesser als das Symbol oben links, nicht mehr
+ *  bildschirmfuellend. */
+const HEADER_ZOOM = 0.52;
 
 const R_MAX = 26;
 const R_MIN = 10;
@@ -175,13 +177,11 @@ export default function CassetteHeader({ cassetteId, pairIndex, label, count, cu
   const rRight = R_MIN + (R_MAX - R_MIN) * progress;
 
   return (
-    <header className="px-3 pb-2 pt-2">
-      {/* Kleiner als die volle Breite: auf dem Handy nahm die ausgeklappte
-          Kassette sonst gut 40 % der Hoehe ein. zoom statt transform, damit
-          auch der belegte Platz schrumpft (nicht nur das Bild); die
-          Breitengrenze gilt vor dem Zoom und haelt das Seitenverhaeltnis
-          einer echten Kassette. */}
-      <div className="mx-auto" style={{ perspective: '1100px', zoom: HEADER_ZOOM, maxWidth: '24rem' }}>
+    <header className="p-2">
+      {/* Feste Zeichenbreite, per zoom verkleinert: zoom statt transform,
+          damit auch der belegte Platz schrumpft und das schwebende Feld in
+          App.tsx genau so gross wird wie die Kassette darin. */}
+      <div style={{ perspective: '1100px', zoom: HEADER_ZOOM, width: '24rem' }}>
         <CassetteFace
           side={side}
           cassetteId={cassetteId}

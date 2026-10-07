@@ -376,8 +376,10 @@ Regeln, damit beides sich nicht in die Quere kommt:
 - **Radien:** `rounded-lg` für Bedienelemente, `rounded-xl` für Flächen, `rounded-full` für
   Pillen und Avatare. Materialien behalten ihre eigenen (Abzug, Etikett).
 - **Farben:** `--accent` pro Kassette, dazu feste Bedeutungsfarben (`--on-accent`, `--danger`).
-- **Beiträge** liegen ohne Kartenrahmen auf der Fläche; Melden und Löschen stecken im
-  „…“-Menü, Tonfetzen und Reagieren sind Icons.
+- **Beiträge** sind Karten (Art, Track, Datum); Melden und Löschen stecken im „…“-Menü,
+  Tonfetzen und Reagieren sind Knöpfe mit Symbol und Text.
+- **Die eingelegte Kassette** klappt aus dem Symbol oben links als schwebendes Feld auf
+  (rund 200 px breit) und legt sich über den Inhalt.
 - **Untere Leiste:** Fach, Band, Hot Line, Neues. **Obere Leiste:** Kassette, Aufnehmen, Regal,
   Profilbild; darunter Suche und Filter für die eingelegte Seite.
 
