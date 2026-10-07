@@ -217,6 +217,17 @@ function Deck() {
     return () => document.removeEventListener('pointerdown', onDown);
   }, [panelShown]);
 
+  // Haarstrich unter der Leiste nur, solange darunter gescrollt ist — in
+  // Ruhe verschmilzt die Leiste mit dem Board (.bar-flat in index.css).
+  // Gesetzt wird nur beim Ueberschreiten der Kante, nicht bei jedem Pixel.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 0);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   useEffect(() => {
     const close = () => setDeckOpen(false);
     window.addEventListener('wheel', close, { passive: true });
@@ -441,10 +452,16 @@ function Deck() {
           laeuft die Zeile bei iPhone und Android dort hinein. */}
       <div
         ref={topbarRef}
-        className="glass sticky top-0 z-30 pt-[max(0.5rem,env(safe-area-inset-top))]"
+        className="bar-flat sticky top-0 z-30 pt-[max(0.5rem,env(safe-area-inset-top))]"
+        data-scrolled={scrolled || undefined}
         // Solange die Kassette ausgeklappt ist, faellt die Trennlinie nach
         // unten weg — Leiste und Panel sind dann eine durchgehende Flaeche.
-        style={{ borderBottomColor: panelShown ? 'transparent' : undefined }}
+        // Der Grund gleitet beim Umdrehen mit wie der Rahmen (App, FLIP_IN_MS),
+        // sonst sprang die Leiste vorab auf die Farbe der anderen Seite.
+        style={{
+          borderBottomColor: panelShown ? 'transparent' : undefined,
+          transition: `background-color ${FLIP_IN_MS + 80}ms ease-out, border-color 160ms ease-out`,
+        }}
       >
         <div className="mx-auto flex max-w-xl flex-col gap-1.5 px-3 pb-2">
           {/* Titelzeile wie bei Instagram: links Aufnehmen, Mitte die Wortmarke,

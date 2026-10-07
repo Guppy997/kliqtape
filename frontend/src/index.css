@@ -153,6 +153,21 @@ body {
     0 0.5rem 1rem rgba(0, 0, 0, 0.32);
 }
 
+/* Obere Leiste: gehoert zum Board, ist keine eigene Platte — gleicher Grund
+   wie die Seite, ohne Schleier, Rahmen oder Schatten. Deckend bleibt sie
+   trotzdem, damit durchlaufender Inhalt nicht durchscheint. Erst wenn
+   darunter gescrollt wird, trennt ein Haarstrich (data-scrolled, App.tsx),
+   sonst wirken die Karten an der Kante hart abgeschnitten. */
+.bar-flat {
+  background: var(--screen);
+  border-bottom: 1px solid transparent;
+  transition: border-color 160ms ease-out;
+}
+
+.bar-flat[data-scrolled] {
+  border-bottom-color: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
 /* Knoepfe/Chips, die auf einer .glass-Flaeche sitzen. Hier ist Transparenz
    unproblematisch: darunter liegt die deckende Leiste, nicht der Inhalt —
    die Chips heben sich also nur leicht von ihr ab, ohne dass etwas

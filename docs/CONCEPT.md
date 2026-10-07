@@ -392,7 +392,9 @@ Regeln, damit beides sich nicht in die Quere kommt:
 - **Obere Leiste:** Titelzeile `[+]  KLIQTAPE  [🔔]` (Aufnehmen, Wortmarke, „Neues“), darunter
   eine schmale Zeile für die eingelegte Kassette (Symbol, Name, Seite) und rechts die Lupe. Die
   Lupe klappt Suche und Filter für die eingelegte Seite auf; beim Schließen wird beides
-  zurückgesetzt, solange etwas aktiv ist, leuchtet die Lupe.
+  zurückgesetzt, solange etwas aktiv ist, leuchtet die Lupe. Die Leiste hat **denselben Grund wie
+  das Board** (kein Schleier, kein Rahmen, kein Schatten); nur wenn darunter gescrollt wird,
+  trennt ein Haarstrich.
 - **Untere Leiste:** Fach, Band, Hot Line, Profil — schlank (rund 54 pt plus Home-Indikator),
   kleine Symbole mit winziger Beschriftung, das aktive in der Akzentfarbe.
 - **Profil** ist die eigene Sammlung, **nur für einen selbst sichtbar** (kein öffentliches

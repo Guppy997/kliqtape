@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.47.1',
+    date: '2026-10-07',
+    changes: [
+      'Die obere Leiste verschmilzt mit dem Hintergrund — keine eigene Fläche mehr, nur beim Scrollen trennt ein feiner Strich',
+    ],
+  },
+  {
     version: '0.47.0',
     date: '2026-10-07',
     changes: [
