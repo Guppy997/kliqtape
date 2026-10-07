@@ -262,10 +262,22 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
 
   const messageList = (
     <div
-      className={variant === 'hotline' ? 'flex flex-1 flex-col gap-1 overflow-y-auto py-3' : 'flex flex-col gap-1 py-3'}
+      className={
+        variant === 'hotline'
+          ? 'flex flex-1 flex-col gap-1 overflow-y-auto py-3'
+          : 'flex flex-col justify-end gap-1 py-3'
+      }
+      // Gruppenchat: Nachrichten sitzen unten am Eingabefeld wie in jedem
+      // Messenger. Vorher standen wenige Nachrichten oben — genau unter der
+      // aufgeklappten Kassette, der Chat sah leer aus. --topbar-h misst App.tsx.
+      style={
+        variant === 'cassette'
+          ? { minHeight: 'calc(100dvh - var(--topbar-h, 7rem) - var(--chatcomposer-h, 5rem) - 1.5rem)' }
+          : undefined
+      }
     >
       {chat.messages.length === 0 ? (
-        <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>
+        <p className="py-10 text-center text-sm" style={{ color: 'var(--dim)' }}>
           {variant === 'hotline'
             ? chat.other
               ? `Noch nichts mit ${chat.other}.`
@@ -285,10 +297,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                 {variant === 'cassette' && !mine && <Avatar name={m.from} side={side} size={1.5} />}
                 <div className="flex max-w-[76%] flex-col gap-0.5">
                   {showSender && (
-                    <span
-                      className="font-mono px-1 text-[0.56rem] uppercase tracking-[0.06em]"
-                      style={{ color: 'var(--dim)' }}
-                    >
+                    <span className="px-1 text-2xs" style={{ color: 'var(--dim)' }}>
                       {m.from}
                     </span>
                   )}
@@ -303,10 +312,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                   >
                     {m.quotedPost && (
                       <div
-                        className="mb-1.5 rounded-md px-2 py-1"
+                        className="mb-1.5 rounded-lg px-2 py-1"
                         style={{ background: 'rgba(0,0,0,.18)', borderLeft: '2px solid currentColor' }}
                       >
-                        <span className="block truncate text-[0.68rem] opacity-80">
+                        <span className="block truncate text-2xs opacity-80">
                           {m.quotedPost.author}: {previewFor(m.quotedPost.kind, m.quotedPost.body)}
                         </span>
                       </div>
@@ -314,7 +323,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                     <ChatBubbleContent msg={m} />
                   </div>
                   <span
-                    className="font-mono px-1 text-[0.5rem] tabular-nums"
+                    className="font-mono px-1 text-2xs tabular-nums"
                     style={{ color: 'var(--dim)', alignSelf: mine ? 'flex-end' : 'flex-start' }}
                   >
                     {m.pending ? 'wird gesendet …' : berlinTime(m.createdAt)}
@@ -335,7 +344,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
       style={variant === 'hotline' ? { borderTop: '1px solid var(--line)' } : undefined}
     >
       {error && (
-        <p className="text-xs" style={{ color: '#F0B5A5' }}>
+        <p className="text-xs" style={{ color: 'var(--danger)' }}>
           {error}
         </p>
       )}
@@ -349,7 +358,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
           className="flex items-center gap-2 rounded-lg py-1.5 pl-2.5 pr-1.5"
           style={{ background: 'var(--card)', borderLeft: '3px solid var(--accent)' }}
         >
-          <span className="min-w-0 flex-1 truncate text-[0.76rem]" style={{ color: 'var(--dim)' }}>
+          <span className="min-w-0 flex-1 truncate text-meta" style={{ color: 'var(--dim)' }}>
             An <span style={{ color: 'var(--ink)' }}>{pendingQuote.author}</span>:{' '}
             {previewFor(pendingQuote.kind, pendingQuote.body)}
           </span>
@@ -374,14 +383,11 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
               style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
             >
               <span className="blink size-2.5 shrink-0 rounded-full" style={{ background: '#C7452A' }} />
-              <span className="font-mono tabular-nums text-sm" style={{ color: 'var(--ink)' }}>
+              <span className="tabular-nums text-sm" style={{ color: 'var(--ink)' }}>
                 {String(Math.floor(recElapsed / 60000)).padStart(2, '0')}:
                 {String(Math.floor((recElapsed % 60000) / 1000)).padStart(2, '0')}
               </span>
-              <span
-                className="font-mono truncate text-[0.6rem] uppercase tracking-wide"
-                style={{ color: 'var(--dim)' }}
-              >
+              <span className="truncate text-2xs" style={{ color: 'var(--dim)' }}>
                 nimmt auf …
               </span>
             </div>
@@ -401,7 +407,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
               title="Senden"
               onClick={stopRecording}
               className="grid size-11 shrink-0 place-items-center rounded-lg"
-              style={{ background: accent, color: variant === 'hotline' ? '#20180A' : '#17130E' }}
+              style={{ background: accent, color: variant === 'hotline' ? '#20180A' : 'var(--on-accent)' }}
             >
               <svg
                 width="14"
@@ -428,7 +434,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
               aria-label="Emoji"
               title="Emoji"
               onClick={() => setEmojiOpen(true)}
-              className="grid size-9 shrink-0 place-items-center self-end rounded-full text-lg transition-transform active:scale-90"
+              className="hit grid size-9 shrink-0 place-items-center self-end rounded-full text-lg transition-transform active:scale-90"
               style={{ color: 'var(--dim)' }}
             >
               <svg
@@ -462,7 +468,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                   void submit();
                 }
               }}
-              className="min-w-0 flex-1 resize-none rounded-lg p-2.5 text-[0.9rem] outline-none disabled:opacity-50"
+              className="min-w-0 flex-1 resize-none rounded-lg p-2.5 text-sm outline-none disabled:opacity-50"
               style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
             />
             <button
@@ -506,7 +512,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                 disabled={!canSend || chat.sending}
                 onClick={() => void submit()}
                 className="grid size-11 shrink-0 place-items-center rounded-lg transition-transform active:scale-95 disabled:opacity-40"
-                style={{ background: accent, color: variant === 'hotline' ? '#20180A' : '#17130E' }}
+                style={{ background: accent, color: variant === 'hotline' ? '#20180A' : 'var(--on-accent)' }}
               >
                 <svg
                   width="15"
@@ -555,9 +561,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
           </>
         )}
       </div>
-      {recState !== 'recording' && (
+      {/* Restzeichen erst kurz vor der Grenze — dauerhaft "500" war nur Rauschen. */}
+      {recState !== 'recording' && maxLen - text.length < 50 && (
         <p
-          className="font-mono text-right text-[0.58rem]"
+          className="font-mono text-right text-2xs tabular-nums"
           style={{ color: maxLen - text.length < 30 ? accent : 'var(--dim)' }}
         >
           {maxLen - text.length}
@@ -616,10 +623,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
               className="flex items-center justify-between rounded-xl px-3.5 py-3 text-left"
               style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
             >
-              <span className="font-disp text-sm font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--ink)' }}>
+              <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                 {c.label}
               </span>
-              <span className="font-mono text-[0.6rem]" style={{ color: 'var(--dim)' }}>
+              <span className="text-2xs" style={{ color: 'var(--dim)' }}>
                 {c.hint}
               </span>
             </button>
@@ -646,7 +653,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
       <Sheet open={attachStep === 'tape'} onClose={() => setAttachStep(null)} variant="full" title="Mixtape teilen">
         <div className="flex flex-col gap-3">
           {shareableTapes.length === 0 ? (
-            <p className="font-hand py-8 text-center text-lg" style={{ color: 'var(--dim)' }}>
+            <p className="py-8 text-center text-sm" style={{ color: 'var(--dim)' }}>
               Noch kein versiegeltes Mixtape.
             </p>
           ) : (
@@ -660,7 +667,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                 style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
               >
                 <span
-                  className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md"
+                  className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg"
                   style={{ background: '#D8CFBB' }}
                 >
                   {t.coverId ? (
@@ -673,10 +680,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                   <span className="font-hand block truncate text-[1.02rem]" style={{ color: 'var(--ink)' }}>
                     {t.title}
                   </span>
-                  <span
-                    className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]"
-                    style={{ color: 'var(--dim)' }}
-                  >
+                  <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
                     ursprünglich für {t.to} · {t.trackCount}/12
                   </span>
                 </span>
@@ -717,7 +721,7 @@ function ChatBubbleContent({ msg }: { msg: ChatMessage }) {
   switch (msg.kind) {
     case 'text':
       return (
-        <p className="text-[0.9rem] leading-relaxed">
+        <p className="text-sm leading-relaxed">
           <EmojiText text={msg.body} />
         </p>
       );
@@ -725,9 +729,9 @@ function ChatBubbleContent({ msg }: { msg: ChatMessage }) {
     case 'photo':
       return msg.mediaId ? (
         <div className="flex flex-col gap-1.5">
-          <img src={mediaUrl(msg.mediaId)} alt={msg.body || 'Foto'} loading="lazy" className="max-w-full rounded-md" />
+          <img src={mediaUrl(msg.mediaId)} alt={msg.body || 'Foto'} loading="lazy" className="max-w-full rounded-lg" />
           {msg.body && (
-            <p className="text-[0.85rem]">
+            <p className="text-meta">
               <EmojiText text={msg.body} />
             </p>
           )}
@@ -742,10 +746,10 @@ function ChatBubbleContent({ msg }: { msg: ChatMessage }) {
             controls
             playsInline
             preload="metadata"
-            className="max-w-full rounded-md"
+            className="max-w-full rounded-lg"
           />
           {msg.body && (
-            <p className="text-[0.85rem]">
+            <p className="text-meta">
               <EmojiText text={msg.body} />
             </p>
           )}
@@ -768,7 +772,7 @@ function ChatBubbleContent({ msg }: { msg: ChatMessage }) {
       return msg.tape ? (
         <div className="flex items-center gap-2">
           <span
-            className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-md"
+            className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg"
             style={{ background: '#D8CFBB' }}
           >
             {msg.tape.coverId ? (
@@ -779,9 +783,7 @@ function ChatBubbleContent({ msg }: { msg: ChatMessage }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="font-hand block truncate text-[0.95rem]">{msg.tape.title}</span>
-            <span className="font-mono block text-[0.55rem] uppercase tracking-[0.08em] opacity-70">
-              {msg.tape.trackCount} Titel
-            </span>
+            <span className="block text-2xs opacity-70">{msg.tape.trackCount} Titel</span>
           </span>
         </div>
       ) : null;

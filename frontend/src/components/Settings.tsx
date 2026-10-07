@@ -137,11 +137,11 @@ export default function Settings() {
           setError(null);
           setOpen(true);
         }}
-        className="glass-chip flex shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5"
-        style={{ color: 'var(--dim)' }}
+        title="Profil"
+        className="hit shrink-0 rounded-full"
+        style={{ boxShadow: '0 0 0 1.5px var(--line)' }}
       >
-        <Avatar name={me} side={side} size={1.2} />
-        <span className="font-mono text-[0.6rem] uppercase tracking-[0.1em]">Profil</span>
+        <Avatar name={me} side={side} size={2.25} />
       </button>
 
       {/* Volle Seite in der Farbe der aktuellen Seite — nichts scheint durch. */}
@@ -166,7 +166,7 @@ export default function Settings() {
               <div className="flex items-center gap-4">
                 <Avatar name={me} side={side} size={5} />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
-                  <span className="font-hand truncate text-2xl" style={{ color: 'var(--ink)' }}>
+                  <span className="truncate text-xl font-semibold" style={{ color: 'var(--ink)' }}>
                     {me}
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -174,7 +174,7 @@ export default function Settings() {
                       type="button"
                       onClick={() => setShooting(true)}
                       className="rounded-lg px-3 py-2 text-sm font-semibold"
-                      style={{ background: 'var(--accent)', color: '#17130E' }}
+                      style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
                     >
                       {myAvatar ? 'Neues Bild' : 'Bild aufnehmen'}
                     </button>
@@ -191,7 +191,7 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
-              <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+              <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
                 Auch das Profilbild wird aufgenommen, nicht hochgeladen — kein perfektes Bild aus der Galerie.
               </p>
             </section>
@@ -221,7 +221,7 @@ export default function Settings() {
             <Block title="Zugangscode">
               <div className="flex gap-2">
                 <div
-                  className="min-w-0 flex-1 truncate rounded-lg px-3 py-2.5 font-mono text-sm"
+                  className="min-w-0 flex-1 truncate rounded-lg px-3 py-2.5 text-sm"
                   style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
                 >
                   {token ? (tokenVisible ? token : '•'.repeat(20)) : '—'}
@@ -263,15 +263,11 @@ export default function Settings() {
                     style={{
                       background: startSide === s ? 'var(--accent)' : 'var(--card)',
                       border: '1px solid var(--line)',
-                      color: startSide === s ? '#17130E' : 'var(--ink)',
+                      color: startSide === s ? 'var(--on-accent)' : 'var(--ink)',
                     }}
                   >
-                    <span className="font-disp block text-sm font-bold uppercase tracking-[0.1em]">
-                      Seite {s.toUpperCase()}
-                    </span>
-                    <span className="font-mono block text-[0.58rem] uppercase tracking-[0.08em] opacity-70">
-                      {SIDE_LABEL[s]}
-                    </span>
+                    <span className="block text-sm font-semibold">Seite {s.toUpperCase()}</span>
+                    <span className="block text-2xs opacity-70">{SIDE_LABEL[s]}</span>
                   </button>
                 ))}
               </div>
@@ -280,9 +276,9 @@ export default function Settings() {
             {/* --- Ehrlichkeit statt Versprechen --- */}
             <Block title="Was der Server sieht">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-[0.78rem]" style={{ color: 'var(--ink)' }}>
+                <table className="w-full text-left text-meta" style={{ color: 'var(--ink)' }}>
                   <thead>
-                    <tr className="font-mono text-[0.56rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+                    <tr className="text-2xs" style={{ color: 'var(--dim)' }}>
                       <th className="pb-1.5 pr-2 font-normal">&nbsp;</th>
                       <th className="pb-1.5 pr-2 font-normal">A · {SIDE_LABEL.a}</th>
                       <th className="pb-1.5 font-normal">B · {SIDE_LABEL.b}</th>
@@ -311,7 +307,7 @@ export default function Settings() {
               {/* Funktionen, die nicht an Seite A/B haengen — jede neue Funktion
                   bekommt hier eine Zeile, bevor sie ausgeliefert wird. */}
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-[0.78rem]" style={{ color: 'var(--ink)' }}>
+                <table className="w-full text-left text-meta" style={{ color: 'var(--ink)' }}>
                   <tbody className="align-top">
                     {SERVER_SEES_EXTRA.map(([k, v]) => (
                       <tr key={k} style={{ borderTop: '1px solid var(--line)' }}>
@@ -325,8 +321,8 @@ export default function Settings() {
                 </table>
               </div>
               <p
-                className="font-mono rounded-lg px-3 py-2.5 text-[0.62rem] leading-relaxed"
-                style={{ background: 'rgba(184,70,44,.15)', color: '#F0B5A5' }}
+                className="rounded-lg px-3 py-2.5 text-2xs leading-relaxed"
+                style={{ background: 'rgba(184,70,44,.15)', color: 'var(--danger)' }}
               >
                 In diesem Prototyp ist <strong>nichts Ende-zu-Ende-verschlüsselt</strong>, auch Seite B nicht. Diese
                 Tabelle sagt immer die Wahrheit; wenn Verschlüsselung kommt, ändert sie sich hier zuerst.
@@ -346,7 +342,7 @@ export default function Settings() {
                 style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
               >
                 Alles herunterladen
-                <span className="font-mono block text-[0.58rem]" style={{ color: 'var(--dim)' }}>
+                <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
                   Beiträge, Mixtapes, Hotlines und Reaktionen als JSON
                 </span>
               </button>
@@ -354,12 +350,10 @@ export default function Settings() {
                 type="button"
                 onClick={wipe}
                 className="rounded-lg px-3 py-2.5 text-left text-sm"
-                style={{ background: 'var(--card)', border: '1px solid var(--line)', color: '#F0B5A5' }}
+                style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--danger)' }}
               >
                 Alles löschen
-                <span className="font-mono block text-[0.58rem] opacity-70">
-                  Vom Server entfernt, nicht nur von diesem Gerät
-                </span>
+                <span className="block text-2xs opacity-70">Vom Server entfernt, nicht nur von diesem Gerät</span>
               </button>
               <button
                 type="button"
@@ -371,9 +365,7 @@ export default function Settings() {
                 style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--dim)' }}
               >
                 Nur abmelden
-                <span className="font-mono block text-[0.58rem] opacity-70">
-                  Deine Aufnahmen bleiben auf dem Server
-                </span>
+                <span className="block text-2xs opacity-70">Deine Aufnahmen bleiben auf dem Server</span>
               </button>
             </Block>
 
@@ -385,13 +377,10 @@ export default function Settings() {
                   className="flex items-baseline gap-2 rounded-lg px-3 py-2.5"
                   style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
                 >
-                  <span
-                    className="font-disp text-sm font-bold uppercase tracking-[0.1em]"
-                    style={{ color: 'var(--ink)' }}
-                  >
+                  <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                     {s.toUpperCase()} · {SIDE_LABEL[s]}
                   </span>
-                  <span className="font-mono text-[0.6rem]" style={{ color: 'var(--dim)' }}>
+                  <span className="text-2xs" style={{ color: 'var(--dim)' }}>
                     {SIDE_HINT[s]}
                   </span>
                 </div>
@@ -404,7 +393,7 @@ export default function Settings() {
               <button
                 type="button"
                 onClick={() => setShowLog((v) => !v)}
-                className="font-mono flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-[0.66rem] uppercase tracking-[0.1em]"
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-2xs"
                 style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--dim)' }}
               >
                 <span>
@@ -417,18 +406,18 @@ export default function Settings() {
                 <span aria-hidden="true">{showLog ? '▴' : '▾'}</span>
               </button>
               {showLog && <VersionLog />}
-              <p className="font-mono text-[0.58rem]" style={{ color: 'var(--dim)' }}>
+              <p className="text-2xs" style={{ color: 'var(--dim)' }}>
                 AGPL-3.0 · kein Tracking, keine Werbung, kein Algorithmus
               </p>
             </section>
 
             {note && (
-              <p className="font-mono text-[0.66rem]" style={{ color: 'var(--accent)' }}>
+              <p className="text-2xs" style={{ color: 'var(--accent)' }}>
                 {note}
               </p>
             )}
             {error && (
-              <p className="font-mono text-[0.66rem]" style={{ color: '#F0B5A5' }}>
+              <p className="text-2xs" style={{ color: 'var(--danger)' }}>
                 {error}
               </p>
             )}
@@ -464,7 +453,7 @@ function AlbumOptOut() {
         <span className="block text-sm" style={{ color: 'var(--ink)' }}>
           Meine Beiträge nicht in Alben
         </span>
-        <span className="font-mono block text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+        <span className="block text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
           Wer ein Tape als PDF-Album speichert, bekommt deine Beiträge dann nicht mit.
         </span>
       </span>
@@ -485,7 +474,7 @@ function AlbumOptOut() {
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
+      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
         {title}
       </h3>
       {children}
@@ -495,7 +484,7 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 
 function Hint({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+    <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
       {children}
     </p>
   );

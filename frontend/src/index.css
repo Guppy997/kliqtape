@@ -32,6 +32,23 @@
   --font-disp: 'Arial Narrow', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-hand: 'Bradley Hand', 'Marker Felt', 'Segoe Script', cursive;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* --- Bausteine der Bedienung (Designpunkt 10) ---------------------------
+     Gilt fuer die moderne Bedienung, NICHT fuer die Materialien (Kassette,
+     Abzug, Zettel, Etikett) — die behalten ihre eigenen Masse.
+
+     Schrift: 11 px ist die Untergrenze (iOS empfiehlt ~11 pt); darunter
+     nichts mehr, was man lesen soll. 2xs = Metadaten, xs = Hinweise,
+     meta = Nebentext, sm = Bedienung, base = Fliesstext. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.35;
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.4;
+
+  /* Radien: lg fuer Bedienelemente (Felder, Knoepfe), xl fuer Flaechen
+     (Karten, Zeilen, Blaetter), full fuer Pillen und Avatare. */
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
 }
 
 html,
@@ -78,6 +95,26 @@ body {
   --accent: var(--color-a-stripe);
   --card: var(--color-a-card);
   --line: var(--color-a-line);
+  /* Feste Bedeutungsfarben, unabhaengig von der Kassette. */
+  --on-accent: #17130e; /* Schrift auf Akzent-Flaechen */
+  --danger: #f0b5a5; /* Warn-/Loesch-Text */
+  --danger-line: #b8462c;
+  --danger-bg: rgba(184, 70, 44, 0.18);
+}
+
+/* Tippflaeche mindestens 44 x 44 pt, ohne das Element groesser zu zeichnen
+   (Designpunkt 9) — fuer kleine Icon-Knoepfe. */
+.hit {
+  position: relative;
+}
+.hit::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }
 
 /* --- Glas-Chrome ------------------------------------------------------------

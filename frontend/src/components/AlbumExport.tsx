@@ -58,12 +58,12 @@ export default function AlbumExport({
         </p>
 
         {isLoading && (
-          <p className="font-mono text-[0.62rem]" style={{ color: 'var(--dim)' }}>
+          <p className="text-2xs" style={{ color: 'var(--dim)' }}>
             Spule durch …
           </p>
         )}
         {data && data.tapes.length === 0 && (
-          <p className="font-hand py-6 text-center text-lg" style={{ color: 'var(--dim)' }}>
+          <p className="py-6 text-center text-sm" style={{ color: 'var(--dim)' }}>
             Auf Seite A ist noch nichts, das sich drucken lässt.
           </p>
         )}
@@ -88,19 +88,16 @@ export default function AlbumExport({
                   style={{
                     border: `1.5px solid ${on ? 'var(--accent)' : 'var(--line)'}`,
                     background: on ? 'var(--accent)' : 'transparent',
-                    color: '#17130E',
+                    color: 'var(--on-accent)',
                   }}
                 >
                   {on && '✓'}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span
-                    className="font-mono block text-[0.56rem] uppercase tracking-[0.12em]"
-                    style={{ color: 'var(--dim)' }}
-                  >
+                  <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
                     Tape {String(t.index).padStart(2, '0')} · {t.date}
                   </span>
-                  <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
+                  <span className="block truncate text-base font-medium" style={{ color: 'var(--ink)' }}>
                     {t.name ?? (photos.length ? 'Bilder und Zettel' : 'Zettel')}
                   </span>
                 </span>
@@ -121,7 +118,7 @@ export default function AlbumExport({
         </div>
 
         {save.error && (
-          <p className="text-sm" style={{ color: '#F0B5A5' }}>
+          <p className="text-sm" style={{ color: 'var(--danger)' }}>
             {(save.error as Error).message}
           </p>
         )}
@@ -131,8 +128,8 @@ export default function AlbumExport({
             type="button"
             disabled={chosen.size === 0 || save.isPending}
             onClick={() => save.mutate()}
-            className="font-disp w-full rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] disabled:opacity-40"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            className="w-full rounded-xl px-4 py-3 text-sm font-semibold disabled:opacity-40"
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {save.isPending ? 'Album wird gebunden …' : 'PDF speichern'}
           </button>

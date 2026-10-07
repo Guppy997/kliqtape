@@ -364,6 +364,23 @@ Vor einer Öffnung juristisch prüfen lassen.
 
 ## 13. Visuelle Identität
 
+**Die Bedienung ist modern, die Materialien sind retro (Stand v0.44).** Daraus folgen feste
+Regeln, damit beides sich nicht in die Quere kommt:
+
+- **Schrift:** Systemschrift für alles, was man bedient. Handschrift nur auf Material
+  (Kassettenetikett, Bildunterschrift auf dem Abzug, Zettel, Mixtape-Titel und -Widmung,
+  Imposter-Aufgabenkarte). Schreibmaschinenschrift nur für Zahlen (Track, Uhrzeit, Restzeichen).
+  Keine Großbuchstaben mit Sperrsatz in der Bedienung.
+- **Größen:** 11 px ist die Untergrenze (`text-2xs`), danach `text-xs`, `text-meta` (13 px),
+  `text-sm`. Kleine Icon-Knöpfe bekommen mit `.hit` eine Tippfläche von 44 × 44.
+- **Radien:** `rounded-lg` für Bedienelemente, `rounded-xl` für Flächen, `rounded-full` für
+  Pillen und Avatare. Materialien behalten ihre eigenen (Abzug, Etikett).
+- **Farben:** `--accent` pro Kassette, dazu feste Bedeutungsfarben (`--on-accent`, `--danger`).
+- **Beiträge** liegen ohne Kartenrahmen auf der Fläche; Melden und Löschen stecken im
+  „…“-Menü, Tonfetzen und Reagieren sind Icons.
+- **Untere Leiste:** Fach, Band, Hot Line, Neues. **Obere Leiste:** Kassette, Aufnehmen, Regal,
+  Profilbild; darunter Suche und Filter für die eingelegte Seite.
+
 **Seite A — Type I, klassisch.** Mattes schwarzes Gehäuse `#23201C`, Papieretikett `#E4DAC4`,
 Oxidbraun `#5C3A21`, roter Type-I-Streifen `#B8462C`, Handschrift auf dem Etikett.
 

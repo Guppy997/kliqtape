@@ -110,7 +110,7 @@ export default function NewsView({ open, onClose }: Props) {
           style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
         >
           <Lockup size="1.6rem" />
-          <span className="font-mono flex-1 text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+          <span className="flex-1 text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
             News, Insights und was sonst noch am Projekt passiert.
           </span>
           {canPost && (
@@ -118,8 +118,8 @@ export default function NewsView({ open, onClose }: Props) {
               type="button"
               onClick={() => setStep('choose')}
               aria-label="Beitrag erstellen"
-              className="grid size-9 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
-              style={{ background: 'var(--accent)', color: '#17130E' }}
+              className="hit grid size-9 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               <svg
                 width="14"
@@ -149,17 +149,14 @@ export default function NewsView({ open, onClose }: Props) {
           }}
         >
           <div className="flex items-center justify-between gap-2">
-            <span
-              className="font-disp block text-sm font-bold uppercase tracking-[0.06em]"
-              style={{ color: 'var(--accent)' }}
-            >
+            <span className="block text-sm font-semibold" style={{ color: 'var(--accent)' }}>
               Unterstütze unser Projekt
             </span>
             {canPost && (
               <button
                 type="button"
                 onClick={openFundingEditor}
-                className="font-mono shrink-0 text-[0.58rem] uppercase tracking-[0.08em]"
+                className="shrink-0 text-2xs"
                 style={{ color: 'var(--accent)' }}
               >
                 Bearbeiten
@@ -170,39 +167,36 @@ export default function NewsView({ open, onClose }: Props) {
           {funding.balance || funding.note ? (
             <>
               {funding.balance && (
-                <span className="font-disp mt-1.5 block text-xl font-bold tabular-nums" style={{ color: 'var(--ink)' }}>
+                <span className="mt-1.5 block text-xl font-semibold tabular-nums" style={{ color: 'var(--ink)' }}>
                   {funding.balance}
                 </span>
               )}
               {funding.note && (
-                <span className="font-mono mt-1 block text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+                <span className="mt-1 block text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
                   {funding.note}
                 </span>
               )}
               {funding.updatedAt > 0 && (
-                <span
-                  className="font-mono mt-1.5 block text-[0.54rem] uppercase tracking-[0.08em]"
-                  style={{ color: 'var(--dim)' }}
-                >
+                <span className="mt-1.5 block text-2xs" style={{ color: 'var(--dim)' }}>
                   Stand: {berlinDateLabel(funding.updatedAt)}
                 </span>
               )}
             </>
           ) : (
-            <span className="font-mono mt-1 block text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+            <span className="mt-1 block text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
               Kliqtape kommt ohne Werbung und ohne Tracking aus — der Spenden-Link folgt hier in Kürze.
             </span>
           )}
         </div>
 
         {isLoading && (
-          <p className="font-mono py-6 text-center text-xs" style={{ color: 'var(--dim)' }}>
+          <p className="py-6 text-center text-xs" style={{ color: 'var(--dim)' }}>
             Lädt …
           </p>
         )}
 
         {!isLoading && posts.length === 0 && (
-          <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>
+          <p className="py-10 text-center text-sm" style={{ color: 'var(--dim)' }}>
             Noch nichts gepostet.
           </p>
         )}
@@ -215,7 +209,7 @@ export default function NewsView({ open, onClose }: Props) {
           >
             <div className="flex items-center gap-2">
               <Lockup size="0.85rem" />
-              <span className="font-mono ml-auto shrink-0 text-[0.58rem] tabular-nums" style={{ color: 'var(--dim)' }}>
+              <span className="font-mono ml-auto shrink-0 text-2xs tabular-nums" style={{ color: 'var(--dim)' }}>
                 {berlinDateLabel(p.createdAt)} · {berlinTimeLabel(p.createdAt)}
               </span>
               {canPost && (
@@ -232,7 +226,7 @@ export default function NewsView({ open, onClose }: Props) {
             </div>
 
             {p.body && (
-              <p className="font-hand mt-2 text-[1rem]" style={{ color: 'var(--ink)' }}>
+              <p className="mt-2 text-sm" style={{ color: 'var(--ink)' }}>
                 {p.body}
               </p>
             )}
@@ -266,10 +260,7 @@ export default function NewsView({ open, onClose }: Props) {
               className="rounded-xl p-3 text-left"
               style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
             >
-              <span
-                className="font-disp block text-sm font-bold uppercase tracking-[0.06em]"
-                style={{ color: 'var(--ink)' }}
-              >
+              <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                 {c.label}
               </span>
             </button>
@@ -290,7 +281,7 @@ export default function NewsView({ open, onClose }: Props) {
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
           {error && (
-            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+            <p className="text-sm" style={{ color: 'var(--danger)' }}>
               {error}
             </p>
           )}
@@ -299,7 +290,7 @@ export default function NewsView({ open, onClose }: Props) {
             onClick={sendText}
             disabled={busy || !text.trim()}
             className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Posten
           </button>
@@ -327,7 +318,7 @@ export default function NewsView({ open, onClose }: Props) {
       <Sheet open={editingFunding} onClose={() => setEditingFunding(false)} variant="full" title="Förderstand">
         <div className="flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
-            <span className="font-mono text-[0.58rem] uppercase tracking-[0.08em]" style={{ color: 'var(--dim)' }}>
+            <span className="text-2xs" style={{ color: 'var(--dim)' }}>
               Aktueller Kontostand
             </span>
             <input
@@ -341,7 +332,7 @@ export default function NewsView({ open, onClose }: Props) {
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="font-mono text-[0.58rem] uppercase tracking-[0.08em]" style={{ color: 'var(--dim)' }}>
+            <span className="text-2xs" style={{ color: 'var(--dim)' }}>
               Wofür / Ziel (optional)
             </span>
             <textarea
@@ -350,12 +341,12 @@ export default function NewsView({ open, onClose }: Props) {
               rows={4}
               maxLength={300}
               placeholder="z. B. Ziel: mehr Speicherplatz für Fotos & Videos (250 €)"
-              className="resize-none rounded-lg p-3 text-[0.9rem] outline-none"
+              className="resize-none rounded-lg p-3 text-sm outline-none"
               style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
             />
           </label>
           {fundingError && (
-            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+            <p className="text-sm" style={{ color: 'var(--danger)' }}>
               {fundingError}
             </p>
           )}
@@ -364,7 +355,7 @@ export default function NewsView({ open, onClose }: Props) {
             onClick={saveFunding}
             disabled={fundingBusy}
             className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Speichern
           </button>

@@ -177,7 +177,7 @@ export default function CassetteDeck() {
             <rect x="0" y="10.5" width="16" height="2.5" rx="1" />
           </svg>
         }
-        label="Eject"
+        label="Fach"
         active={open}
         onClick={() => {
           setError(null);
@@ -197,24 +197,24 @@ export default function CassetteDeck() {
         // Die Unterseiten (Neue Gruppe, Mitglieder) haben ihren eigenen
         // Zurueck-Pfeil zum Fach.
         hideClose
-        title={creating ? 'Neue Gruppe' : manage ? 'Kassette' : 'Kassettenfach'}
+        title={creating ? 'Neue Gruppe' : manage ? 'Kassette' : 'Fach'}
       >
         {creating ? (
           <div className="flex flex-col gap-5">
             <button
               type="button"
               onClick={() => setCreating(false)}
-              className="font-mono self-start text-[0.62rem] uppercase tracking-[0.12em]"
+              className="self-start text-2xs"
               style={{ color: 'var(--dim)' }}
             >
               ← Fach
             </button>
 
             <div>
-              <p className="font-hand text-lg" style={{ color: 'var(--ink)' }}>
+              <p className="text-lg font-semibold" style={{ color: 'var(--ink)' }}>
                 Wie soll das Band heißen?
               </p>
-              <p className="font-mono mt-1 text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+              <p className="mt-1 text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
                 Der Name steht später auf dem Etikett — änderbar ist er jederzeit.
               </p>
             </div>
@@ -228,12 +228,12 @@ export default function CassetteDeck() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newName.trim() && !create.isPending) create.mutate();
               }}
-              className="font-hand w-full rounded-lg px-3 py-3 text-[1.15rem] outline-none"
+              className="w-full rounded-lg px-3 py-3 text-base outline-none"
               style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
             />
 
             <div className="flex flex-col gap-2">
-              <p className="font-mono text-[0.62rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+              <p className="text-2xs" style={{ color: 'var(--dim)' }}>
                 Bandsorte {newLook == null && '· ohne Auswahl automatisch'}
               </p>
               <div className="grid grid-cols-4 gap-2">
@@ -257,10 +257,7 @@ export default function CassetteDeck() {
                           stammen von einem festen Vorschau-Band, die Farben
                           stimmen aber exakt mit dem spaeteren Ergebnis. */}
                       <MiniCassette id="neu" pairIndex={idx} active side="b" label={newName.trim() || undefined} />
-                      <span
-                        className="font-mono text-center text-[0.52rem] uppercase tracking-[0.06em]"
-                        style={{ color: 'var(--dim)' }}
-                      >
+                      <span className="text-center text-2xs" style={{ color: 'var(--dim)' }}>
                         {c.name}
                       </span>
                     </button>
@@ -270,7 +267,7 @@ export default function CassetteDeck() {
             </div>
 
             {error && (
-              <p className="text-sm" style={{ color: '#F0B5A5' }}>
+              <p className="text-sm" style={{ color: 'var(--danger)' }}>
                 {error}
               </p>
             )}
@@ -279,13 +276,13 @@ export default function CassetteDeck() {
               type="button"
               disabled={!newName.trim() || create.isPending}
               onClick={() => create.mutate()}
-              className="font-disp w-full rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] disabled:opacity-40"
-              style={{ background: 'var(--accent)', color: '#17130E' }}
+              className="w-full rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               Einlegen
             </button>
 
-            <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+            <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
               Du bist danach allein auf dem Band und kannst Leute einladen. Jedes Mitglied darf weitere einladen.
             </p>
           </div>
@@ -331,13 +328,10 @@ export default function CassetteDeck() {
               >
                 <StoryCassetteIcon />
                 <span className="min-w-0 flex-1">
-                  <span className="font-hand block truncate text-[1.05rem]" style={{ color: '#E0568C' }}>
+                  <span className="block truncate text-base font-medium" style={{ color: '#E0568C' }}>
                     Story
                   </span>
-                  <span
-                    className="font-mono block truncate text-[0.58rem] uppercase tracking-[0.1em]"
-                    style={{ color: 'var(--dim)' }}
-                  >
+                  <span className="block truncate text-2xs" style={{ color: 'var(--dim)' }}>
                     Foto &amp; Video · 24 Stunden sichtbar
                   </span>
                 </span>
@@ -358,22 +352,16 @@ export default function CassetteDeck() {
               >
                 <KliqtapeCassetteIcon />
                 <span className="min-w-0 flex-1">
-                  <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
+                  <span className="block truncate text-base font-medium" style={{ color: 'var(--ink)' }}>
                     Kliqtape
                   </span>
-                  <span
-                    className="font-mono block truncate text-[0.58rem] uppercase tracking-[0.1em]"
-                    style={{ color: 'var(--dim)' }}
-                  >
+                  <span className="block truncate text-2xs" style={{ color: 'var(--dim)' }}>
                     News, Insights &amp; unterstütze das Projekt
                   </span>
                 </span>
               </button>
 
-              <h3
-                className="font-disp mt-1 text-xs font-bold uppercase tracking-[0.14em]"
-                style={{ color: 'var(--dim)' }}
-              >
+              <h3 className="mt-1 text-xs font-semibold" style={{ color: 'var(--dim)' }}>
                 Gruppen
               </h3>
 
@@ -400,8 +388,8 @@ export default function CassetteDeck() {
                   }}
                   aria-label="Neue Gruppe anlegen"
                   title="Neue Gruppe"
-                  className="ml-auto grid size-9 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
-                  style={{ background: 'var(--accent)', color: '#17130E' }}
+                  className="hit ml-auto grid size-9 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
+                  style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
                 >
                   <svg
                     width="13"
@@ -419,13 +407,13 @@ export default function CassetteDeck() {
               </div>
 
               {cassettes.length === 0 && (
-                <p className="font-hand py-6 text-center text-lg" style={{ color: 'var(--dim)' }}>
+                <p className="py-6 text-center text-sm" style={{ color: 'var(--dim)' }}>
                   Noch kein Band im Fach.
                 </p>
               )}
 
               {cassettes.length > 0 && shownCassettes.length === 0 && (
-                <p className="font-mono py-6 text-center text-[0.64rem]" style={{ color: 'var(--dim)' }}>
+                <p className="py-6 text-center text-2xs" style={{ color: 'var(--dim)' }}>
                   Keine Gruppe gefunden.
                 </p>
               )}
@@ -489,13 +477,10 @@ export default function CassetteDeck() {
                         />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
+                        <span className="block truncate text-base font-medium" style={{ color: 'var(--ink)' }}>
                           {c.name}
                         </span>
-                        <span
-                          className="font-mono block truncate text-[0.58rem] uppercase tracking-[0.1em]"
-                          style={{ color: 'var(--dim)' }}
-                        >
+                        <span className="block truncate text-2xs" style={{ color: 'var(--dim)' }}>
                           {c.memberCount} {c.memberCount === 1 ? 'Person' : 'Leute'} · A {c.sideA} · B {c.sideB}
                         </span>
                       </span>
@@ -508,7 +493,7 @@ export default function CassetteDeck() {
                       }}
                       aria-label={`${c.name} bearbeiten`}
                       title="Bearbeiten"
-                      className="grid size-7 shrink-0 place-items-center rounded-full"
+                      className="hit grid size-7 shrink-0 place-items-center rounded-full"
                       style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
                     >
                       <svg
@@ -532,7 +517,7 @@ export default function CassetteDeck() {
             </div>
 
             {error && (
-              <p className="text-sm" style={{ color: '#F0B5A5' }}>
+              <p className="text-sm" style={{ color: 'var(--danger)' }}>
                 {error}
               </p>
             )}

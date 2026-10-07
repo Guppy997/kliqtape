@@ -35,7 +35,7 @@ export default function FilmShoot({ open, cassetteId, releaseAt, onClose, onShot
     <Sheet open={open} onClose={onClose} variant="full" title="Film belichten">
       {open && (
         <div className="flex flex-col gap-3">
-          <p className="font-mono text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+          <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
             Ein Bild pro Woche. Es wird entwickelt
             {releaseAt
               ? ` und ${filmReleaseLabel(releaseAt)} für alle gleichzeitig sichtbar`

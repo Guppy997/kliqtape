@@ -88,12 +88,12 @@ export default function NameGate({ prefill }: { prefill?: string }) {
             value={tokenValue}
             onChange={(e) => setTokenValue(e.target.value)}
             placeholder="Zugangscode von deinem anderen Gerät"
-            className="font-mono rounded-lg px-3 py-3 text-sm outline-none"
+            className="rounded-lg px-3 py-3 text-sm outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
         )}
         {error && (
-          <p className="text-sm" style={{ color: '#F0B5A5' }}>
+          <p className="text-sm" style={{ color: 'var(--danger)' }}>
             {error}
           </p>
         )}
@@ -105,7 +105,7 @@ export default function NameGate({ prefill }: { prefill?: string }) {
         >
           {busy ? 'Einen Moment …' : 'Band einlegen'}
         </button>
-        <p className="font-mono text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+        <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
           Dein Zugangscode liegt danach in den Einstellungen — kopier ihn dort, um dich auf einem zweiten Gerät
           anzumelden. Achtung: Inhalte sind noch nicht Ende-zu-Ende-verschlüsselt.
         </p>

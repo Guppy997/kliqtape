@@ -45,10 +45,7 @@ export default function LetterRedeemer() {
         boxShadow: '0 0.8rem 2rem rgba(0,0,0,.5)',
       }}
     >
-      <span
-        className="font-mono shrink-0 pt-0.5 text-[0.56rem] uppercase tracking-[0.12em]"
-        style={{ color: message.ok ? 'var(--accent)' : '#F0B5A5' }}
-      >
+      <span className="shrink-0 pt-0.5 text-2xs" style={{ color: message.ok ? 'var(--accent)' : 'var(--danger)' }}>
         Brief
       </span>
       <p className="min-w-0 flex-1 text-sm leading-snug" style={{ color: 'var(--ink)' }}>

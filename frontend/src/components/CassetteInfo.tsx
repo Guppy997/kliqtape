@@ -176,12 +176,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
 
   return (
     <div className="flex flex-col gap-7">
-      <button
-        type="button"
-        onClick={onBack}
-        className="font-mono self-start text-[0.62rem] uppercase tracking-[0.12em]"
-        style={{ color: 'var(--dim)' }}
-      >
+      <button type="button" onClick={onBack} className="self-start text-2xs" style={{ color: 'var(--dim)' }}>
         ← Fach
       </button>
 
@@ -215,21 +210,21 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
               maxLength={40}
               autoFocus
               aria-label="Name der Kassette"
-              className="font-hand min-w-0 flex-1 rounded-lg px-3 py-2 text-center text-[1.15rem] outline-none"
+              className="min-w-0 flex-1 rounded-lg px-3 py-2 text-center text-base outline-none"
               style={{ background: 'var(--card)', border: '1px solid var(--accent)', color: 'var(--ink)' }}
             />
             <button
               type="submit"
               disabled={!name.trim() || doRename.isPending}
               className="rounded-lg px-3 text-sm font-semibold disabled:opacity-40"
-              style={{ background: 'var(--accent)', color: '#17130E' }}
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               OK
             </button>
           </form>
         ) : (
           <div className="flex items-center gap-2">
-            <h2 className="font-hand text-[1.6rem] leading-tight" style={{ color: 'var(--ink)' }}>
+            <h2 className="text-xl leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
               {cassette.name}
             </h2>
             <button
@@ -240,7 +235,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
               }}
               aria-label="Namen ändern"
               title="Namen ändern"
-              className="grid size-7 place-items-center rounded-full"
+              className="hit grid size-7 place-items-center rounded-full"
               style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
             >
               <PencilIcon />
@@ -248,7 +243,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
           </div>
         )}
 
-        <p className="font-mono text-[0.6rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+        <p className="text-2xs" style={{ color: 'var(--dim)' }}>
           Kassette · {cassette.memberCount} {cassette.memberCount === 1 ? 'Person' : 'Leute'} · seit{' '}
           {berlinDateLabel(cassette.createdAt)}
         </p>
@@ -286,12 +281,12 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
         {searching && (
           <div className="flex flex-col gap-1">
             {searchLoading && (
-              <p className="font-mono py-2 text-[0.62rem]" style={{ color: 'var(--dim)' }}>
+              <p className="py-2 text-2xs" style={{ color: 'var(--dim)' }}>
                 Spule durch …
               </p>
             )}
             {!searchLoading && results.length === 0 && (
-              <p className="font-mono py-2 text-[0.62rem]" style={{ color: 'var(--dim)' }}>
+              <p className="py-2 text-2xs" style={{ color: 'var(--dim)' }}>
                 Nichts gefunden — gesucht wird in Text, Bildunterschriften, Namen und Mixtape-Titeln.
               </p>
             )}
@@ -304,7 +299,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                 style={{ border: '1px solid var(--line)' }}
               >
                 <span
-                  className="font-mono mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[0.56rem] uppercase"
+                  className="mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-2xs"
                   style={{ border: '1px solid var(--line)', color: 'var(--accent)' }}
                 >
                   {p.track}
@@ -313,7 +308,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                   <span className="block truncate text-sm" style={{ color: 'var(--ink)' }}>
                     <Highlight text={snippetOf(p)} q={q} />
                   </span>
-                  <span className="font-mono block text-[0.56rem]" style={{ color: 'var(--dim)' }}>
+                  <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
                     {p.author} · {berlinDateLabel(p.created_at)} · Seite {p.side.toUpperCase()}
                   </span>
                 </span>
@@ -325,7 +320,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
 
       {/* ---- Mitglieder und Einladen ------------------------------------- */}
       <section className="flex flex-col gap-1.5">
-        <h3 className="font-disp mb-1 text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+        <h3 className="mb-1 text-xs font-semibold" style={{ color: 'var(--dim)' }}>
           {members.length} {members.length === 1 ? 'Person' : 'Leute'} auf dem Band
         </h3>
 
@@ -341,7 +336,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
         >
           <span
             className="grid size-[1.6rem] shrink-0 place-items-center rounded-full"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             aria-hidden="true"
           >
             <svg
@@ -379,7 +374,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
               style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
             />
             {invited && (
-              <p className="font-mono px-1 text-[0.62rem]" style={{ color: 'var(--accent)' }}>
+              <p className="px-1 text-2xs" style={{ color: 'var(--accent)' }}>
                 {invited} ist eingeladen und muss noch zustimmen.
               </p>
             )}
@@ -395,7 +390,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                 <span className="min-w-0 flex-1 truncate text-sm" style={{ color: 'var(--ink)' }}>
                   {n}
                 </span>
-                <span aria-hidden="true" className="font-disp text-base font-bold" style={{ color: 'var(--accent)' }}>
+                <span aria-hidden="true" className="text-base font-semibold" style={{ color: 'var(--accent)' }}>
                   +
                 </span>
               </button>
@@ -413,7 +408,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                 </span>
               </button>
             )}
-            <p className="font-mono px-1 text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+            <p className="px-1 text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
               Jedes Mitglied darf einladen. Dabei ist die Person erst, wenn sie zustimmt.
             </p>
           </div>
@@ -429,7 +424,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                   {m.name}
                   {m.name === me && ' (du)'}
                 </span>
-                <span className="font-mono block text-[0.56rem]" style={{ color: 'var(--dim)' }}>
+                <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
                   {creator ? 'hat das Band angelegt' : `eingeladen von ${m.addedBy}`}
                 </span>
               </span>
@@ -439,7 +434,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                   onClick={() => {
                     if (confirm(`${m.name} vom Band nehmen?`)) doRemove.mutate(m.name);
                   }}
-                  className="font-mono shrink-0 px-1 text-[0.6rem] uppercase"
+                  className="shrink-0 px-1 text-2xs"
                   style={{ color: 'var(--dim)' }}
                 >
                   raus
@@ -452,7 +447,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
 
       {/* ---- Aus dem Band etwas machen ------------------------------------ */}
       <section className="flex flex-col gap-1.5">
-        <h3 className="font-disp mb-1 text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+        <h3 className="mb-1 text-xs font-semibold" style={{ color: 'var(--dim)' }}>
           Zum Mitnehmen
         </h3>
         <button
@@ -466,7 +461,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
             <span className="block text-sm" style={{ color: 'var(--ink)' }}>
               Album als PDF
             </span>
-            <span className="font-mono block text-[0.56rem]" style={{ color: 'var(--dim)' }}>
+            <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
               Tapes von Seite A zum Ausdrucken
             </span>
           </span>
@@ -483,14 +478,14 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
             <span className="block text-sm" style={{ color: 'var(--ink)' }}>
               {letter.isPending ? 'Brief wird gedruckt …' : 'Einladung als Brief'}
             </span>
-            <span className="font-mono block text-[0.56rem]" style={{ color: 'var(--dim)' }}>
+            <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
               PDF mit QR-Code · gilt einmal, 14 Tage
             </span>
           </span>
         </button>
         {letterUrl && (
           <p
-            className="font-mono flex flex-wrap items-center gap-x-2 px-1 text-[0.58rem] leading-relaxed"
+            className="flex flex-wrap items-center gap-x-2 px-1 text-2xs leading-relaxed"
             style={{ color: 'var(--dim)' }}
           >
             Brief gespeichert. Wer ihn einlöst, muss noch zustimmen.
@@ -511,7 +506,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
       <ImposterSpecial cassette={cassette} onStarted={onJump} onError={fail} />
 
       {error && (
-        <p className="text-sm" style={{ color: '#F0B5A5' }}>
+        <p className="text-sm" style={{ color: 'var(--danger)' }}>
           {error}
         </p>
       )}
@@ -548,7 +543,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
           </div>
         )}
       </section>
-      <p className="font-mono -mt-4 px-1 text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+      <p className="-mt-4 px-1 text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
         {isCreator
           ? 'Löschen kannst nur du, weil du das Band angelegt hast. Gehst du, übernimmt das dienstälteste Mitglied.'
           : `Löschen kann nur ${cassette.createdBy}, die Person, die das Band angelegt hat.`}
@@ -600,7 +595,7 @@ function DangerRow({
       onClick={onClick}
       disabled={disabled}
       className="flex w-full items-center gap-3 px-3.5 py-3 text-left text-sm disabled:opacity-50"
-      style={{ color: '#F0B5A5' }}
+      style={{ color: 'var(--danger)' }}
     >
       {icon}
       {label}
@@ -699,7 +694,7 @@ function AgingStrip({ cassette, pairIndex }: { cassette: Cassette; pairIndex?: n
   ];
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="font-disp text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+      <h3 className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
         Das Band altert mit
       </h3>
       <div className="grid grid-cols-4 gap-2">
@@ -724,17 +719,14 @@ function AgingStrip({ cassette, pairIndex }: { cassette: Cassette; pairIndex?: n
                   width={70}
                 />
               </span>
-              <span
-                className="font-mono text-[0.52rem] uppercase tracking-[0.08em]"
-                style={{ color: current ? 'var(--accent)' : 'var(--dim)' }}
-              >
+              <span className="text-2xs" style={{ color: current ? 'var(--accent)' : 'var(--dim)' }}>
                 {current ? `jetzt · ${labels[i]}` : labels[i]}
               </span>
             </div>
           );
         })}
       </div>
-      <p className="font-mono text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+      <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
         Alle {AGE_STEP_DAYS} Tage seit dem Anlegen etwas mehr Gebrauchsspuren: das Etikett vergilbt, die Kanten werden
         abgegriffen, das Band bekommt Korn.
       </p>

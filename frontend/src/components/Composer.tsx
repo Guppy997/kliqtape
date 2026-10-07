@@ -217,7 +217,7 @@ export default function Composer({ onPosted }: Props) {
           setError(null);
           setStep(pageOpen ? null : 'choose');
         }}
-        className="relative z-50 grid size-8 place-items-center rounded-full transition-transform active:scale-95"
+        className="hit relative z-50 grid size-8 place-items-center rounded-full transition-transform active:scale-95"
         style={{
           background: 'linear-gradient(180deg, #2E2925, #1A1714)',
           boxShadow: '0 0.25rem 0.6rem rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.12) inset',
@@ -272,13 +272,10 @@ export default function Composer({ onPosted }: Props) {
                 </svg>
               </span>
               <span className="min-w-0 flex-1">
-                <span
-                  className="font-disp block text-sm font-bold uppercase tracking-[0.06em]"
-                  style={{ color: 'var(--ink)' }}
-                >
+                <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                   Film
                 </span>
-                <span className="font-mono block text-[0.66rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+                <span className="block text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
                   {film?.iShot
                     ? `Diese Woche schon belichtet. Entwickelt wird ${filmReleaseLabel(film.nextRelease)}.`
                     : 'Ein Foto pro Woche, nur Kamera. Es wird entwickelt — Sonntagabend sehen es alle gleichzeitig.'}
@@ -301,13 +298,10 @@ export default function Composer({ onPosted }: Props) {
                 {ICONS[c.kind]}
               </span>
               <span className="min-w-0 flex-1">
-                <span
-                  className="font-disp block text-sm font-bold uppercase tracking-[0.06em]"
-                  style={{ color: 'var(--ink)' }}
-                >
+                <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                   {c.label}
                 </span>
-                <span className="font-mono block text-[0.66rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+                <span className="block text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
                   {c.description}
                 </span>
               </span>
@@ -325,7 +319,7 @@ export default function Composer({ onPosted }: Props) {
       >
         <div className="flex flex-col gap-3">
           {shareable.length === 0 ? (
-            <p className="font-hand py-8 text-center text-lg" style={{ color: 'var(--dim)' }}>
+            <p className="py-8 text-center text-sm" style={{ color: 'var(--dim)' }}>
               Noch kein versiegeltes Mixtape.
             </p>
           ) : (
@@ -339,7 +333,7 @@ export default function Composer({ onPosted }: Props) {
                 style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
               >
                 <span
-                  className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md"
+                  className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg"
                   style={{ background: '#D8CFBB' }}
                 >
                   {t.coverId ? (
@@ -352,10 +346,7 @@ export default function Composer({ onPosted }: Props) {
                   <span className="font-hand block truncate text-[1.02rem]" style={{ color: 'var(--ink)' }}>
                     {t.title}
                   </span>
-                  <span
-                    className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]"
-                    style={{ color: 'var(--dim)' }}
-                  >
+                  <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
                     ursprünglich für {t.to} · {t.trackCount}/12
                   </span>
                 </span>
@@ -363,11 +354,11 @@ export default function Composer({ onPosted }: Props) {
             ))
           )}
           {error && (
-            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+            <p className="text-sm" style={{ color: 'var(--danger)' }}>
               {error}
             </p>
           )}
-          <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+          <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
             Geteilt sehen alle auf dieser Seite das Tape — auch wenn du es ursprünglich für eine Person gebaut hast.
           </p>
         </div>
@@ -412,10 +403,7 @@ export default function Composer({ onPosted }: Props) {
                 <div className="pointer-events-none h-11 w-[5.8rem] overflow-hidden">
                   <Zettel id={`vorschau-${s}`} style={s} text="Zettel" scale={0.34} />
                 </div>
-                <span
-                  className="font-mono text-[0.56rem] uppercase tracking-[0.06em]"
-                  style={{ color: noteStyle === s ? 'var(--accent)' : 'var(--dim)' }}
-                >
+                <span className="text-2xs" style={{ color: noteStyle === s ? 'var(--accent)' : 'var(--dim)' }}>
                   {NOTE_STYLE_LABEL[s]}
                 </span>
               </button>
@@ -423,7 +411,7 @@ export default function Composer({ onPosted }: Props) {
           </div>
 
           {error && (
-            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+            <p className="text-sm" style={{ color: 'var(--danger)' }}>
               {error}
             </p>
           )}
@@ -441,7 +429,7 @@ export default function Composer({ onPosted }: Props) {
               onClick={() => post('text', { body: text.trim(), noteStyle })}
               disabled={busy || !text.trim()}
               className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
-              style={{ background: 'var(--accent)', color: '#17130E' }}
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               Aufs Band
             </button>

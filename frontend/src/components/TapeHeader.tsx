@@ -60,7 +60,7 @@ export default function TapeHeader({ cassetteId, cassetteCreatedAt, tapeIndex, o
           onClick={() => favorite.mutate()}
           disabled={favorite.isPending}
           aria-label={override?.favoritedByMe ? 'Favorit entfernen' : 'Als Favorit markieren'}
-          className="shrink-0 text-[0.8rem] leading-none disabled:opacity-50"
+          className="shrink-0 text-meta leading-none disabled:opacity-50"
           style={{ color: override?.favoritedByMe ? 'var(--accent)' : 'var(--dim)' }}
         >
           {override?.favoritedByMe ? '★' : '☆'}
@@ -86,14 +86,14 @@ export default function TapeHeader({ cassetteId, cassetteCreatedAt, tapeIndex, o
             maxLength={60}
             placeholder={defaultTapeName(tapeIndex)}
             aria-label="Name des Tapes"
-            className="font-hand rounded px-1.5 py-0.5 text-[0.95rem] outline-none"
+            className="rounded-lg px-2 py-0.5 text-sm font-medium outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--accent)', color: 'var(--ink)' }}
           />
         ) : (
           <>
             {/* Der Name ist reiner Text — Antippen beim Scrollen loeste vorher
                 versehentlich das Umbenennen aus. Bearbeiten nur ueber den Stift. */}
-            <span className="font-hand text-[0.95rem]" style={{ color: 'var(--ink)' }}>
+            <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
               {name}
             </span>
             <button
@@ -105,7 +105,7 @@ export default function TapeHeader({ cassetteId, cassetteCreatedAt, tapeIndex, o
               }}
               aria-label={`${name} umbenennen`}
               title="Umbenennen"
-              className="grid size-6 shrink-0 place-items-center rounded-full"
+              className="hit grid size-6 shrink-0 place-items-center rounded-full"
               style={{ color: 'var(--dim)' }}
             >
               <svg

@@ -81,7 +81,7 @@ export default function TapeEditor({ id, onClose }: Props) {
 
   if (!tape)
     return (
-      <p className="font-mono text-xs" style={{ color: 'var(--dim)' }}>
+      <p className="text-xs" style={{ color: 'var(--dim)' }}>
         Tape wird geholt …
       </p>
     );
@@ -108,7 +108,7 @@ export default function TapeEditor({ id, onClose }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="font-mono text-[0.64rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+      <p className="text-2xs" style={{ color: 'var(--dim)' }}>
         Entwurf für {tape.to} · {tape.tracks.length}/{MAX_TRACKS} Titel
       </p>
 
@@ -117,16 +117,13 @@ export default function TapeEditor({ id, onClose }: Props) {
         <button
           type="button"
           onClick={() => setShooting(true)}
-          className="grid aspect-square w-24 shrink-0 place-items-center overflow-hidden rounded-md"
+          className="grid aspect-square w-24 shrink-0 place-items-center overflow-hidden rounded-lg"
           style={{ background: 'var(--card)', border: '1px dashed var(--line)' }}
         >
           {tape.coverId ? (
             <img src={mediaUrl(tape.coverId)} alt="Cover" className="size-full object-cover" />
           ) : (
-            <span
-              className="font-mono px-2 text-center text-[0.58rem] uppercase leading-tight"
-              style={{ color: 'var(--dim)' }}
-            >
+            <span className="px-2 text-center text-2xs leading-tight" style={{ color: 'var(--dim)' }}>
               Cover
               <br />
               wählen
@@ -141,7 +138,7 @@ export default function TapeEditor({ id, onClose }: Props) {
             onBlur={() => title != null && title !== tape.title && save.mutate({ title })}
             maxLength={60}
             placeholder="Titel des Tapes"
-            className="font-hand rounded-md px-2.5 py-2 text-[1.05rem] outline-none"
+            className="font-hand rounded-lg px-2.5 py-2 text-[1.05rem] outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
           <textarea
@@ -151,7 +148,7 @@ export default function TapeEditor({ id, onClose }: Props) {
             rows={3}
             maxLength={300}
             placeholder="Widmung …"
-            className="font-hand resize-none rounded-md px-2.5 py-2 text-[0.95rem] outline-none"
+            className="font-hand resize-none rounded-lg px-2.5 py-2 text-[0.95rem] outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
         </div>
@@ -165,14 +162,14 @@ export default function TapeEditor({ id, onClose }: Props) {
             className="flex items-center gap-2.5 rounded-lg px-3 py-2"
             style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
           >
-            <span className="font-mono w-5 shrink-0 text-[0.68rem] tabular-nums" style={{ color: 'var(--accent)' }}>
+            <span className="font-mono w-5 shrink-0 text-2xs tabular-nums" style={{ color: 'var(--accent)' }}>
               {String(t.position).padStart(2, '0')}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[0.88rem]" style={{ color: 'var(--ink)' }}>
+              <p className="truncate text-sm" style={{ color: 'var(--ink)' }}>
                 {t.title}
               </p>
-              <p className="font-mono truncate text-[0.6rem]" style={{ color: 'var(--dim)' }}>
+              <p className="truncate text-2xs" style={{ color: 'var(--dim)' }}>
                 {t.artist}
                 {t.artist && platformOf(t.url) ? ' · ' : ''}
                 {platformOf(t.url)}
@@ -191,7 +188,7 @@ export default function TapeEditor({ id, onClose }: Props) {
         ))}
 
         {tape.tracks.length === 0 && (
-          <p className="font-hand py-4 text-center text-base" style={{ color: 'var(--dim)' }}>
+          <p className="py-4 text-center text-sm" style={{ color: 'var(--dim)' }}>
             Noch kein Titel drauf.
           </p>
         )}
@@ -199,10 +196,7 @@ export default function TapeEditor({ id, onClose }: Props) {
 
       {/* --- Titel hinzufügen --- */}
       {full ? (
-        <p
-          className="font-mono rounded-lg px-3 py-2 text-[0.64rem]"
-          style={{ background: 'var(--card)', color: 'var(--accent)' }}
-        >
+        <p className="rounded-lg px-3 py-2 text-2xs" style={{ background: 'var(--card)', color: 'var(--accent)' }}>
           Das Band ist voll. {MAX_TRACKS} Titel — mehr passt nicht drauf.
         </p>
       ) : (
@@ -215,7 +209,7 @@ export default function TapeEditor({ id, onClose }: Props) {
             onChange={(e) => setTTitle(e.target.value)}
             maxLength={90}
             placeholder="Titel"
-            className="rounded-md px-2.5 py-2 text-[0.9rem] outline-none"
+            className="rounded-lg px-2.5 py-2 text-sm outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
           <input
@@ -223,7 +217,7 @@ export default function TapeEditor({ id, onClose }: Props) {
             onChange={(e) => setTArtist(e.target.value)}
             maxLength={90}
             placeholder="Künstler"
-            className="rounded-md px-2.5 py-2 text-[0.9rem] outline-none"
+            className="rounded-lg px-2.5 py-2 text-sm outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
           <input
@@ -232,7 +226,7 @@ export default function TapeEditor({ id, onClose }: Props) {
             inputMode="url"
             maxLength={500}
             placeholder="Link (Spotify, Apple Music, YouTube …)"
-            className="font-mono rounded-md px-2.5 py-2 text-[0.75rem] outline-none"
+            className="rounded-lg px-2.5 py-2 text-meta outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
           <button
@@ -259,7 +253,7 @@ export default function TapeEditor({ id, onClose }: Props) {
       )}
 
       {error && (
-        <p className="text-sm" style={{ color: '#F0B5A5' }}>
+        <p className="text-sm" style={{ color: 'var(--danger)' }}>
           {error}
         </p>
       )}
@@ -269,7 +263,7 @@ export default function TapeEditor({ id, onClose }: Props) {
           type="button"
           onClick={() => confirm('Entwurf wegwerfen?') && scrap.mutate()}
           className="rounded-lg px-4 py-3 text-sm"
-          style={{ background: 'var(--card)', border: '1px solid var(--line)', color: '#F0B5A5' }}
+          style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--danger)' }}
         >
           Wegwerfen
         </button>
@@ -280,8 +274,8 @@ export default function TapeEditor({ id, onClose }: Props) {
             confirm(`Tape versiegeln und ${tape.to} überreichen? Danach lässt es sich nicht mehr ändern.`) &&
             seal.mutate()
           }
-          className="font-disp flex-1 rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-[0.12em] disabled:opacity-40"
-          style={{ background: 'var(--accent)', color: '#17130E' }}
+          className="flex-1 rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+          style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           Versiegeln & überreichen
         </button>

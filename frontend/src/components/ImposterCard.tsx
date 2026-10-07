@@ -85,13 +85,10 @@ export default function ImposterCard({ cassette, onChanged }: { cassette: Casset
       <header className="flex items-center gap-2.5">
         <MaskIcon />
         <span className="min-w-0 flex-1">
-          <span
-            className="font-disp block text-xs font-bold uppercase tracking-[0.14em]"
-            style={{ color: 'var(--ink)' }}
-          >
+          <span className="block text-xs font-semibold" style={{ color: 'var(--ink)' }}>
             Imposter-Woche
           </span>
-          <span className="font-mono block text-[0.56rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+          <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
             {week.phase === 'playing'
               ? `Special · aufgedeckt ${filmReleaseLabel(week.revealAt)}`
               : week.phase === 'voting'
@@ -121,7 +118,7 @@ export default function ImposterCard({ cassette, onChanged }: { cassette: Casset
           <button
             type="button"
             onClick={() => setRevealing(true)}
-            className="font-mono self-start rounded-full px-3.5 py-1.5 text-[0.62rem] uppercase tracking-[0.12em]"
+            className="self-start rounded-full px-3.5 py-1.5 text-2xs"
             style={
               revealSeen(cassette.id) === week.id
                 ? { border: '1px solid var(--line)', color: 'var(--dim)' }
@@ -187,16 +184,13 @@ function Playing({
           border: `1px dashed ${week.card.imposter ? STAMP_RED : 'var(--line)'}`,
         }}
       >
-        <p
-          className="font-mono text-[0.56rem] uppercase tracking-[0.12em]"
-          style={{ color: week.card.imposter ? '#F0B5A5' : 'var(--dim)' }}
-        >
+        <p className="text-2xs" style={{ color: week.card.imposter ? 'var(--danger)' : 'var(--dim)' }}>
           {week.card.imposter ? 'Du bist der Imposter — nur ein Hinweis:' : 'Eure Aufgabe'}
         </p>
         <p className="font-hand mt-1 text-[1.2rem] leading-snug" style={{ color: 'var(--ink)' }}>
           {week.card.text}
         </p>
-        <p className="mt-1.5 text-[0.74rem] leading-snug" style={{ color: 'var(--dim)' }}>
+        <p className="mt-1.5 text-meta leading-snug" style={{ color: 'var(--dim)' }}>
           {week.card.imposter
             ? 'Die anderen kennen die genaue Aufgabe. Mach etwas, das nicht auffällt.'
             : 'Eine Person auf dem Band kennt die Aufgabe nicht und bekommt nur einen Hinweis.'}
@@ -204,15 +198,15 @@ function Playing({
       </div>
 
       {week.iSubmitted ? (
-        <p className="font-mono text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+        <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
           Abgegeben. Bis Sonntagabend sieht das niemand, auch du nicht.
         </p>
       ) : week.entryKind === 'photo' ? (
         <button
           type="button"
           onClick={() => setShooting(true)}
-          className="font-mono self-start rounded-full px-3.5 py-1.5 text-[0.62rem] uppercase tracking-[0.12em]"
-          style={{ background: 'var(--accent)', color: '#17130E' }}
+          className="self-start rounded-full px-3.5 py-1.5 text-2xs"
+          style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           Foto machen
         </button>
@@ -231,14 +225,14 @@ function Playing({
             disabled={!text.trim() || submitText.isPending}
             onClick={() => submitText.mutate()}
             className="rounded-lg px-3.5 text-sm font-semibold disabled:opacity-40"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Abgeben
           </button>
         </div>
       )}
       {submitText.error && (
-        <p className="text-sm" style={{ color: '#F0B5A5' }}>
+        <p className="text-sm" style={{ color: 'var(--danger)' }}>
           {(submitText.error as Error).message}
         </p>
       )}
@@ -248,7 +242,7 @@ function Playing({
           type="button"
           onClick={() => now.mutate()}
           disabled={now.isPending}
-          className="font-mono self-start text-[0.56rem] uppercase tracking-[0.1em] underline disabled:opacity-50"
+          className="self-start text-2xs underline disabled:opacity-50"
           style={{ color: 'var(--dim)' }}
         >
           Demo: Sonntagabend vorziehen
@@ -284,7 +278,7 @@ function Voting({ week, cassette, onChanged }: { week: ImposterWeek; cassette: C
 
   return (
     <>
-      <p className="text-[0.8rem] leading-snug" style={{ color: 'var(--dim)' }}>
+      <p className="text-meta leading-snug" style={{ color: 'var(--dim)' }}>
         Tipp auf den Beitrag, dessen Person die Aufgabe nicht kannte. Umentscheiden geht bis zur Auflösung.
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -307,11 +301,11 @@ function Voting({ week, cassette, onChanged }: { week: ImposterWeek; cassette: C
               <EntryThumb entry={e} />
               <span className="flex items-center gap-1.5 px-0.5">
                 <Avatar name={e.author} side={side} size={1.1} />
-                <span className="min-w-0 flex-1 truncate text-[0.74rem]" style={{ color: 'var(--ink)' }}>
+                <span className="min-w-0 flex-1 truncate text-meta" style={{ color: 'var(--ink)' }}>
                   {own ? 'Du' : e.author}
                 </span>
                 {chosen && (
-                  <span className="font-mono text-[0.5rem] uppercase tracking-[0.1em]" style={{ color: '#F0B5A5' }}>
+                  <span className="text-2xs" style={{ color: 'var(--danger)' }}>
                     dein Tipp
                   </span>
                 )}
@@ -321,14 +315,14 @@ function Voting({ week, cassette, onChanged }: { week: ImposterWeek; cassette: C
         })}
       </div>
       {week.entries.length === 0 && (
-        <p className="font-hand text-center text-lg" style={{ color: 'var(--dim)' }}>
+        <p className="text-center text-sm" style={{ color: 'var(--dim)' }}>
           Niemand hat etwas abgegeben.
         </p>
       )}
 
       {week.voted.length > 0 && (
         <div className="flex items-center gap-1.5">
-          <span className="font-mono text-[0.56rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
+          <span className="text-2xs" style={{ color: 'var(--dim)' }}>
             Getippt:
           </span>
           {week.voted.map((v) => (
@@ -342,13 +336,13 @@ function Voting({ week, cassette, onChanged }: { week: ImposterWeek; cassette: C
           type="button"
           onClick={() => reveal.mutate()}
           disabled={reveal.isPending}
-          className="font-mono self-start rounded-full px-3.5 py-1.5 text-[0.62rem] uppercase tracking-[0.12em] disabled:opacity-50"
+          className="self-start rounded-full px-3.5 py-1.5 text-2xs disabled:opacity-50"
           style={{ background: STAMP_RED, color: '#FFF4EC' }}
         >
           Auflösen
         </button>
       ) : (
-        <p className="font-mono text-[0.58rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+        <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
           Aufgelöst wird, sobald alle getippt haben, von {week.startedBy} — spätestens{' '}
           {filmReleaseLabel(week.votingEndsAt)} von selbst.
         </p>
@@ -413,13 +407,13 @@ function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string;
         type="button"
         onClick={onClose}
         aria-label="Schließen"
-        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] grid size-9 place-items-center rounded-full text-white"
+        className="hit absolute right-4 top-[max(1rem,env(safe-area-inset-top))] grid size-9 place-items-center rounded-full text-white"
         style={{ background: 'rgba(255,255,255,.12)' }}
       >
         ✕
       </button>
 
-      <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-white/60">Imposter-Woche · Auflösung</p>
+      <p className="text-2xs text-white/60">Imposter-Woche · Auflösung</p>
 
       <div className="grid w-full max-w-sm grid-cols-3 gap-2.5">
         {crew.map((e, i) => {
@@ -435,12 +429,12 @@ function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string;
               }}
             >
               <EntryThumb entry={e} />
-              <span className="font-mono absolute inset-x-0 bottom-0.5 truncate px-1 text-center text-[0.5rem] uppercase tracking-[0.08em] text-[#3B3226]">
+              <span className="absolute inset-x-0 bottom-0.5 truncate px-1 text-center text-2xs text-[#3B3226]">
                 {e.author === me ? 'Du' : e.author}
               </span>
               {cleared && (
                 <span
-                  className="font-mono absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 whitespace-nowrap rounded border px-1 text-[0.45rem] uppercase tracking-[0.1em]"
+                  className="font-mono absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 whitespace-nowrap rounded border px-1 text-[0.5rem] uppercase tracking-[0.1em]"
                   style={{ borderColor: '#4E7A5E', color: '#4E7A5E', background: 'rgba(236,229,214,.85)' }}
                 >
                   kannte die Aufgabe
@@ -482,12 +476,12 @@ function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string;
         className="flex max-w-sm flex-col gap-2 text-center"
         style={{ opacity: stamped ? 1 : 0, transition: 'opacity 500ms ease 400ms' }}
       >
-        <p className="font-hand text-[1.5rem] leading-tight text-white">
+        <p className="text-xl leading-tight font-semibold text-white">
           {result.caught
             ? `${imposterName === 'Du' ? 'Du warst' : `${imposterName} war`} es — die Runde lag richtig.`
             : `${imposterName === 'Du' ? 'Du warst' : `${imposterName} war`} es — und ${imposterName === 'Du' ? 'bist' : 'ist'} durchgekommen.`}
         </p>
-        <p className="text-[0.8rem] leading-relaxed text-white/70">
+        <p className="text-meta leading-relaxed text-white/70">
           Die Aufgabe: „{result.task}“
           <br />
           {imposterName === 'Du' ? 'Du bekamst' : `${imposterName} bekam`} nur: „{result.hint}“
@@ -495,12 +489,12 @@ function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string;
         <button
           type="button"
           onClick={onClose}
-          className="font-mono mt-2 self-center rounded-full px-4 py-2 text-[0.62rem] uppercase tracking-[0.12em]"
+          className="mt-2 self-center rounded-full px-4 py-2 text-2xs"
           style={{ background: '#ECE5D6', color: '#3B3226' }}
         >
           Zurück zum Band
         </button>
-        <p className="font-mono text-[0.56rem] text-white/45">Alle Beiträge liegen im Tape vom Sonntag auf Seite A.</p>
+        <p className="text-2xs text-white/45">Alle Beiträge liegen im Tape vom Sonntag auf Seite A.</p>
       </div>
     </div>,
     document.body,
@@ -559,18 +553,18 @@ export function ImposterSpecial({
 
   return (
     <section className="flex flex-col gap-2 rounded-xl p-3.5" style={{ border: '1px dashed var(--line)' }}>
-      <h3 className="font-disp text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+      <h3 className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
         Special
       </h3>
       <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
         Imposter-Woche
       </p>
-      <p className="text-[0.8rem] leading-snug" style={{ color: 'var(--dim)' }}>
+      <p className="text-meta leading-snug" style={{ color: 'var(--dim)' }}>
         Alle bekommen dieselbe Aufgabe, eine Person nur einen vagen Hinweis. Sonntagabend zeigen alle, was sie gemacht
         haben, und ihr tippt, wer es war. Kein Punktestand, nur der Spaß.
       </p>
       {status ? (
-        <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+        <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
           {status}
         </p>
       ) : (
@@ -581,7 +575,7 @@ export function ImposterSpecial({
             if (confirm(`Imposter-Woche auf "${cassette.name}" starten? Alle auf dem Band bekommen ihre Karte.`))
               start.mutate();
           }}
-          className="font-mono self-start rounded-full px-3.5 py-1.5 text-[0.62rem] uppercase tracking-[0.12em] disabled:opacity-50"
+          className="self-start rounded-full px-3.5 py-1.5 text-2xs disabled:opacity-50"
           style={{ background: '#C8402A', color: '#FFF4EC' }}
         >
           Imposter-Woche starten

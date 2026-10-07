@@ -26,13 +26,13 @@ export default function UpdateNotification() {
         boxShadow: '0 0.6rem 1.6rem rgba(0,0,0,.5)',
       }}
     >
-      <span className="min-w-0 flex-1 text-[0.86rem]" style={{ color: 'var(--ink)' }}>
+      <span className="min-w-0 flex-1 text-meta" style={{ color: 'var(--ink)' }}>
         Neue Version liegt bereit.
       </span>
       <button
         type="button"
         onClick={() => setNeedRefresh(false)}
-        className="font-mono shrink-0 px-2 text-[0.66rem] uppercase tracking-widest"
+        className="shrink-0 px-2 text-2xs"
         style={{ color: 'var(--dim)' }}
       >
         Später
@@ -40,8 +40,8 @@ export default function UpdateNotification() {
       <button
         type="button"
         onClick={() => void updateServiceWorker(true)}
-        className="font-disp shrink-0 rounded-lg px-3 py-1.5 text-[0.8rem] font-bold uppercase tracking-[0.1em]"
-        style={{ background: 'var(--accent)', color: '#17130E' }}
+        className="shrink-0 rounded-lg px-3 py-1.5 text-meta font-semibold"
+        style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
       >
         Band wechseln
       </button>

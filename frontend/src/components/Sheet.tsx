@@ -54,18 +54,15 @@ export default function Sheet({
 
   const header = (
     <div className="mb-4 flex items-center gap-3">
-      <p
-        className="font-mono min-w-0 flex-1 text-[0.66rem] uppercase tracking-[0.14em]"
-        style={{ color: 'var(--dim)' }}
-      >
+      <h2 className="min-w-0 flex-1 truncate text-lg font-semibold" style={{ color: 'var(--ink)' }}>
         {title ?? ''}
-      </p>
+      </h2>
       {!hideClose && (
         <button
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="grid size-9 shrink-0 place-items-center rounded-full text-base"
+          className="hit grid size-9 shrink-0 place-items-center rounded-full text-base"
           style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
         >
           ✕

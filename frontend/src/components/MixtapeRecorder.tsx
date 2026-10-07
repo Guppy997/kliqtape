@@ -90,7 +90,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="font-mono text-[0.66rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+      <p className="text-2xs" style={{ color: 'var(--dim)' }}>
         O-Ton · 90 Sekunden
       </p>
 
@@ -98,11 +98,11 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
       <div className="flex items-center justify-center gap-8 py-2">
         <RecReel fill={1 - fill} live={state === 'recording'} />
         <div className="text-center">
-          <div className="font-disp text-3xl font-bold tabular-nums" style={{ color: 'var(--ink)' }}>
+          <div className="text-3xl font-semibold tabular-nums" style={{ color: 'var(--ink)' }}>
             {String(Math.floor(left / 60000)).padStart(2, '0')}:
             {String(Math.floor((left % 60000) / 1000)).padStart(2, '0')}
           </div>
-          <div className="font-mono text-[0.6rem] uppercase tracking-widest" style={{ color: 'var(--dim)' }}>
+          <div className="text-2xs" style={{ color: 'var(--dim)' }}>
             {state === 'recording' ? 'läuft' : state === 'done' ? 'Band voll' : 'bereit'}
           </div>
         </div>
@@ -110,7 +110,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
       </div>
 
       {error && (
-        <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'rgba(184,70,44,.18)', color: '#F0B5A5' }}>
+        <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}>
           {error}
         </p>
       )}
@@ -118,7 +118,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
       {state === 'done' && result && (
         <div className="flex flex-col gap-3">
           <TapePlayer src={result.url} hintMs={result.ms} />
-          <p className="font-mono text-[0.62rem]" style={{ color: 'var(--dim)' }}>
+          <p className="text-2xs" style={{ color: 'var(--dim)' }}>
             Zieh am Band — vor und zurück.
           </p>
           <input
@@ -126,7 +126,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
             onChange={(e) => setCaption(e.target.value)}
             maxLength={60}
             placeholder="Beschriften …"
-            className="font-hand rounded-md px-3 py-2 text-base outline-none"
+            className="rounded-lg px-3 py-2 text-base outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
         </div>
@@ -147,7 +147,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
             type="button"
             onClick={start}
             className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Aufnahme starten
           </button>
@@ -178,7 +178,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
               }
             }}
             className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {sending ? 'Wird überspielt …' : 'Aufs Band'}
           </button>

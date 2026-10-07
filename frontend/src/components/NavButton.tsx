@@ -11,7 +11,8 @@ interface Props {
 }
 
 /**
- * Ein Bereich der unteren Leiste: Icon, Beschriftung darunter, optional ein
+ * Ein Bereich der unteren Leiste (Fach, Band, Hot Line, Neues): Icon, kurze
+ * Beschriftung darunter, optional ein
  * Zaehler oben rechts. Eject, Hot Line und Neuigkeiten sahen frueher alle
  * unterschiedlich aus (Metallschild, LED, Textpille) — bewusst uneinheitlich.
  * Jetzt wie eine echte Tableiste, angelehnt an Signal & Co.: nur das aktive
@@ -38,17 +39,14 @@ export default function NavButton({ icon, label, badge, active, onClick }: Props
         {icon}
         {!!badge && (
           <span
-            className="font-mono absolute -right-1 -top-1 grid size-3.5 place-items-center rounded-full text-[0.5rem] tabular-nums"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            className="absolute -right-1.5 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-2xs font-semibold tabular-nums"
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {badge}
           </span>
         )}
       </span>
-      <span
-        className="font-mono text-[0.56rem] uppercase tracking-[0.08em]"
-        style={{ color: active ? 'var(--accent)' : 'var(--dim)' }}
-      >
+      <span className="text-2xs font-medium" style={{ color: active ? 'var(--accent)' : 'var(--dim)' }}>
         {label}
       </span>
     </button>

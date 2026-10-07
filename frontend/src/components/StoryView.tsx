@@ -128,13 +128,9 @@ export default function StoryView({ open, onClose }: Props) {
 
           <div className="mt-2 flex items-center gap-2 px-3">
             <Avatar name={activeGroup.author} side={side} size={2} />
-            <span className="font-hand text-lg text-white">{activeGroup.author}</span>
+            <span className="text-base font-semibold text-white">{activeGroup.author}</span>
             {activeGroup.author === me && (
-              <button
-                type="button"
-                onClick={removeActive}
-                className="font-mono ml-auto shrink-0 text-[0.6rem] uppercase tracking-[0.1em] text-white/70"
-              >
+              <button type="button" onClick={removeActive} className="ml-auto shrink-0 text-2xs text-white/70">
                 Löschen
               </button>
             )}
@@ -142,7 +138,7 @@ export default function StoryView({ open, onClose }: Props) {
               type="button"
               onClick={closeViewer}
               aria-label="Zurück zur Übersicht"
-              className="grid size-9 shrink-0 place-items-center rounded-full text-white"
+              className="hit grid size-9 shrink-0 place-items-center rounded-full text-white"
               style={{ background: 'rgba(255,255,255,.15)' }}
             >
               ✕
@@ -195,7 +191,7 @@ export default function StoryView({ open, onClose }: Props) {
             >
               <span
                 className="grid size-9 place-items-center rounded-full"
-                style={{ background: 'var(--accent)', color: '#17130E' }}
+                style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
                 aria-hidden="true"
               >
                 <svg
@@ -210,7 +206,7 @@ export default function StoryView({ open, onClose }: Props) {
                   <path d="M7 1v12M1 7h12" />
                 </svg>
               </span>
-              <span className="font-mono text-[0.56rem] uppercase tracking-[0.1em]" style={{ color: 'var(--accent)' }}>
+              <span className="text-2xs" style={{ color: 'var(--accent)' }}>
                 Deine Story
               </span>
             </button>
@@ -244,12 +240,10 @@ export default function StoryView({ open, onClose }: Props) {
                   >
                     <Avatar name={g.author} side={side} size={1.15} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[0.72rem] font-semibold leading-tight text-white">
+                      <span className="block truncate text-xs font-semibold leading-tight text-white">
                         {g.author === me ? 'Du' : g.author}
                       </span>
-                      <span className="font-mono block text-[0.5rem] uppercase tracking-[0.06em] text-white/70">
-                        {agoLabel(latest.createdAt)}
-                      </span>
+                      <span className="block text-2xs text-white/70">{agoLabel(latest.createdAt)}</span>
                     </span>
                   </span>
                 </button>
@@ -258,18 +252,18 @@ export default function StoryView({ open, onClose }: Props) {
           </div>
 
           {groups.length === 0 && (
-            <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>
+            <p className="py-10 text-center text-sm" style={{ color: 'var(--dim)' }}>
               Noch keine Storys — sei die erste.
             </p>
           )}
 
           {error && (
-            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+            <p className="text-sm" style={{ color: 'var(--danger)' }}>
               {error}
             </p>
           )}
 
-          <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+          <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
             Sichtbar für alle, mit denen du in irgendeiner Kassette zusammen bist — nicht nur für die gerade eingelegte
             Runde. Verschwindet nach 24 Stunden von selbst.
           </p>

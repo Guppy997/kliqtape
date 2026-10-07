@@ -129,15 +129,24 @@ export default function Shelf({ me }: { me: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="glass-chip font-mono flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.58rem] uppercase tracking-[0.1em]"
+        aria-label="Regal"
+        title="Regal"
+        className="glass-chip hit grid size-9 shrink-0 place-items-center rounded-full"
         style={{ color: 'var(--dim)' }}
       >
-        <svg width="11" height="9" viewBox="0 0 11 9" fill="currentColor" aria-hidden="true">
-          <rect x="0" y="0" width="11" height="9" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1" />
-          <circle cx="3.6" cy="4.5" r="1.5" />
-          <circle cx="7.4" cy="4.5" r="1.5" />
+        <svg
+          width="18"
+          height="15"
+          viewBox="0 0 18 15"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden="true"
+        >
+          <rect x="1" y="1" width="16" height="13" rx="2" />
+          <circle cx="6" cy="7.5" r="2.1" />
+          <circle cx="12" cy="7.5" r="2.1" />
         </svg>
-        Regal
       </button>
 
       <Sheet open={open} onClose={() => setOpen(false)} variant="full" title="Regal">
@@ -155,7 +164,7 @@ export default function Shelf({ me }: { me: string }) {
               type="button"
               onClick={() => setFilterOpen((v) => !v)}
               aria-expanded={filterOpen}
-              className="font-mono shrink-0 rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.1em]"
+              className="shrink-0 rounded-full px-2.5 py-1 text-2xs"
               style={{
                 border: '1px solid var(--line)',
                 color: cassetteFilter === 'all' ? 'var(--dim)' : 'var(--accent)',
@@ -179,11 +188,11 @@ export default function Shelf({ me }: { me: string }) {
                   setCassetteFilter('all');
                   setFilterOpen(false);
                 }}
-                className="font-mono rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.08em]"
+                className="rounded-full px-2.5 py-1 text-2xs"
                 style={{
                   background: cassetteFilter === 'all' ? 'var(--accent)' : 'transparent',
                   border: '1px solid var(--line)',
-                  color: cassetteFilter === 'all' ? '#17130E' : 'var(--ink)',
+                  color: cassetteFilter === 'all' ? 'var(--on-accent)' : 'var(--ink)',
                 }}
               >
                 Alle
@@ -196,11 +205,11 @@ export default function Shelf({ me }: { me: string }) {
                     setCassetteFilter(c.id);
                     setFilterOpen(false);
                   }}
-                  className="font-mono rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.08em]"
+                  className="rounded-full px-2.5 py-1 text-2xs"
                   style={{
                     background: cassetteFilter === c.id ? 'var(--accent)' : 'transparent',
                     border: '1px solid var(--line)',
-                    color: cassetteFilter === c.id ? '#17130E' : 'var(--ink)',
+                    color: cassetteFilter === c.id ? 'var(--on-accent)' : 'var(--ink)',
                   }}
                 >
                   {c.name}
@@ -210,13 +219,13 @@ export default function Shelf({ me }: { me: string }) {
           )}
 
           {loading && (
-            <p className="font-mono py-6 text-center text-xs" style={{ color: 'var(--dim)' }}>
+            <p className="py-6 text-center text-xs" style={{ color: 'var(--dim)' }}>
               Lädt …
             </p>
           )}
 
           {!loading && filtered.length === 0 && (
-            <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>
+            <p className="py-10 text-center text-sm" style={{ color: 'var(--dim)' }}>
               Nichts gefunden.
             </p>
           )}
@@ -287,10 +296,7 @@ function TapeRowItem({
       </button>
 
       <div className="min-w-0 flex-1">
-        <span
-          className="font-mono block truncate text-[0.56rem] uppercase tracking-[0.1em]"
-          style={{ color: 'var(--dim)' }}
-        >
+        <span className="block truncate text-2xs" style={{ color: 'var(--dim)' }}>
           {cassette.name}
         </span>
         {editing ? (
@@ -305,7 +311,7 @@ function TapeRowItem({
             }}
             maxLength={60}
             placeholder={defaultTapeName(tapeIndex)}
-            className="font-hand w-full rounded px-1 py-0.5 text-[1.02rem] outline-none"
+            className="w-full rounded-lg px-1 py-0.5 text-base outline-none"
             style={{ background: 'var(--screen)', border: '1px solid var(--accent)', color: 'var(--ink)' }}
           />
         ) : (
@@ -315,7 +321,7 @@ function TapeRowItem({
               setDraft(override?.name ?? '');
               setEditing(true);
             }}
-            className="font-hand block w-full truncate text-left text-[1.05rem]"
+            className="block w-full truncate text-left text-base font-medium"
             style={{ color: 'var(--ink)' }}
           >
             {name}
@@ -329,12 +335,12 @@ function TapeRowItem({
           onClick={() => favorite.mutate()}
           disabled={favorite.isPending}
           aria-label={override?.favoritedByMe ? 'Favorit entfernen' : 'Als Favorit markieren'}
-          className="text-[0.8rem] leading-none disabled:opacity-50"
+          className="text-meta leading-none disabled:opacity-50"
           style={{ color: override?.favoritedByMe ? 'var(--accent)' : 'var(--dim)' }}
         >
           {override?.favoritedByMe ? '★' : '☆'}
         </button>
-        <span className="font-mono text-[0.52rem]" style={{ color: 'var(--dim)' }}>
+        <span className="text-2xs" style={{ color: 'var(--dim)' }}>
           {berlinDateLabel(dateMs)}
         </span>
       </div>

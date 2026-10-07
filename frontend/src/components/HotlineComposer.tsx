@@ -96,7 +96,7 @@ export default function HotlineComposer() {
             <button
               type="button"
               onClick={() => setTarget(null)}
-              className="font-mono mb-2 self-start text-[0.62rem] uppercase tracking-[0.12em]"
+              className="mb-2 self-start text-2xs"
               style={{ color: 'var(--dim)' }}
             >
               ← Wählen
@@ -118,7 +118,7 @@ export default function HotlineComposer() {
                 setPicking(false);
                 setPickQuery('');
               }}
-              className="font-mono self-start text-[0.62rem] uppercase tracking-[0.12em]"
+              className="self-start text-2xs"
               style={{ color: 'var(--dim)' }}
             >
               ← Hot Line
@@ -134,11 +134,11 @@ export default function HotlineComposer() {
             />
 
             {fresh.length === 0 ? (
-              <p className="font-mono py-6 text-center text-[0.64rem]" style={{ color: 'var(--dim)' }}>
+              <p className="py-6 text-center text-2xs" style={{ color: 'var(--dim)' }}>
                 Mit allen anderen läuft schon eine Leitung.
               </p>
             ) : shownFresh.length === 0 ? (
-              <p className="font-mono py-6 text-center text-[0.64rem]" style={{ color: 'var(--dim)' }}>
+              <p className="py-6 text-center text-2xs" style={{ color: 'var(--dim)' }}>
                 Niemanden gefunden.
               </p>
             ) : (
@@ -182,11 +182,11 @@ export default function HotlineComposer() {
                 }}
                 aria-label="Neue Leitung"
                 title="Neue Leitung"
-                className="grid size-9 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
+                className="hit grid size-9 shrink-0 place-items-center rounded-full transition-transform active:scale-95"
                 // Nimmt die Farbe der eingelegten Kassette an (--accent wird in
                 // App.tsx pro Kassette/Seite gesetzt) — wie das Plus im Fach.
                 // Das Hot-Line-Gelb bleibt den Ungelesen-Zaehlern vorbehalten.
-                style={{ background: 'var(--accent)', color: '#17130E' }}
+                style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
               >
                 <svg
                   width="13"
@@ -204,11 +204,11 @@ export default function HotlineComposer() {
             </div>
 
             {threads.length === 0 ? (
-              <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>
+              <p className="py-10 text-center text-sm" style={{ color: 'var(--dim)' }}>
                 Noch keine Leitung offen.
               </p>
             ) : shownThreads.length === 0 ? (
-              <p className="font-mono py-10 text-center text-[0.64rem]" style={{ color: 'var(--dim)' }}>
+              <p className="py-10 text-center text-2xs" style={{ color: 'var(--dim)' }}>
                 Niemanden gefunden.
               </p>
             ) : (
@@ -228,14 +228,14 @@ export default function HotlineComposer() {
                       </span>
                       {t.unread > 0 && (
                         <span
-                          className="font-mono rounded-full px-1.5 py-0.5 text-[0.56rem]"
+                          className="rounded-full px-1.5 py-0.5 text-2xs"
                           style={{ background: HOTLINE_AMBER, color: '#20180A' }}
                         >
                           {t.unread}
                         </span>
                       )}
                     </div>
-                    <p className="truncate text-[0.78rem]" style={{ color: 'var(--dim)' }}>
+                    <p className="truncate text-meta" style={{ color: 'var(--dim)' }}>
                       {previewFor(t.lastKind ?? 'text', t.lastBody)}
                     </p>
                   </div>
@@ -243,7 +243,7 @@ export default function HotlineComposer() {
               ))
             )}
 
-            <p className="font-mono mt-2 text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+            <p className="mt-2 text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
               Text, Bild, Clip, O-Ton oder Mixtape. Der Verlauf bleibt dauerhaft.
             </p>
           </div>

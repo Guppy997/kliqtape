@@ -28,19 +28,14 @@ export default function ReportForm({ target, what, onDone }: Props) {
   if (send.isSuccess) {
     return (
       <div className="flex flex-col gap-2 p-3">
-        <p className="font-hand text-lg" style={{ color: 'var(--ink)' }}>
+        <p className="text-base font-semibold" style={{ color: 'var(--ink)' }}>
           Gemeldet. Danke.
         </p>
-        <p className="font-mono text-[0.62rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+        <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
           Die Meldung ist gespeichert. Im Prototyp gibt es noch kein Moderationsteam, das sie automatisch bearbeitet —
           sie liegt bei den Betreiber:innen. Niemand auf dem Band erfährt, dass du gemeldet hast.
         </p>
-        <button
-          type="button"
-          onClick={onDone}
-          className="font-mono mt-1 self-start text-[0.62rem] uppercase tracking-[0.12em]"
-          style={{ color: 'var(--accent)' }}
-        >
+        <button type="button" onClick={onDone} className="mt-1 self-start text-2xs" style={{ color: 'var(--accent)' }}>
           Schließen
         </button>
       </div>
@@ -62,11 +57,11 @@ export default function ReportForm({ target, what, onDone }: Props) {
               role="radio"
               aria-checked={chosen}
               onClick={() => setReason(r.key)}
-              className="rounded-full px-3 py-1.5 text-[0.78rem]"
+              className="rounded-full px-3 py-1.5 text-meta"
               style={{
                 background: chosen ? 'color-mix(in srgb, #F0B5A5 22%, transparent)' : 'transparent',
-                border: `1px solid ${chosen ? '#F0B5A5' : 'var(--line)'}`,
-                color: chosen ? '#F0B5A5' : 'var(--ink)',
+                border: `1px solid ${chosen ? 'var(--danger)' : 'var(--line)'}`,
+                color: chosen ? 'var(--danger)' : 'var(--ink)',
               }}
             >
               {r.label}
@@ -84,7 +79,7 @@ export default function ReportForm({ target, what, onDone }: Props) {
         style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
       />
       {send.error && (
-        <p className="text-sm" style={{ color: '#F0B5A5' }}>
+        <p className="text-sm" style={{ color: 'var(--danger)' }}>
           {(send.error as Error).message}
         </p>
       )}
@@ -93,17 +88,12 @@ export default function ReportForm({ target, what, onDone }: Props) {
           type="button"
           disabled={!reason || send.isPending}
           onClick={() => send.mutate()}
-          className="font-mono rounded-lg px-3.5 py-2 text-[0.66rem] uppercase tracking-[0.1em] disabled:opacity-40"
-          style={{ background: 'rgba(184,70,44,.18)', border: '1px solid #B8462C', color: '#F0B5A5' }}
+          className="rounded-lg px-3.5 py-2 text-2xs disabled:opacity-40"
+          style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-line)', color: 'var(--danger)' }}
         >
           Meldung senden
         </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="font-mono text-[0.62rem] uppercase tracking-[0.12em]"
-          style={{ color: 'var(--dim)' }}
-        >
+        <button type="button" onClick={onDone} className="text-2xs" style={{ color: 'var(--dim)' }}>
           Abbrechen
         </button>
       </div>

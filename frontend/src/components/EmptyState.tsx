@@ -30,7 +30,7 @@ export function NoCassette() {
       <EmptyShell />
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-hand text-[1.7rem] leading-tight" style={{ color: 'var(--ink)' }}>
+        <h2 className="text-xl leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
           Noch kein Band im Fach.
         </h2>
         <p className="mx-auto max-w-[19rem] text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -52,8 +52,8 @@ export function NoCassette() {
                 ? `${invites[0]!.invitedBy} lädt dich auf „${invites[0]!.cassetteName}“ ein`
                 : `${invites.length} Einladungen warten auf dich`}
             </span>
-            <span className="font-mono block text-[0.6rem] uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>
-              In den Benachrichtigungen zustimmen
+            <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
+              Unter „Neues“ zustimmen
             </span>
           </span>
           <span aria-hidden="true" style={{ color: 'var(--accent)' }}>
@@ -74,7 +74,7 @@ export function NoCassette() {
             style={{ border: '1px solid var(--line)' }}
           >
             <span
-              className="font-mono mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[0.6rem]"
+              className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-2xs"
               style={{ border: '1px solid var(--accent)', color: 'var(--accent)' }}
             >
               {i + 1}
@@ -83,7 +83,7 @@ export function NoCassette() {
               <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                 {title}
               </span>
-              <span className="block text-[0.8rem] leading-snug" style={{ color: 'var(--dim)' }}>
+              <span className="block text-meta leading-snug" style={{ color: 'var(--dim)' }}>
                 {text}
               </span>
             </span>
@@ -94,8 +94,8 @@ export function NoCassette() {
       <button
         type="button"
         onClick={() => openDeck({ kind: 'create' })}
-        className="font-disp w-full max-w-sm rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-[0.1em]"
-        style={{ background: 'var(--accent)', color: '#17130E' }}
+        className="w-full max-w-sm rounded-xl px-4 py-3.5 text-sm font-semibold"
+        style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
       >
         Erstes Band beschriften
       </button>
@@ -111,7 +111,7 @@ export function EmptyBand({ cassette }: { cassette: Cassette }) {
   return (
     <div className="rise flex flex-col items-center gap-4 px-2 py-10 text-center" style={BELOW_DECK}>
       <BlankLabel />
-      <h2 className="font-hand text-[1.5rem] leading-tight" style={{ color: 'var(--ink)' }}>
+      <h2 className="text-lg leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
         Das Band ist noch leer.
       </h2>
       <p className="max-w-[19rem] text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -170,7 +170,7 @@ function EmptyShell() {
       <circle cx="132" cy="72" r="11" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="3 4" opacity=".6" />
       {/* Plus mittig: hier kommt dein Band hin */}
       <circle cx="105" cy="72" r="14" fill="var(--accent)" />
-      <path d="M105 65v14M98 72h14" stroke="#17130E" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M105 65v14M98 72h14" stroke="var(--on-accent)" strokeWidth="2.2" strokeLinecap="round" />
       {/* Bodenkante der Huelle */}
       <path d="M10 124h190" stroke="var(--line)" strokeWidth="1.5" strokeLinecap="round" />
     </svg>

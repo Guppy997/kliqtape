@@ -39,7 +39,10 @@ GitHub Actions führt genau das bei jedem Push aus. `npm run format` formatiert 
 - **Ehrlichkeit in der App:** Nichts behauptet Verschlüsselung, solange es keine gibt. Neue
   Funktionen bekommen eine Zeile in „Was der Server sieht“ (`Settings.tsx`).
 - **Kommentare auf Deutsch**, und sie erklären das *Warum*, nicht das *Was*.
-- **Gestaltung:** Retro sind die Materialien, modern ist alles andere.
+- **Gestaltung:** Retro sind die Materialien, modern ist alles andere. Konkret (CONCEPT.md §13):
+  Systemschrift in der Bedienung, Handschrift nur auf Material, Schreibmaschine nur für Zahlen;
+  nichts unter `text-2xs` (11 px); kleine Icon-Knöpfe mit `.hit`; Farben über die Tokens
+  (`--accent`, `--danger`, `--on-accent`), nicht als feste Hex-Werte.
 
 ## Versionen
 

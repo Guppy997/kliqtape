@@ -75,7 +75,7 @@ export default function BottomBar({ onHome }: Props) {
               <path d="M6.3 6h3.4" />
             </svg>
           }
-          label="Home"
+          label="Band"
           active={isHome}
           onClick={onHome}
         />

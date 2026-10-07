@@ -80,14 +80,14 @@ export default function FilmBag({ cassette, onChanged }: { cassette: Cassette; o
         >
           <MiniBag />
           <span className="min-w-0 flex-1">
-            <span className="font-hand block text-[1.25rem] leading-tight" style={{ color: 'var(--ink)' }}>
+            <span className="block text-base leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
               Der Film ist entwickelt.
             </span>
-            <span className="mt-0.5 block text-[0.8rem]" style={{ color: 'var(--dim)' }}>
+            <span className="mt-0.5 block text-meta" style={{ color: 'var(--dim)' }}>
               Abzüge von {namesOf(developed.shots, me)}
             </span>
             <span
-              className="font-mono mt-2 inline-block rounded-full px-3 py-1 text-[0.6rem] uppercase tracking-[0.12em]"
+              className="mt-2 inline-block rounded-full px-3 py-1 text-2xs"
               style={{ background: KRAFT, color: KRAFT_INK }}
             >
               Tüte öffnen
@@ -104,7 +104,7 @@ export default function FilmBag({ cassette, onChanged }: { cassette: Cassette; o
             <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
               Film der Woche
             </span>
-            <span className="block text-[0.76rem] leading-snug" style={{ color: 'var(--dim)' }}>
+            <span className="block text-meta leading-snug" style={{ color: 'var(--dim)' }}>
               Wird {filmReleaseLabel(film.nextRelease)} entwickelt.{' '}
               {film.iShot ? 'Dein Bild ist belichtet.' : 'Du hast noch ein Bild frei.'}
             </span>
@@ -113,7 +113,7 @@ export default function FilmBag({ cassette, onChanged }: { cassette: Cassette; o
                 type="button"
                 onClick={() => developNow.mutate()}
                 disabled={developNow.isPending}
-                className="font-mono mt-1 text-[0.56rem] uppercase tracking-[0.1em] underline disabled:opacity-50"
+                className="mt-1 text-2xs underline disabled:opacity-50"
                 style={{ color: 'var(--dim)' }}
               >
                 Demo: jetzt entwickeln
@@ -124,8 +124,8 @@ export default function FilmBag({ cassette, onChanged }: { cassette: Cassette; o
             <button
               type="button"
               onClick={() => setShooting(true)}
-              className="font-mono shrink-0 rounded-full px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.12em]"
-              style={{ background: 'var(--accent)', color: '#17130E' }}
+              className="shrink-0 rounded-full px-3 py-1.5 text-2xs"
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               Belichten
             </button>
@@ -209,7 +209,7 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
         type="button"
         onClick={onClose}
         aria-label="Schließen"
-        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] grid size-9 place-items-center rounded-full text-white"
+        className="hit absolute right-4 top-[max(1rem,env(safe-area-inset-top))] grid size-9 place-items-center rounded-full text-white"
         style={{ background: 'rgba(255,255,255,.12)' }}
       >
         ✕
@@ -218,7 +218,7 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
       {phase !== 'viewer' ? (
         <div className="relative" style={{ width: 230, height: 280, perspective: '900px', marginTop: 120 }}>
           {/* Rueckwand — das Innere der Tuete */}
-          <div className="absolute inset-x-0 bottom-0 rounded-md" style={{ top: 70, background: KRAFT_DEEP }} />
+          <div className="absolute inset-x-0 bottom-0 rounded-lg" style={{ top: 70, background: KRAFT_DEEP }} />
           {/* Abzuege: stecken in der Tuete, rutschen beim Oeffnen nach oben raus */}
           {shots.slice(0, 4).map((s, i) => (
             <div
@@ -305,7 +305,7 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
             </div>
             <figcaption className="mt-2 flex items-baseline justify-between gap-2 px-0.5 text-[#3B3226]">
               <span className="font-hand text-[1.05rem]">{shot.caption || shot.author}</span>
-              <span className="font-mono shrink-0 text-[0.52rem] uppercase tracking-[0.08em] opacity-70">
+              <span className="shrink-0 text-2xs opacity-70">
                 {shot.caption ? `${shot.author} · ` : ''}
                 {takenLabel(shot.takenAt)}
               </span>
@@ -346,14 +346,14 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
               <button
                 type="button"
                 onClick={onClose}
-                className="font-mono rounded-full px-4 py-2.5 text-[0.62rem] uppercase tracking-[0.12em]"
+                className="rounded-full px-4 py-2.5 text-2xs"
                 style={{ background: KRAFT, color: KRAFT_INK }}
               >
                 Ins Band legen
               </button>
             )}
           </div>
-          <p className="font-mono text-center text-[0.58rem] leading-relaxed text-white/50">
+          <p className="text-center text-2xs leading-relaxed text-white/50">
             Die Abzüge liegen danach im Tape vom Sonntag auf Seite A.
           </p>
         </div>

@@ -22,14 +22,14 @@ export default function TapeView({ id }: Props) {
 
   if (isError) {
     return (
-      <p className="text-sm" style={{ color: '#F0B5A5' }}>
+      <p className="text-sm" style={{ color: 'var(--danger)' }}>
         {(error as Error).message}
       </p>
     );
   }
   if (!tape) {
     return (
-      <p className="font-mono text-xs" style={{ color: 'var(--dim)' }}>
+      <p className="text-xs" style={{ color: 'var(--dim)' }}>
         Tape wird geholt …
       </p>
     );
@@ -49,9 +49,7 @@ export default function TapeView({ id }: Props) {
           </div>
         )}
         <p className="font-hand mt-2 px-1 text-center text-[1.15rem] leading-tight text-[#3B3226]">{tape.title}</p>
-        <p className="font-mono mt-1 text-center text-[0.58rem] uppercase tracking-[0.1em] text-[#3B3226]/60">
-          {mine ? `für ${tape.to}` : `von ${tape.from}`}
-        </p>
+        <p className="mt-1 text-center text-2xs text-[#3B3226]/60">{mine ? `für ${tape.to}` : `von ${tape.from}`}</p>
       </div>
 
       {tape.note && (
@@ -69,21 +67,21 @@ export default function TapeView({ id }: Props) {
           const plat = platformOf(t.url);
           const row = (
             <>
-              <span className="font-mono w-5 shrink-0 text-[0.68rem] tabular-nums" style={{ color: 'var(--accent)' }}>
+              <span className="font-mono w-5 shrink-0 text-2xs tabular-nums" style={{ color: 'var(--accent)' }}>
                 {String(t.position).padStart(2, '0')}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[0.9rem]" style={{ color: 'var(--ink)' }}>
+                <span className="block truncate text-sm" style={{ color: 'var(--ink)' }}>
                   {t.title}
                 </span>
-                <span className="font-mono block truncate text-[0.6rem]" style={{ color: 'var(--dim)' }}>
+                <span className="block truncate text-2xs" style={{ color: 'var(--dim)' }}>
                   {t.artist}
                   {t.artist && plat ? ' · ' : ''}
                   {plat}
                 </span>
               </span>
               {t.url && (
-                <span className="font-mono shrink-0 text-[0.6rem] uppercase" style={{ color: 'var(--accent)' }}>
+                <span className="shrink-0 text-2xs" style={{ color: 'var(--accent)' }}>
                   öffnen ↗
                 </span>
               )}
@@ -117,7 +115,7 @@ export default function TapeView({ id }: Props) {
 
       {tape.sealed && <SaveCard tape={tape} />}
 
-      <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+      <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
         Die Titel öffnen sich in dem Dienst, aus dem der Link stammt. Kliqtape speichert keine Musik und ist an keine
         Plattform gebunden.
       </p>

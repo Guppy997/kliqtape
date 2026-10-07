@@ -162,12 +162,12 @@ export default function CameraCapture({
           e.target.value = '';
         }}
       />
-      <p className="font-mono text-[0.66rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+      <p className="text-2xs" style={{ color: 'var(--dim)' }}>
         {title ?? (mode === 'photo' ? 'Foto · nur jetzt' : `Video · max ${MAX_VIDEO_MS / 1000} Sekunden`)}
       </p>
 
       {error ? (
-        <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'rgba(184,70,44,.18)', color: '#F0B5A5' }}>
+        <p className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}>
           {error}
         </p>
       ) : round ? (
@@ -217,7 +217,7 @@ export default function CameraCapture({
       )}
 
       {recording && (
-        <div className="text-center font-mono text-sm tabular-nums" style={{ color: '#E06A4C' }}>
+        <div className="text-center text-sm tabular-nums" style={{ color: '#E06A4C' }}>
           ● {((MAX_VIDEO_MS - elapsed) / 1000).toFixed(1)}s
         </div>
       )}
@@ -237,7 +237,7 @@ export default function CameraCapture({
             type="button"
             onClick={() => fileRef.current?.click()}
             className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Bild aus der Galerie
           </button>
@@ -269,7 +269,7 @@ export default function CameraCapture({
               className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
               style={{
                 background: recording ? '#B8462C' : 'var(--accent)',
-                color: recording ? '#FFF3EC' : '#17130E',
+                color: recording ? '#FFF3EC' : 'var(--on-accent)',
               }}
             >
               {mode === 'photo' ? 'Auslösen' : recording ? 'Stopp' : 'Aufnehmen'}
@@ -303,7 +303,7 @@ export default function CameraCapture({
                 }
               }}
               className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
-              style={{ background: 'var(--accent)', color: '#17130E' }}
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               {sending ? 'Wird überspielt …' : sendLabel}
             </button>

@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.44.0',
+    date: '2026-10-07',
+    changes: [
+      'Aufgeräumteres Design: eine klare Schrift für die Bedienung, Handschrift nur noch auf Etiketten, Abzügen und Zetteln, keine Großbuchstaben-Beschriftungen mehr',
+      'Beiträge liegen ohne Rahmen auf der Fläche; Melden und Löschen stecken im „…“-Menü, Tonfetzen und Reagieren sind kleine Symbole',
+      'Oben nur noch dein Profilbild und das Regal-Symbol; darunter eine Suche durch die Beiträge der eingelegten Seite und der Filter',
+      'Untere Leiste mit kurzen Namen: Fach, Band, Hot Line, Neues',
+      'Gruppenchat: Nachrichten beginnen unten am Eingabefeld statt unter der Kassette zu verschwinden; die Zeichenzahl erscheint erst kurz vor der Grenze',
+      'Alles gut lesbar (mindestens 11 Punkt) und kleine Knöpfe mit großer Tippfläche',
+    ],
+  },
+  {
     version: '0.43.1',
     date: '2026-10-07',
     changes: [

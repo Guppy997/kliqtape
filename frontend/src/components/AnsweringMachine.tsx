@@ -74,31 +74,24 @@ export default function AnsweringMachine() {
             <path d="M5.3 12.2a2.2 2.2 0 0 0 4.4 0h-4.4Z" />
           </svg>
         }
-        label="Benachrichtigung"
+        label="Neues"
         badge={notifCount > 0 ? notifCount : undefined}
         active={open}
         onClick={() => setActiveNav('notify')}
       />
 
       {/* Hauptseite: wird ueber die untere Leiste gewechselt, deshalb ohne X. */}
-      <Sheet
-        open={open}
-        onClose={() => setActiveNav(null)}
-        variant="full"
-        reserveBottomNav
-        hideClose
-        title="Neuigkeiten"
-      >
+      <Sheet open={open} onClose={() => setActiveNav(null)} variant="full" reserveBottomNav hideClose title="Neues">
         <div className="flex flex-col gap-6">
           {notifCount === 0 && (
-            <p className="font-hand py-10 text-center text-lg" style={{ color: 'var(--dim)' }}>
+            <p className="py-10 text-center text-sm" style={{ color: 'var(--dim)' }}>
               Nichts Neues.
             </p>
           )}
 
           {invites.length > 0 && (
             <section className="flex flex-col gap-2.5">
-              <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                 Einladungen · {invites.length}
               </h3>
               {invites.map((inv) => (
@@ -124,10 +117,7 @@ export default function AnsweringMachine() {
                         <span className="font-semibold">{inv.invitedBy}</span> lädt dich zu{' '}
                         <span className="font-semibold">{inv.cassetteName}</span> ein
                       </p>
-                      <p
-                        className="font-mono mt-0.5 text-[0.56rem] uppercase tracking-[0.08em]"
-                        style={{ color: 'var(--dim)' }}
-                      >
+                      <p className="mt-0.5 text-2xs" style={{ color: 'var(--dim)' }}>
                         {timeAgo(inv.createdAt)}
                       </p>
                     </div>
@@ -137,7 +127,7 @@ export default function AnsweringMachine() {
                       type="button"
                       disabled={respond.isPending}
                       onClick={() => respond.mutate({ id: inv.id, accept: false })}
-                      className="font-mono shrink-0 px-1.5 text-[0.62rem] uppercase tracking-[0.06em] disabled:opacity-50"
+                      className="shrink-0 px-1.5 text-2xs disabled:opacity-50"
                       style={{ color: 'var(--dim)' }}
                     >
                       Ablehnen
@@ -146,8 +136,8 @@ export default function AnsweringMachine() {
                       type="button"
                       disabled={respond.isPending}
                       onClick={() => respond.mutate({ id: inv.id, accept: true })}
-                      className="font-disp shrink-0 rounded-lg px-3 py-1.5 text-[0.72rem] font-bold uppercase tracking-[0.08em] disabled:opacity-50"
-                      style={{ background: 'var(--accent)', color: '#17130E' }}
+                      className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                      style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
                     >
                       Zustimmen
                     </button>
@@ -159,7 +149,7 @@ export default function AnsweringMachine() {
 
           {cassetteNews.length > 0 && (
             <section className="flex flex-col gap-2.5">
-              <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                 Kassetten · {cassetteNews.length}
               </h3>
               {cassetteNews.map((c) => (
@@ -175,17 +165,14 @@ export default function AnsweringMachine() {
                 >
                   <MiniCassette id={c.id} pairIndex={looks.get(c.id)} active side={side} label={c.name} />
                   <span className="min-w-0 flex-1">
-                    <span className="font-hand block truncate text-[1.05rem]" style={{ color: 'var(--ink)' }}>
+                    <span className="block truncate text-base font-medium" style={{ color: 'var(--ink)' }}>
                       {c.name}
                     </span>
-                    <span
-                      className="font-mono block text-[0.58rem] uppercase tracking-[0.08em]"
-                      style={{ color: 'var(--accent)' }}
-                    >
+                    <span className="block text-2xs" style={{ color: 'var(--accent)' }}>
                       Neuer Beitrag
                     </span>
                   </span>
-                  <span className="font-mono shrink-0 text-[0.6rem]" style={{ color: 'var(--dim)' }}>
+                  <span className="shrink-0 text-2xs" style={{ color: 'var(--dim)' }}>
                     →
                   </span>
                 </button>

@@ -58,7 +58,7 @@ export default function MixtapeShelf() {
           aria-label={forMe.length + drafts.length > 0 ? `Mixtapes, ${forMe.length + drafts.length} offen` : 'Mixtapes'}
           title="Mixtapes"
           onClick={() => setView('shelf')}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-md transition-transform active:translate-y-px"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg transition-transform active:translate-y-px"
           style={{
             background: 'linear-gradient(180deg, #35302A, #1E1B17)',
             color: 'var(--ink)',
@@ -78,8 +78,8 @@ export default function MixtapeShelf() {
         </button>
         {forMe.length + drafts.length > 0 && (
           <span
-            className="font-mono absolute -right-1 -top-1 grid size-3.5 place-items-center rounded-full text-[0.5rem] tabular-nums"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            className="absolute -right-1 -top-1 grid size-3.5 place-items-center rounded-full text-2xs tabular-nums"
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {forMe.length + drafts.length}
           </span>
@@ -95,8 +95,8 @@ export default function MixtapeShelf() {
               setError(null);
               setView('new');
             }}
-            className="font-disp rounded-xl px-4 py-3.5 text-sm font-bold uppercase tracking-[0.12em]"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            className="rounded-xl px-4 py-3.5 text-sm font-semibold"
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Neues Mixtape bauen
           </button>
@@ -130,7 +130,7 @@ export default function MixtapeShelf() {
       <Sheet open={view === 'new'} onClose={() => setView('shelf')} variant="full" title="Neues Mixtape">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <label className="font-mono text-[0.62rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+            <label className="text-2xs" style={{ color: 'var(--dim)' }}>
               Für wen?
             </label>
             <input
@@ -148,11 +148,11 @@ export default function MixtapeShelf() {
                     key={n}
                     type="button"
                     onClick={() => setTo(n)}
-                    className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[0.72rem]"
+                    className="flex items-center gap-1.5 rounded-full px-2 py-1 text-xs"
                     style={{
                       background: to === n ? 'var(--accent)' : 'var(--card)',
                       border: '1px solid var(--line)',
-                      color: to === n ? '#17130E' : 'var(--ink)',
+                      color: to === n ? 'var(--on-accent)' : 'var(--ink)',
                     }}
                   >
                     <Avatar name={n} side={side} size={1.1} />
@@ -164,7 +164,7 @@ export default function MixtapeShelf() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-mono text-[0.62rem] uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+            <label className="text-2xs" style={{ color: 'var(--dim)' }}>
               Titel
             </label>
             <input
@@ -178,12 +178,12 @@ export default function MixtapeShelf() {
           </div>
 
           {error && (
-            <p className="text-sm" style={{ color: '#F0B5A5' }}>
+            <p className="text-sm" style={{ color: 'var(--danger)' }}>
               {error}
             </p>
           )}
 
-          <p className="font-mono text-[0.6rem] leading-relaxed" style={{ color: 'var(--dim)' }}>
+          <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
             Bis zu 12 Titel. {to.trim() || 'Der Empfänger'} sieht nichts davon, solange du daran baust — erst das
             Versiegeln überreicht das Tape.
           </p>
@@ -192,8 +192,8 @@ export default function MixtapeShelf() {
             type="button"
             disabled={!to.trim() || !title.trim() || create.isPending}
             onClick={() => create.mutate()}
-            className="font-disp rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-[0.12em] disabled:opacity-40"
-            style={{ background: 'var(--accent)', color: '#17130E' }}
+            className="rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Band einlegen
           </button>
@@ -242,12 +242,12 @@ function Group({
 }) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="font-disp text-sm font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--ink)' }}>
+      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
         {title}
       </h3>
 
       {tapes.length === 0 ? (
-        <p className="font-mono text-[0.64rem]" style={{ color: 'var(--dim)' }}>
+        <p className="text-2xs" style={{ color: 'var(--dim)' }}>
           {empty}
         </p>
       ) : (
@@ -260,7 +260,7 @@ function Group({
             style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
           >
             <span
-              className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md"
+              className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg"
               style={{ background: '#D8CFBB' }}
             >
               {t.coverId ? (
@@ -274,10 +274,7 @@ function Group({
               <span className="font-hand block truncate text-[1.02rem]" style={{ color: 'var(--ink)' }}>
                 {t.title || 'Ohne Titel'}
               </span>
-              <span
-                className="font-mono block truncate text-[0.6rem] uppercase tracking-[0.1em]"
-                style={{ color: 'var(--dim)' }}
-              >
+              <span className="block truncate text-2xs" style={{ color: 'var(--dim)' }}>
                 {draft ? `für ${t.to}` : t.from === t.to ? '' : `von ${t.from} · für ${t.to}`} · {t.trackCount}/12
               </span>
             </span>

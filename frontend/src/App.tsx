@@ -130,6 +130,7 @@ function Deck() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Kind | 'all'>('all');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const navActive = useBottomNav((s) => s.active);
   const setActiveNav = useBottomNav((s) => s.setActive);
   const viewMode = useViewMode((s) => s.viewMode);
@@ -145,17 +146,26 @@ function Deck() {
   // anfangen statt verdeckt zu werden (EmptyState.tsx). ResizeObserver
   // feuert auch waehrend des Auf-/Zuklappens, die Variable gleitet also mit.
   const panelRef = useRef<HTMLDivElement>(null);
+  const topbarRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const el = panelRef.current;
-    if (!el) return;
+    const bar = topbarRef.current;
+    if (!el || !bar) return;
     const root = document.documentElement.style;
-    const update = () => root.setProperty('--deck-h', `${el.getBoundingClientRect().height}px`);
+    // --topbar-h: Hoehe der klebenden Leiste, damit der Gruppenchat seine
+    // Nachrichten unten am Eingabefeld ausrichten kann (ChatThread.tsx).
+    const update = () => {
+      root.setProperty('--deck-h', `${el.getBoundingClientRect().height}px`);
+      root.setProperty('--topbar-h', `${bar.getBoundingClientRect().height}px`);
+    };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
+    ro.observe(bar);
     return () => {
       ro.disconnect();
       root.removeProperty('--deck-h');
+      root.removeProperty('--topbar-h');
     };
   }, []);
 
@@ -185,6 +195,7 @@ function Deck() {
     setSide('a');
     setFilter('all');
     setFilterOpen(false);
+    setQuery('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -235,9 +246,24 @@ function Deck() {
   useEffect(() => {
     setFilter('all');
     setFilterOpen(false);
+    setQuery('');
   }, [side, cassetteId]);
 
-  const shown = useMemo(() => (filter !== 'all' ? data.filter((p) => p.kind === filter) : data), [data, filter]);
+  // Suche und Filter wirken zusammen: erst die Art, dann der Text (Inhalt,
+  // Name, Mixtape-Titel) — rein im Client, die Seite ist schon geladen.
+  const q = query.trim().toLowerCase();
+  const shown = useMemo(
+    () =>
+      data.filter(
+        (p) =>
+          (filter === 'all' || p.kind === filter) &&
+          (!q ||
+            p.body.toLowerCase().includes(q) ||
+            p.author.toLowerCase().includes(q) ||
+            (p.tape?.title ?? '').toLowerCase().includes(q)),
+      ),
+    [data, filter, q],
+  );
 
   // Seite A: Beitraege chronologisch nach Tape (Kalendertag) gruppieren —
   // gilt auch bei aktivem Filter, anders als Seite B gibt es hier keinen
@@ -276,7 +302,7 @@ function Deck() {
   // ChatThread haengt stattdessen sein eigenes Eingabefeld fest an den
   // unteren Rand (siehe dort). Der Inhalt braucht dafuer zusaetzlichen
   // Abstand unten, sonst verschwindet die letzte Nachricht dahinter.
-  const isCassetteChat = side === 'b' && filter === 'all';
+  const isCassetteChat = side === 'b' && filter === 'all' && !q;
 
   // Beim Ankommen auf einer Seite zum ersten UNGESEHENEN Beitrag springen,
   // statt immer ganz oben (aeltester) oder blind ganz unten (aktuellster) zu
@@ -365,16 +391,14 @@ function Deck() {
           Seite liegt also UNTER Notch/Kamera-Ausschnitt. Ohne dieses Polster
           laeuft die Zeile bei iPhone und Android dort hinein. */}
       <div
+        ref={topbarRef}
         className="glass sticky top-0 z-30 pt-[max(0.5rem,env(safe-area-inset-top))]"
         // Solange die Kassette ausgeklappt ist, faellt die Trennlinie nach
         // unten weg — Leiste und Panel sind dann eine durchgehende Flaeche.
         style={{ borderBottomColor: panelShown ? 'transparent' : undefined }}
       >
         <div className="mx-auto flex max-w-xl flex-col gap-1.5 px-3 pb-2">
-          <div
-            className="font-mono flex items-center justify-between gap-1.5 text-[0.64rem] uppercase tracking-[0.11em]"
-            style={{ color: 'var(--dim)' }}
-          >
+          <div className="flex items-center justify-between gap-1.5 text-2xs" style={{ color: 'var(--dim)' }}>
             <span className="flex min-w-0 items-center gap-1.5">
               {/* Holt die weggescrollte Kassette zurueck. Sitzt bewusst ganz
                   links, damit die Stelle gleich bleibt, egal ob der
@@ -411,18 +435,6 @@ function Deck() {
               {!isCassetteChat && navActive === null && <Composer onPosted={invalidate} />}
             </span>
             <span className="flex shrink-0 items-center gap-1.5">
-              {/* Auf beiden Seiten filterbar — auch Seite B sammelt sich mit der
-                  Zeit, und "was ist grad an O-Toenen da" ist dort genauso eine
-                  sinnvolle Frage wie im Archiv. */}
-              <button
-                type="button"
-                onClick={() => setFilterOpen((v) => !v)}
-                aria-expanded={filterOpen}
-                className="glass-chip shrink-0 rounded-full px-2 py-1 text-[0.58rem]"
-                style={{ color: filter === 'all' ? 'var(--dim)' : 'var(--accent)' }}
-              >
-                {filter === 'all' ? 'Filter' : FILTERS.find((f) => f.key === filter)?.label} {filterOpen ? '▴' : '▾'}
-              </button>
               {/* Regal geht jetzt ueber alle Kassetten — holt sich seine Daten
                   selbst, unabhaengig von der gerade eingelegten. */}
               <Shelf me={me} />
@@ -430,13 +442,85 @@ function Deck() {
             </span>
           </div>
 
-          {/* Kleines Fenster, das direkt unter der Zeile aufklappt — kein
-              eigener Bildschirm fuer eine so kurze Auswahl. */}
+          {/* Zweite Zeile: Beitraege durchsuchen, Art filtern. Gilt fuer die
+              eingelegte Seite; auf Seite B wird aus dem Chat dabei eine
+              Trefferliste. */}
+          {cassetteId && (
+            <div className="flex items-center gap-2">
+              <label
+                className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-full px-3"
+                style={{ background: 'color-mix(in srgb, var(--ink) 7%, transparent)' }}
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                  style={{ color: 'var(--dim)' }}
+                >
+                  <circle cx="7" cy="7" r="4.5" />
+                  <path d="M10.5 10.5 14 14" />
+                </svg>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={side === 'a' ? 'Auf Seite A suchen' : 'Im Gruppenchat suchen'}
+                  aria-label="Beiträge suchen"
+                  className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                  style={{ color: 'var(--ink)' }}
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    aria-label="Suche leeren"
+                    className="hit text-sm"
+                    style={{ color: 'var(--dim)' }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </label>
+              <button
+                type="button"
+                onClick={() => setFilterOpen((v) => !v)}
+                aria-expanded={filterOpen}
+                aria-label={
+                  filter === 'all' ? 'Nach Art filtern' : `Filter: ${FILTERS.find((f) => f.key === filter)?.label}`
+                }
+                title="Nach Art filtern"
+                className="hit grid size-9 shrink-0 place-items-center rounded-full"
+                style={{
+                  background: filter === 'all' ? 'color-mix(in srgb, var(--ink) 7%, transparent)' : 'var(--accent)',
+                  color: filter === 'all' ? 'var(--dim)' : 'var(--on-accent)',
+                }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M2 4h12M4.5 8h7M7 12h2" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           {filterOpen && (
-            <div className="glass-chip flex flex-wrap gap-1.5 rounded-lg p-2">
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
               {(side === 'b' ? FILTERS_B : FILTERS).map((f) => {
                 const n = f.key === 'all' ? data.length : data.filter((p) => p.kind === f.key).length;
                 if (n === 0 && f.key !== 'all') return null;
+                const on = filter === f.key;
                 return (
                   <button
                     key={f.key}
@@ -445,14 +529,14 @@ function Deck() {
                       setFilter(f.key);
                       setFilterOpen(false);
                     }}
-                    className="font-mono rounded-full px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.08em]"
+                    aria-pressed={on}
+                    className="h-8 shrink-0 rounded-full px-3 text-sm"
                     style={{
-                      background: filter === f.key ? 'var(--accent)' : 'transparent',
-                      border: '1px solid var(--line)',
-                      color: filter === f.key ? '#17130E' : 'var(--ink)',
+                      background: on ? 'var(--accent)' : 'color-mix(in srgb, var(--ink) 7%, transparent)',
+                      color: on ? 'var(--on-accent)' : 'var(--ink)',
                     }}
                   >
-                    {f.label} {n}
+                    {f.label}
                   </button>
                 );
               })}
@@ -515,7 +599,7 @@ function Deck() {
             ) : (
               <>
                 {isLoading && (
-                  <p className="font-mono py-10 text-center text-xs" style={{ color: 'var(--dim)' }}>
+                  <p className="py-10 text-center text-xs" style={{ color: 'var(--dim)' }}>
                     Band wird eingelegt …
                   </p>
                 )}
@@ -523,7 +607,7 @@ function Deck() {
                 {isError && (
                   <p
                     className="rounded-lg px-3 py-2 text-sm"
-                    style={{ background: 'rgba(184,70,44,.18)', color: '#F0B5A5' }}
+                    style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}
                   >
                     {/* Bandsalat: wenn das Backend nicht antwortet, ist das Band verheddert. */}
                     Bandsalat — {(error as Error).message}
@@ -536,13 +620,10 @@ function Deck() {
 
                 {!isLoading && !isError && shown.length === 0 && !(data.length === 0 && side === 'a' && current) && (
                   <div className="py-16 text-center">
-                    <p className="font-hand text-lg" style={{ color: 'var(--dim)' }}>
+                    <p className="text-sm" style={{ color: 'var(--dim)' }}>
                       {data.length === 0 ? 'Leeres Band.' : 'Nichts davon auf diesem Band.'}
                     </p>
-                    <p
-                      className="mt-1 font-mono text-[0.66rem] uppercase tracking-widest"
-                      style={{ color: 'var(--dim)' }}
-                    >
+                    <p className="mt-1 text-2xs" style={{ color: 'var(--dim)' }}>
                       Seite {side.toUpperCase()} · {SIDE_LABEL[side]}
                     </p>
                   </div>
@@ -550,7 +631,7 @@ function Deck() {
 
                 {side === 'a'
                   ? tapeGroups.map((group) => (
-                      <div key={group.tapeIndex} className="flex flex-col gap-1.5">
+                      <div key={group.tapeIndex} className="flex flex-col gap-5">
                         <TapeHeader
                           cassetteId={cassetteId!}
                           cassetteCreatedAt={current!.createdAt}
@@ -575,7 +656,7 @@ function Deck() {
 
                 {/* Film der Woche: am Ende von Seite A, dort wo man beim
                     Einlegen landet (neuester Stand). Nur ohne Filter. */}
-                {side === 'a' && filter === 'all' && current && !isLoading && (
+                {side === 'a' && filter === 'all' && !q && current && !isLoading && (
                   <>
                     <ImposterCard cassette={current} onChanged={invalidate} />
                     <FilmBag cassette={current} onChanged={invalidate} />
@@ -589,10 +670,10 @@ function Deck() {
                       className="h-1 w-24 rounded-full"
                       style={{ background: 'linear-gradient(90deg, var(--accent), transparent)' }}
                     />
-                    <p className="font-hand text-base" style={{ color: 'var(--dim)' }}>
+                    <p className="text-sm" style={{ color: 'var(--dim)' }}>
                       Bandende.
                     </p>
-                    <p className="font-mono text-[0.6rem] uppercase tracking-widest" style={{ color: 'var(--dim)' }}>
+                    <p className="text-2xs" style={{ color: 'var(--dim)' }}>
                       kein Nachschub
                     </p>
                   </div>
