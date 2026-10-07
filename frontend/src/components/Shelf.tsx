@@ -13,7 +13,6 @@ import { berlinDateLabel, dateOfTapeIndex } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import { MiniCassette, useCassettes, useLookIndex } from './CassetteDeck';
 import { defaultTapeName, tapeDisplayName } from './TapeHeader';
-import Sheet from './Sheet';
 
 interface TapeRow {
   cassette: Cassette;
@@ -29,11 +28,11 @@ interface TapeRow {
  * Zeile, nach Datum sortiert — "Alle Freunde · Tape 04" kann direkt neben
  * "Die Kliqe · Tape 02" stehen, je nachdem was aktueller ist.
  *
- * Mixtapes haben seit kurzem einen eigenen Knopf im Laufwerk (siehe
- * MixtapeShelf.tsx) — das hier ist ausschliesslich Seite-A-Archiv.
+ * Nur der Inhalt: das Profil (ProfileView.tsx) zeigt ihn im Regal unter
+ * "Aus deinen Kassetten". `active` haelt die Abfragen still, solange das
+ * Profil zu ist; `onJump` schliesst es, wenn man zu einem Tape springt.
  */
-export default function Shelf({ me }: { me: string }) {
-  const [open, setOpen] = useState(false);
+export default function ShelfList({ me, active: open, onJump }: { me: string; active: boolean; onJump: () => void }) {
   const [query, setQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [cassetteFilter, setCassetteFilter] = useState<string | 'all'>('all');
@@ -108,7 +107,7 @@ export default function Shelf({ me }: { me: string }) {
   function jumpTo(row: TapeRow) {
     setCassette(row.cassette.id);
     setSide('a');
-    setOpen(false);
+    onJump();
     // Bei einem Kassettenwechsel muss der Feed erst laden, bevor der Anker
     // existiert — kurz nachschauen, bis er da ist (bei der schon eingelegten
     // Kassette meist schon beim ersten Versuch).
@@ -125,127 +124,100 @@ export default function Shelf({ me }: { me: string }) {
   }
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Regal"
-        title="Regal"
-        className="glass-chip hit grid size-9 shrink-0 place-items-center rounded-full"
-        style={{ color: 'var(--dim)' }}
-      >
-        <svg
-          width="18"
-          height="15"
-          viewBox="0 0 18 15"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          aria-hidden="true"
+    <div className="flex flex-col gap-3">
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Tape oder Kassette suchen …"
+        className="rounded-lg px-3 py-2 text-sm outline-none"
+        style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+      />
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setFilterOpen((v) => !v)}
+          aria-expanded={filterOpen}
+          className="shrink-0 rounded-full px-2.5 py-1 text-2xs"
+          style={{
+            border: '1px solid var(--line)',
+            color: cassetteFilter === 'all' ? 'var(--dim)' : 'var(--accent)',
+          }}
         >
-          <rect x="1" y="1" width="16" height="13" rx="2" />
-          <circle cx="6" cy="7.5" r="2.1" />
-          <circle cx="12" cy="7.5" r="2.1" />
-        </svg>
-      </button>
+          {cassetteFilter === 'all' ? 'Filter' : (cassettes.find((c) => c.id === cassetteFilter)?.name ?? 'Filter')}{' '}
+          {filterOpen ? '▴' : '▾'}
+        </button>
+      </div>
 
-      <Sheet open={open} onClose={() => setOpen(false)} variant="full" title="Regal">
-        <div className="flex flex-col gap-3">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tape oder Kassette suchen …"
-            className="rounded-lg px-3 py-2 text-sm outline-none"
-            style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
-          />
-
-          <div>
+      {/* Ausgeklappt statt einer Dauerreihe — die Auswahl (welche
+              Kassette) braucht nicht staendig Platz. */}
+      {filterOpen && (
+        <div
+          className="flex flex-wrap gap-1.5 rounded-lg p-2"
+          style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setCassetteFilter('all');
+              setFilterOpen(false);
+            }}
+            className="rounded-full px-2.5 py-1 text-2xs"
+            style={{
+              background: cassetteFilter === 'all' ? 'var(--accent)' : 'transparent',
+              border: '1px solid var(--line)',
+              color: cassetteFilter === 'all' ? 'var(--on-accent)' : 'var(--ink)',
+            }}
+          >
+            Alle
+          </button>
+          {cassettes.map((c) => (
             <button
+              key={c.id}
               type="button"
-              onClick={() => setFilterOpen((v) => !v)}
-              aria-expanded={filterOpen}
-              className="shrink-0 rounded-full px-2.5 py-1 text-2xs"
+              onClick={() => {
+                setCassetteFilter(c.id);
+                setFilterOpen(false);
+              }}
+              className="rounded-full px-2.5 py-1 text-2xs"
               style={{
+                background: cassetteFilter === c.id ? 'var(--accent)' : 'transparent',
                 border: '1px solid var(--line)',
-                color: cassetteFilter === 'all' ? 'var(--dim)' : 'var(--accent)',
+                color: cassetteFilter === c.id ? 'var(--on-accent)' : 'var(--ink)',
               }}
             >
-              {cassetteFilter === 'all' ? 'Filter' : (cassettes.find((c) => c.id === cassetteFilter)?.name ?? 'Filter')}{' '}
-              {filterOpen ? '▴' : '▾'}
+              {c.name}
             </button>
-          </div>
-
-          {/* Ausgeklappt statt einer Dauerreihe — die Auswahl (welche
-              Kassette) braucht nicht staendig Platz. */}
-          {filterOpen && (
-            <div
-              className="flex flex-wrap gap-1.5 rounded-lg p-2"
-              style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setCassetteFilter('all');
-                  setFilterOpen(false);
-                }}
-                className="rounded-full px-2.5 py-1 text-2xs"
-                style={{
-                  background: cassetteFilter === 'all' ? 'var(--accent)' : 'transparent',
-                  border: '1px solid var(--line)',
-                  color: cassetteFilter === 'all' ? 'var(--on-accent)' : 'var(--ink)',
-                }}
-              >
-                Alle
-              </button>
-              {cassettes.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    setCassetteFilter(c.id);
-                    setFilterOpen(false);
-                  }}
-                  className="rounded-full px-2.5 py-1 text-2xs"
-                  style={{
-                    background: cassetteFilter === c.id ? 'var(--accent)' : 'transparent',
-                    border: '1px solid var(--line)',
-                    color: cassetteFilter === c.id ? 'var(--on-accent)' : 'var(--ink)',
-                  }}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {loading && (
-            <p className="py-6 text-center text-xs" style={{ color: 'var(--dim)' }}>
-              Lädt …
-            </p>
-          )}
-
-          {!loading && filtered.length === 0 && (
-            <p className="py-10 text-center text-sm" style={{ color: 'var(--dim)' }}>
-              Nichts gefunden.
-            </p>
-          )}
-
-          <div className="flex flex-col gap-1.5">
-            {filtered.map((row) => (
-              <TapeRowItem
-                key={`${row.cassette.id}-${row.tapeIndex}`}
-                row={row}
-                pairIndex={looks.get(row.cassette.id)}
-                active={row.cassette.id === cassetteId}
-                me={me}
-                onJump={() => jumpTo(row)}
-                onChanged={() => invalidateTapesOf(row.cassette.id)}
-              />
-            ))}
-          </div>
+          ))}
         </div>
-      </Sheet>
-    </>
+      )}
+
+      {loading && (
+        <p className="py-6 text-center text-xs" style={{ color: 'var(--dim)' }}>
+          Lädt …
+        </p>
+      )}
+
+      {!loading && filtered.length === 0 && (
+        <p className="py-10 text-center text-sm" style={{ color: 'var(--dim)' }}>
+          Nichts gefunden.
+        </p>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        {filtered.map((row) => (
+          <TapeRowItem
+            key={`${row.cassette.id}-${row.tapeIndex}`}
+            row={row}
+            pairIndex={looks.get(row.cassette.id)}
+            active={row.cassette.id === cassetteId}
+            me={me}
+            onJump={() => jumpTo(row)}
+            onChanged={() => invalidateTapesOf(row.cassette.id)}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

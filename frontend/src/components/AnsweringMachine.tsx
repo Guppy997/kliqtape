@@ -3,7 +3,6 @@ import { acceptInvite, declineInvite, fetchInvites } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
 import { MiniCassette, useCassetteNews, useLookIndex } from './CassetteDeck';
-import NavButton from './NavButton';
 import Sheet from './Sheet';
 
 /** "vor 5 Min.", "vor 3 Std." — grob genuegt hier, niemand braucht die
@@ -67,21 +66,31 @@ export default function AnsweringMachine() {
 
   return (
     <>
-      <NavButton
-        icon={
-          <svg width="15" height="16" viewBox="0 0 15 16" fill="currentColor" aria-hidden="true">
-            <path d="M7.5 0a4.25 4.25 0 0 0-4.25 4.25v2.36c0 .58-.22 1.14-.63 1.55L1.4 9.4a1 1 0 0 0 .7 1.7h10.8a1 1 0 0 0 .7-1.7l-1.22-1.24a2.2 2.2 0 0 1-.63-1.55V4.25A4.25 4.25 0 0 0 7.5 0Z" />
-            <path d="M5.3 12.2a2.2 2.2 0 0 0 4.4 0h-4.4Z" />
-          </svg>
-        }
-        label="Neues"
-        badge={notifCount > 0 ? notifCount : undefined}
-        active={open}
-        onClick={() => setActiveNav('notify')}
-      />
+      {/* Glocke oben rechts in der Titelzeile, wie man es kennt. */}
+      <button
+        type="button"
+        onClick={() => setActiveNav(open ? null : 'notify')}
+        aria-label={notifCount > 0 ? `Neues, ${notifCount}` : 'Neues'}
+        aria-pressed={open}
+        title="Neues"
+        className="hit relative grid size-9 shrink-0 place-items-center rounded-full"
+        style={{ color: open ? 'var(--accent)' : 'var(--ink)' }}
+      >
+        <svg width="19" height="20" viewBox="0 0 15 16" fill="currentColor" aria-hidden="true">
+          <path d="M7.5 0a4.25 4.25 0 0 0-4.25 4.25v2.36c0 .58-.22 1.14-.63 1.55L1.4 9.4a1 1 0 0 0 .7 1.7h10.8a1 1 0 0 0 .7-1.7l-1.22-1.24a2.2 2.2 0 0 1-.63-1.55V4.25A4.25 4.25 0 0 0 7.5 0Z" />
+          <path d="M5.3 12.2a2.2 2.2 0 0 0 4.4 0h-4.4Z" />
+        </svg>
+        {notifCount > 0 && (
+          <span
+            className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-2xs font-semibold tabular-nums"
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
+          >
+            {notifCount}
+          </span>
+        )}
+      </button>
 
-      {/* Hauptseite: wird ueber die untere Leiste gewechselt, deshalb ohne X. */}
-      <Sheet open={open} onClose={() => setActiveNav(null)} variant="full" reserveBottomNav hideClose title="Neues">
+      <Sheet open={open} onClose={() => setActiveNav(null)} variant="full" reserveBottomNav title="Neues">
         <div className="flex flex-col gap-6">
           {notifCount === 0 && (
             <p className="py-10 text-center text-sm" style={{ color: 'var(--dim)' }}>

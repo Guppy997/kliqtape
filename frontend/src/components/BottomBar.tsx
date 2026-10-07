@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useApp } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
-import AnsweringMachine from './AnsweringMachine';
 import CassetteDeck from './CassetteDeck';
 import HotlineComposer from './HotlineComposer';
 import NavButton from './NavButton';
+import ProfileView from './ProfileView';
 
 interface Props {
   /** Zurueck zur Startansicht der eingelegten Kassette — Seite A, ohne Filter. */
@@ -12,11 +12,10 @@ interface Props {
 }
 
 /**
- * Untere Leiste — vier gleichwertige Bereiche wie bei WhatsApp & Co.: Eject
- * (Kassette wechseln), Hot Line (direkt schreiben), Home (zurueck zur
- * Startansicht), Neuigkeiten (was ist los). Erstellen passiert seit der
- * ersten Vereinfachung oben links als eigener Action-Button (siehe App.tsx),
- * nicht mehr hier unten.
+ * Untere Leiste — vier gleichwertige Bereiche, schlank wie bei Instagram:
+ * Fach (Kassette wechseln), Band (zurueck zur Startansicht), Hot Line
+ * (direkt schreiben), Profil (die eigene Sammlung). Erstellen sitzt oben
+ * links, die Glocke ("Neues") oben rechts (siehe App.tsx).
  *
  * z-45, bewusst hoeher als frueher (war z-20): Eject/Hot-Line/Neuigkeiten
  * geben ihrem jeweiligen Sheet jetzt reserveBottomNav mit (siehe Sheet.tsx) —
@@ -50,9 +49,9 @@ export default function BottomBar({ onHome }: Props) {
   return (
     <div
       ref={barRef}
-      className="glass fixed inset-x-0 bottom-0 z-[45] px-3 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2"
+      className="glass fixed inset-x-0 bottom-0 z-[45] px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1"
     >
-      <div className="mx-auto grid max-w-xl grid-cols-4 place-items-center gap-1.5">
+      <div className="mx-auto grid max-w-xl grid-cols-4 place-items-center gap-1">
         <CassetteDeck />
         <NavButton
           icon={
@@ -80,7 +79,7 @@ export default function BottomBar({ onHome }: Props) {
           onClick={onHome}
         />
         <HotlineComposer />
-        <AnsweringMachine />
+        <ProfileView />
       </div>
     </div>
   );

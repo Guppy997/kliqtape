@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ApiError,
@@ -41,7 +41,9 @@ const SERVER_SEES_EXTRA: [string, string][] = [
   ],
 ];
 
-export default function Settings() {
+/** Einstellungen als Blatt — geoeffnet ueber das Zahnrad im Profil
+ *  (ProfileView.tsx), nicht mehr ueber einen eigenen Knopf in der Leiste. */
+export default function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const me = useApp((s) => s.me);
   const token = useApp((s) => s.token);
   const setIdentity = useApp((s) => s.setIdentity);
@@ -50,7 +52,6 @@ export default function Settings() {
   const setStartSide = useApp((s) => s.setStartSide);
   const qc = useQueryClient();
 
-  const [open, setOpen] = useState(false);
   const [shooting, setShooting] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [name, setName] = useState(me);
@@ -58,6 +59,14 @@ export default function Settings() {
   const [tokenVisible, setTokenVisible] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Beim Oeffnen frisch anfangen — frueher erledigte das der eigene Knopf.
+  useEffect(() => {
+    if (!open) return;
+    setName(me);
+    setNote(null);
+    setError(null);
+  }, [open, me]);
 
   const { data: profiles } = useProfiles();
   const myAvatar = profiles?.find((p) => p.name === me)?.avatarId ?? null;
@@ -128,24 +137,8 @@ export default function Settings() {
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="Profil"
-        onClick={() => {
-          setName(me);
-          setNote(null);
-          setError(null);
-          setOpen(true);
-        }}
-        title="Profil"
-        className="hit shrink-0 rounded-full"
-        style={{ boxShadow: '0 0 0 1.5px var(--line)' }}
-      >
-        <Avatar name={me} side={side} size={2.25} />
-      </button>
-
       {/* Volle Seite in der Farbe der aktuellen Seite — nichts scheint durch. */}
-      <Sheet open={open} onClose={() => setOpen(false)} title="Profil" variant="full">
+      <Sheet open={open} onClose={onClose} title="Einstellungen" variant="full">
         {shooting ? (
           <CameraCapture
             mode="photo"

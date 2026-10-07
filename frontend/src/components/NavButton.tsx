@@ -21,34 +21,30 @@ interface Props {
  * einheitliche, etwas hellere Flaeche, nicht jeder Knopf einzeln.
  */
 export default function NavButton({ icon, label, badge, active, onClick }: Props) {
+  // Schlank wie bei Instagram: kein Hintergrund ums aktive Symbol, nur die
+  // Akzentfarbe — die Leiste soll nicht mehr ein Sechstel des Bildschirms
+  // belegen. 44-pt-Tippflaeche bleibt ueber die volle Breite der Spalte.
   return (
     <button
       type="button"
       aria-label={badge ? `${label}, ${badge} neu` : label}
       aria-pressed={active}
       onClick={onClick}
-      className="flex flex-col items-center gap-1 px-2 py-1 transition-transform active:scale-95"
+      className="flex min-h-11 w-full flex-col items-center justify-center gap-0.5 transition-transform active:scale-95"
+      style={{ color: active ? 'var(--accent)' : 'var(--dim)' }}
     >
-      <span
-        className="relative grid size-9 place-items-center rounded-full transition-colors"
-        style={{
-          background: active ? 'color-mix(in srgb, var(--accent) 22%, transparent)' : 'transparent',
-          color: active ? 'var(--accent)' : 'var(--dim)',
-        }}
-      >
+      <span className="relative grid h-6 w-7 place-items-center">
         {icon}
         {!!badge && (
           <span
-            className="absolute -right-1.5 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-2xs font-semibold tabular-nums"
+            className="absolute -right-2 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-2xs font-semibold tabular-nums"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {badge}
           </span>
         )}
       </span>
-      <span className="text-2xs font-medium" style={{ color: active ? 'var(--accent)' : 'var(--dim)' }}>
-        {label}
-      </span>
+      <span className="text-2xs font-medium leading-none">{label}</span>
     </button>
   );
 }

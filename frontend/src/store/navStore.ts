@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type NavId = 'eject' | 'hotline' | 'notify';
+export type NavId = 'eject' | 'hotline' | 'notify' | 'profile';
 
 /** Womit das Fach aufgehen soll, wenn es von aussen geoeffnet wird — etwa aus
  *  dem Leerzustand (EmptyState.tsx) direkt ins Anlegen oder Einladen. */

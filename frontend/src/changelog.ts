@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.45.0',
+    date: '2026-10-07',
+    changes: [
+      'Neue Titelzeile oben: Plus zum Aufnehmen links, Kliqtape in der Mitte, die Glocke für Neues rechts',
+      'Darunter eine schmale Zeile mit der eingelegten Kassette, ihrem Namen und der Seite — die Lupe sitzt rechts daneben',
+      'Untere Leiste deutlich schlanker: Fach, Band, Hot Line und neu Profil',
+      'Neu: Profil als eigene Sammlung, nur für dich sichtbar — mit Regal, Mixtapes und den Einstellungen hinter dem Zahnrad',
+      'Mixtapes lassen sich wieder bauen und verschenken (im Profil unter Mixtapes)',
+    ],
+  },
+  {
     version: '0.44.4',
     date: '2026-10-07',
     changes: [

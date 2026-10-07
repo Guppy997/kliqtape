@@ -13,8 +13,8 @@ import ChatThread from '@/components/ChatThread';
 import Composer from '@/components/Composer';
 import PostCard from '@/components/PostCard';
 import BottomBar from '@/components/BottomBar';
-import Settings from '@/components/Settings';
-import Shelf from '@/components/Shelf';
+import AnsweringMachine from '@/components/AnsweringMachine';
+import Lockup from '@/components/Lockup';
 import NewsView from '@/components/NewsView';
 import StoryView from '@/components/StoryView';
 import TapeHeader, { defaultTapeName, tapeDisplayName } from '@/components/TapeHeader';
@@ -443,112 +443,126 @@ function Deck() {
         style={{ borderBottomColor: panelShown ? 'transparent' : undefined }}
       >
         <div className="mx-auto flex max-w-xl flex-col gap-1.5 px-3 pb-2">
-          <div className="flex items-center justify-between gap-1.5 text-2xs" style={{ color: 'var(--dim)' }}>
-            <span className="flex min-w-0 items-center gap-1.5">
-              {/* Holt die weggescrollte Kassette zurueck. Sitzt bewusst ganz
-                  links, damit die Stelle gleich bleibt, egal ob der
-                  Erstellen-Knopf daneben gerade da ist (im Chat ist er weg). */}
-              {cassetteId && (
-                <span className="relative shrink-0">
-                  <button
-                    ref={miniRef}
-                    type="button"
-                    onClick={() => setDeckOpen((v) => !v)}
-                    aria-label={deckOpen ? 'Kassette einklappen' : 'Kassette zeigen'}
-                    aria-expanded={deckOpen}
-                    title={current?.name ?? 'Kassette'}
-                    className="block transition-[transform,opacity] active:scale-95"
-                    // Waehrend die grosse Kassette offen ist, ist sie DIESES
-                    // Symbol, nur groesser — das kleine verschwindet so lange.
-                    style={{ opacity: panelShown ? 0 : 1, transitionDuration: panelShown ? '120ms' : '200ms' }}
-                  >
-                    {/* Dieselbe Zeichnung wie die grosse Kassette, nur herunter-
-                        skaliert (siehe CassetteHeader.tsx). */}
-                    <CassetteFacePreview
-                      side={side}
-                      cassetteId={cassetteId}
-                      pairIndex={looks.get(cassetteId)}
-                      label={current?.name ?? 'Kein Band'}
-                      count={data.length}
-                      currentTape={currentTape}
-                      createdAt={current?.createdAt}
-                      width={MINI_WIDTH}
-                    />
-                  </button>
-                  {/* Die grosse Kassette waechst aus genau diesem Symbol: gleicher
-                      Ankerpunkt oben links, Start in Symbolgroesse. Sie legt sich
-                      ueber Leiste und Inhalt; Tipp daneben oder Scrollen klappt
-                      sie wieder zu. */}
-                  <div
-                    ref={panelRef}
-                    inert={!panelShown}
-                    className="glass absolute z-[60] rounded-xl"
-                    style={{
-                      left: -DECK_PAD,
-                      top: -DECK_PAD,
-                      transformOrigin: `${DECK_PAD}px ${DECK_PAD}px`,
-                      transform: panelShown ? 'scale(1)' : `scale(${MINI_WIDTH / DECK_WIDTH})`,
-                      opacity: panelShown ? 1 : 0,
-                      visibility: panelShown ? 'visible' : 'hidden',
-                      transition: panelShown
-                        ? 'transform 360ms cubic-bezier(.2,.8,.2,1), opacity 160ms ease, visibility 0s'
-                        : 'transform 260ms cubic-bezier(.4,0,1,1), opacity 200ms ease 60ms, visibility 0s 260ms',
-                    }}
-                  >
-                    <CassetteHeader
-                      cassetteId={cassetteId}
-                      pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
-                      label={current?.name ?? 'Kein Band'}
-                      count={data.length}
-                      currentTape={currentTape}
-                      createdAt={current?.createdAt}
-                    />
-                  </div>
-                </span>
-              )}
-              {/* Seite B ungefiltert ist reiner Chat (siehe isCassetteChat unten) —
-                  dort soll nichts mit dem Schreiben konkurrieren. Ausserdem nur
-                  in der Home-Uebersicht (kein Sheet aus der unteren Leiste
-                  offen) — sonst schwebt der Knopf noch ueber Eject & Co., weil
-                  deren Sheet dort bewusst nicht alles verdeckt (reserveBottomNav). */}
-              {!isCassetteChat && navActive === null && <Composer onPosted={invalidate} />}
+          {/* Titelzeile wie bei Instagram: links Aufnehmen, Mitte die Wortmarke,
+              rechts die Glocke. Seite B ungefiltert ist reiner Chat — dort
+              soll nichts mit dem Schreiben konkurrieren, das Plus bleibt dann
+              weg (der Platz bleibt, damit die Wortmarke mittig steht). */}
+          <div className="grid grid-cols-[2.75rem_1fr_2.75rem] items-center">
+            <span className="flex justify-start">
+              {!isCassetteChat && navActive === null ? <Composer onPosted={invalidate} /> : <span className="size-8" />}
             </span>
-            <span className="flex shrink-0 items-center gap-1.5">
-              {cassetteId && (
-                <button
-                  type="button"
-                  onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
-                  aria-expanded={searchOpen}
-                  aria-label={searchOpen ? 'Suche schließen' : 'Beiträge suchen'}
-                  title="Suchen"
-                  className="glass-chip hit grid size-9 shrink-0 place-items-center rounded-full"
-                  // Leuchtet, solange Suche oder Filter etwas ausblenden.
-                  style={{
-                    background: q || filter !== 'all' ? 'var(--accent)' : undefined,
-                    color: q || filter !== 'all' ? 'var(--on-accent)' : 'var(--dim)',
-                  }}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    aria-hidden="true"
-                  >
-                    <circle cx="7" cy="7" r="4.5" />
-                    <path d="M10.5 10.5 14 14" />
-                  </svg>
-                </button>
-              )}
-              {/* Regal geht jetzt ueber alle Kassetten — holt sich seine Daten
-                  selbst, unabhaengig von der gerade eingelegten. */}
-              <Shelf me={me} />
-              <Settings />
+            <span className="flex justify-center">
+              <Lockup size="1.2rem" />
+            </span>
+            <span className="flex justify-end">
+              <AnsweringMachine />
             </span>
           </div>
+
+          {/* Zweite, schmale Zeile: die eingelegte Kassette. Das Symbol waechst
+              beim Antippen an Ort und Stelle zur groesseren Kassette; daneben
+              Name und Seite, rechts die Lupe. */}
+          {cassetteId && (
+            <div className="flex items-center gap-2.5">
+              <span className="relative shrink-0">
+                <button
+                  ref={miniRef}
+                  type="button"
+                  onClick={() => setDeckOpen((v) => !v)}
+                  aria-label={deckOpen ? 'Kassette einklappen' : 'Kassette zeigen'}
+                  aria-expanded={deckOpen}
+                  title={current?.name ?? 'Kassette'}
+                  className="block transition-[transform,opacity] active:scale-95"
+                  // Waehrend die grosse Kassette offen ist, ist sie DIESES
+                  // Symbol, nur groesser — das kleine verschwindet so lange.
+                  style={{ opacity: panelShown ? 0 : 1, transitionDuration: panelShown ? '120ms' : '200ms' }}
+                >
+                  {/* Dieselbe Zeichnung wie die grosse Kassette, nur herunter-
+                                      skaliert (siehe CassetteHeader.tsx). */}
+                  <CassetteFacePreview
+                    side={side}
+                    cassetteId={cassetteId}
+                    pairIndex={looks.get(cassetteId)}
+                    label={current?.name ?? 'Kein Band'}
+                    count={data.length}
+                    currentTape={currentTape}
+                    createdAt={current?.createdAt}
+                    width={MINI_WIDTH}
+                  />
+                </button>
+                {/* Die grosse Kassette waechst aus genau diesem Symbol: gleicher
+                                    Ankerpunkt oben links, Start in Symbolgroesse. Sie legt sich
+                                    ueber Leiste und Inhalt; Tipp daneben oder Scrollen klappt
+                                    sie wieder zu. */}
+                <div
+                  ref={panelRef}
+                  inert={!panelShown}
+                  className="glass absolute z-[60] rounded-xl"
+                  style={{
+                    left: -DECK_PAD,
+                    top: -DECK_PAD,
+                    transformOrigin: `${DECK_PAD}px ${DECK_PAD}px`,
+                    transform: panelShown ? 'scale(1)' : `scale(${MINI_WIDTH / DECK_WIDTH})`,
+                    opacity: panelShown ? 1 : 0,
+                    visibility: panelShown ? 'visible' : 'hidden',
+                    transition: panelShown
+                      ? 'transform 360ms cubic-bezier(.2,.8,.2,1), opacity 160ms ease, visibility 0s'
+                      : 'transform 260ms cubic-bezier(.4,0,1,1), opacity 200ms ease 60ms, visibility 0s 260ms',
+                  }}
+                >
+                  <CassetteHeader
+                    cassetteId={cassetteId}
+                    pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
+                    label={current?.name ?? 'Kein Band'}
+                    count={data.length}
+                    currentTape={currentTape}
+                    createdAt={current?.createdAt}
+                  />
+                </div>
+              </span>
+              <button
+                type="button"
+                onClick={() => setDeckOpen((v) => !v)}
+                className="min-w-0 flex-1 text-left"
+                aria-hidden="true"
+                tabIndex={-1}
+              >
+                <span className="block truncate text-sm font-semibold leading-tight" style={{ color: 'var(--ink)' }}>
+                  {current?.name ?? 'Kassette'}
+                </span>
+                <span className="block truncate text-2xs leading-tight" style={{ color: 'var(--dim)' }}>
+                  Seite {side.toUpperCase()} · {SIDE_LABEL[side]}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
+                aria-expanded={searchOpen}
+                aria-label={searchOpen ? 'Suche schließen' : 'Beiträge suchen'}
+                title="Suchen"
+                className="glass-chip hit grid size-9 shrink-0 place-items-center rounded-full"
+                // Leuchtet, solange Suche oder Filter etwas ausblenden.
+                style={{
+                  background: q || filter !== 'all' ? 'var(--accent)' : undefined,
+                  color: q || filter !== 'all' ? 'var(--on-accent)' : 'var(--dim)',
+                }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="7" cy="7" r="4.5" />
+                  <path d="M10.5 10.5 14 14" />
+                </svg>
+              </button>
+            </div>
+          )}
 
           {/* Zweite Zeile, nur nach Tipp auf die Lupe: Beitraege durchsuchen,
               Art filtern. Gilt fuer die eingelegte Seite; auf Seite B wird aus

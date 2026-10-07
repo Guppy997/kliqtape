@@ -7,16 +7,17 @@ import Sheet from './Sheet';
 import TapeEditor from './TapeEditor';
 import TapeView from './TapeView';
 
-type View = null | 'shelf' | 'new' | { open: string } | { edit: string };
+type View = null | 'new' | { open: string } | { edit: string };
 
 /**
- * Mixtapes — eigener Knopf im Laufwerk, nicht mehr im Kassettenfach-Regal
- * (das zeigt jetzt die Tapes der Seite A, siehe Shelf.tsx).
+ * Mixtapes im Profil (ProfileView.tsx): bauen, verschenken, erhaltene
+ * anhoeren. Lag seit v0.19.6 brach, weil der eigene Knopf in der Leiste
+ * wegfiel — jetzt ist das Profil sein Zuhause.
  *
  * Getrennt vom Feed, weil ein Mixtape kein Beitrag ist: es geht an genau eine
  * Person, es entsteht ueber Tage, und es bleibt.
  */
-export default function MixtapeShelf() {
+export default function MixtapeList() {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
   const qc = useQueryClient();
@@ -52,82 +53,45 @@ export default function MixtapeShelf() {
 
   return (
     <>
-      <span className="relative flex shrink-0 flex-col items-center gap-1">
+      <div className="flex flex-col gap-6">
         <button
           type="button"
-          aria-label={forMe.length + drafts.length > 0 ? `Mixtapes, ${forMe.length + drafts.length} offen` : 'Mixtapes'}
-          title="Mixtapes"
-          onClick={() => setView('shelf')}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg transition-transform active:translate-y-px"
-          style={{
-            background: 'linear-gradient(180deg, #35302A, #1E1B17)',
-            color: 'var(--ink)',
-            boxShadow: '0 2px 0 rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.1) inset',
+          onClick={() => {
+            setError(null);
+            setView('new');
           }}
+          className="rounded-xl px-4 py-3.5 text-sm font-semibold"
+          style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
-          {/* Achtelnoten-Paar statt Kassetten-Symbol — das benutzt jetzt
-              schon der Regal-Knopf (Shelf.tsx), Mixtapes brauchen ein
-              eigenes Zeichen. */}
-          <svg width="15" height="12" viewBox="0 0 11 9" fill="currentColor" aria-hidden="true">
-            <ellipse cx="2" cy="7.2" rx="1.6" ry="1.2" />
-            <ellipse cx="7" cy="6.5" rx="1.6" ry="1.2" />
-            <rect x="3.15" y="1" width="0.75" height="6.2" />
-            <rect x="8.15" y="0.3" width="0.75" height="6.2" />
-            <path d="M3.15 1 L8.9 0.3 L8.9 1.5 L3.15 2.2 Z" />
-          </svg>
+          Neues Mixtape bauen
         </button>
-        {forMe.length + drafts.length > 0 && (
-          <span
-            className="absolute -right-1 -top-1 grid size-3.5 place-items-center rounded-full text-2xs tabular-nums"
-            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
-          >
-            {forMe.length + drafts.length}
-          </span>
-        )}
-      </span>
 
-      {/* Übersicht der eigenen Mixtapes */}
-      <Sheet open={view === 'shelf'} onClose={() => setView(null)} variant="full" title="Mixtapes">
-        <div className="flex flex-col gap-6">
-          <button
-            type="button"
-            onClick={() => {
-              setError(null);
-              setView('new');
-            }}
-            className="rounded-xl px-4 py-3.5 text-sm font-semibold"
-            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
-          >
-            Neues Mixtape bauen
-          </button>
-
-          <Group
-            title="Für dich"
-            tapes={forMe}
-            side={side}
-            empty="Noch nichts geschenkt bekommen."
-            onOpen={(id) => setView({ open: id })}
-          />
-          <Group
-            title="In Arbeit"
-            tapes={drafts}
-            side={side}
-            empty="Kein Entwurf offen."
-            onOpen={(id) => setView({ edit: id })}
-            draft
-          />
-          <Group
-            title="Verschenkt"
-            tapes={given}
-            side={side}
-            empty="Noch nichts verschenkt."
-            onOpen={(id) => setView({ open: id })}
-          />
-        </div>
-      </Sheet>
+        <Group
+          title="Für dich"
+          tapes={forMe}
+          side={side}
+          empty="Noch nichts geschenkt bekommen."
+          onOpen={(id) => setView({ open: id })}
+        />
+        <Group
+          title="In Arbeit"
+          tapes={drafts}
+          side={side}
+          empty="Kein Entwurf offen."
+          onOpen={(id) => setView({ edit: id })}
+          draft
+        />
+        <Group
+          title="Verschenkt"
+          tapes={given}
+          side={side}
+          empty="Noch nichts verschenkt."
+          onOpen={(id) => setView({ open: id })}
+        />
+      </div>
 
       {/* Neues Tape anlegen */}
-      <Sheet open={view === 'new'} onClose={() => setView('shelf')} variant="full" title="Neues Mixtape">
+      <Sheet open={view === 'new'} onClose={() => setView(null)} variant="full" title="Neues Mixtape">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <label className="text-2xs" style={{ color: 'var(--dim)' }}>
@@ -203,19 +167,19 @@ export default function MixtapeShelf() {
       {/* Entwurf bearbeiten */}
       <Sheet
         open={typeof view === 'object' && view !== null && 'edit' in view}
-        onClose={() => setView('shelf')}
+        onClose={() => setView(null)}
         variant="full"
         title="Mixtape bauen"
       >
         {typeof view === 'object' && view !== null && 'edit' in view && (
-          <TapeEditor id={view.edit} onClose={() => setView('shelf')} />
+          <TapeEditor id={view.edit} onClose={() => setView(null)} />
         )}
       </Sheet>
 
       {/* Versiegeltes Tape ansehen */}
       <Sheet
         open={typeof view === 'object' && view !== null && 'open' in view}
-        onClose={() => setView('shelf')}
+        onClose={() => setView(null)}
         variant="full"
         title="Mixtape"
       >

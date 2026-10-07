@@ -210,7 +210,9 @@ Stil einer J-Card: Cover, Titel, von/für, Titelliste, die Widmung als aufgekleb
 Karte entsteht im Browser (Canvas, `frontend/src/lib/mixtapeCard.ts`), auf dem Handy über das
 Teilen-Menü („Bild sichern“), sonst als PNG. Der Server ist daran nicht beteiligt.
 
-Das Regal ist **persönlich**, nicht an eine Kassette gebunden. Ein fertiges Tape kann man
+Das Regal ist **persönlich**, nicht an eine Kassette gebunden. Gebaut, verschenkt und angehört
+werden Mixtapes im **Profil** (Reiter „Mixtapes“) — dort lebt die Werkstatt seit v0.45 wieder,
+nachdem sie mit dem Umbau der Leiste in v0.19.6 nicht mehr erreichbar war. Ein fertiges Tape kann man
 zusätzlich auf Seite A einer Runde teilen.
 
 **Bewusst ohne Spotify.** Deren Development Mode ist seit Februar 2026 auf **5 Nutzer** begrenzt,
@@ -381,10 +383,14 @@ Regeln, damit beides sich nicht in die Quere kommt:
 - **Die eingelegte Kassette** gibt es nur einmal: Das Symbol oben links wächst an Ort und Stelle
   zur größeren Kassette (rund 200 px breit), die sich über Leiste und Inhalt legt. Tipp daneben
   oder Scrollen klappt sie wieder zum Symbol zusammen.
-- **Untere Leiste:** Fach, Band, Hot Line, Neues. **Obere Leiste:** eine Zeile mit Kassette,
-  Aufnehmen, Lupe, Regal und Profilbild. Die Lupe klappt Suche und Filter für die eingelegte
-  Seite als zweite Zeile auf; beim Schließen wird beides zurückgesetzt, solange etwas aktiv ist,
-  leuchtet die Lupe.
+- **Obere Leiste:** Titelzeile `[+]  KLIQTAPE  [🔔]` (Aufnehmen, Wortmarke, „Neues“), darunter
+  eine schmale Zeile für die eingelegte Kassette (Symbol, Name, Seite) und rechts die Lupe. Die
+  Lupe klappt Suche und Filter für die eingelegte Seite auf; beim Schließen wird beides
+  zurückgesetzt, solange etwas aktiv ist, leuchtet die Lupe.
+- **Untere Leiste:** Fach, Band, Hot Line, Profil — schlank (rund 54 pt plus Home-Indikator),
+  kleine Symbole mit winziger Beschriftung, das aktive in der Akzentfarbe.
+- **Profil** ist die eigene Sammlung, **nur für einen selbst sichtbar** (kein öffentliches
+  Profil): Regal, Mixtapes, Einstellungen hinter dem Zahnrad.
 
 **Seite A — Type I, klassisch.** Mattes schwarzes Gehäuse `#23201C`, Papieretikett `#E4DAC4`,
 Oxidbraun `#5C3A21`, roter Type-I-Streifen `#B8462C`, Handschrift auf dem Etikett.
