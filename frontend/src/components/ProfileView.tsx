@@ -135,21 +135,23 @@ export default function ProfileView() {
   );
 }
 
+/** Zahnrad mit acht Zaehnen — die fruehere Variante (Kreis mit Strahlen)
+ *  las sich wie eine Sonne. */
 function GearIcon() {
   return (
     <svg
-      width="18"
-      height="18"
+      width="20"
+      height="20"
       viewBox="0 0 20 20"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.5"
+      strokeWidth="1.4"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
+      <path d="M16.02 8.16 L18.15 8.42 L18.15 11.58 L16.02 11.84 L15.56 12.96 L16.88 14.64 L14.64 16.88 L12.96 15.56 L11.84 16.02 L11.58 18.15 L8.42 18.15 L8.16 16.02 L7.04 15.56 L5.36 16.88 L3.12 14.64 L4.44 12.96 L3.98 11.84 L1.85 11.58 L1.85 8.42 L3.98 8.16 L4.44 7.04 L3.12 5.36 L5.36 3.12 L7.04 4.44 L8.16 3.98 L8.42 1.85 L11.58 1.85 L11.84 3.98 L12.96 4.44 L14.64 3.12 L16.88 5.36 L15.56 7.04 Z" />
       <circle cx="10" cy="10" r="2.6" />
-      <path d="M10 1.8v2.4M10 15.8v2.4M1.8 10h2.4M15.8 10h2.4M4.2 4.2l1.7 1.7M14.1 14.1l1.7 1.7M4.2 15.8l1.7-1.7M14.1 5.9l1.7-1.7" />
     </svg>
   );
 }

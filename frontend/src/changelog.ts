@@ -11,6 +11,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.49.1',
+    date: '2026-10-07',
+    changes: ['Das Einstellungs-Symbol im Profil ist jetzt ein richtiges Zahnrad statt einer Sonne'],
+  },
+  {
     version: '0.49.0',
     date: '2026-10-07',
     changes: [
