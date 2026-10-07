@@ -92,8 +92,8 @@ und keine Follower-Zahlen abschaffen — es würde ihr Geschäftsmodell zerstör
 - **Keine öffentlichen Zahlen.** Keine Follower, keine Likes. Du siehst *wer* reagiert hat.
 - **Kleine Runden.** Eine Kassette fasst so viele Leute, wie man wirklich kennt.
 - **Datenminimierung als Architektur.** Konto ohne E-Mail und ohne Passwort (siehe Abschnitt 16).
-- **Nachprüfbare Ehrlichkeit.** Im Profil steht eine Tabelle „Was der Server sieht", und sie sagt
-  immer die Wahrheit — auch dann, wenn die Antwort unangenehm ist.
+- **Nachprüfbare Ehrlichkeit.** In den Einstellungen (Profil → Zahnrad) steht eine Tabelle
+  „Was der Server sieht", und sie sagt immer die Wahrheit — auch dann, wenn die Antwort unangenehm ist.
 
 ## 4. Was es „cooler" macht
 
@@ -317,6 +317,9 @@ cassette_tapes(cassette_id, tape_index, name, named_by, named_at)
       -- Tape = Berlin-Kalendertag seit Gründung, tape_index wird berechnet, nie gespeichert
 cassette_tape_favorites(cassette_id, tape_index, member, favorited_at, label)
       -- eigenes Regal im Profil; label = eigene Beschriftung, nur für member sichtbar
+private_tapes(id, owner, title, color_index, created_at)
+private_items(id, tape_id, kind, body, media_id, source, note_style, created_at)
+      -- eigene Tapes im Profil, nur für owner; Einträge fallen per CASCADE mit
 reactions(post_id, author, media_id, created_at)
       -- Tonfetzen: hörbar nur für posts.author, sonst nur "iSentTonfetzen" (ja/nein)
 
@@ -342,7 +345,7 @@ Anrufbeantworter · Profil mit Export und Löschung · Testdaten-Skript · Story
 Kliqtape-Kanal mit Förderstand · Zugangscode-Identität · Einladungen mit Zustimmen ·
 Kassetten-Ansicht mit Suche · Melden · Entwickelter Film · Imposter-Woche · Album-PDF ·
 Einladung als Brief · Kassette altert · Mixtape als Bild · Tests und CI · Profil als eigene
-Sammlung mit Regal (gesammelte Tapes, selbst beschriftet)
+Sammlung mit Regal (gesammelte Tapes, selbst beschriftet; eigene Tapes wie ein Tagebuch)
 
 > Der ursprünglich geplante 24-Stunden-Verfall auf Seite B wurde **verworfen** — Seite B ist ein
 > dauerhafter Gruppenchat. Das Verfalls-Modell lebt stattdessen in den Storys weiter.
@@ -401,6 +404,13 @@ Regeln, damit beides sich nicht in die Quere kommt:
   viele* gesammelt haben (bis v0.45 lieferte die API einen Zähler mit, jetzt nicht mehr). Wer
   eine Kassette verlässt, findet ihre Tapes nicht mehr im Regal. Ein Tipp auf den Abzug legt die
   Kassette ein und springt zum Tape. Darunter, „Aus deinen Kassetten“: alle Tapes mit Inhalt.
+- **Regal im Profil, „Meine Tapes“:** eigene Bänder ohne Runde, wie ein Tagebuch — Titel und
+  Bandsorte beim Anlegen, darauf Fotos, Clips, Zettel und O-Töne, nach Berliner Tagen geordnet
+  wie Seite A. Die **Galerie ist hier erlaubt** (es geht ums Aufheben), Galeriebilder bleiben aber
+  sichtbar markiert wie bei Beiträgen. Nur die Besitzerin sieht sie; fremde Tapes beantwortet der
+  Server mit demselben 404 wie nicht vorhandene. Ehrlich bleibt: Inhalte liegen im Klartext, Bilder
+  sind wie alle Medien über ihre zufällige Adresse abrufbar (siehe „Was der Server sieht“). Ein
+  Medium, das schon anderswo hängt, lässt sich nicht einkleben (`mediaInUse`).
 
 **Seite A — Type I, klassisch.** Mattes schwarzes Gehäuse `#23201C`, Papieretikett `#E4DAC4`,
 Oxidbraun `#5C3A21`, roter Type-I-Streifen `#B8462C`, Handschrift auf dem Etikett.

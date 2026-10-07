@@ -38,6 +38,10 @@ const SERVER_SEES_EXTRA: [string, string][] = [
     'Eigenes Regal',
     'im Klartext: welche Tapes du gesammelt und wie du sie beschriftet hast. Die Runde sieht davon nichts, auch nicht, dass oder wie viele gesammelt haben',
   ],
+  [
+    'Eigene Tapes',
+    'im Klartext: Titel, Zettel, Fotos, Clips und O-Töne. In der App nur für dich — die Bilder sind aber wie alle Medien über ihre zufällige Adresse abrufbar',
+  ],
   ['Mixtape als Bild', 'nichts Neues — die Karte entsteht nur auf deinem Gerät aus dem, was du ohnehin siehst'],
   [
     'Album-Export',

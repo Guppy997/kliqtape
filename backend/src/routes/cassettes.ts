@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { creatorOf, requireIdentity, requireMember } from '../access.js';
 import { db } from '../db.js';
 import { HttpError } from '../http.js';
+import { PAIR_COUNT } from '../content.js';
 import { RELEASED, dropMedia } from '../media.js';
 
 /* -------------------------------------------------------------------------
@@ -116,9 +117,6 @@ cassettesRouter.patch('/api/cassettes/:id', (req, res) => {
     db.prepare(`UPDATE cassettes SET color_seed = ? WHERE id = ?`).run(colorSeed, req.params.id);
   }
   if (req.body?.colorIndex !== undefined) {
-    // Anzahl Bandsorten dupliziert aus frontend/src/lib/cassetteLook.ts
-    // (PAIR_COUNT) — kein gemeinsames Package fuer eine einzelne Zahl.
-    const PAIR_COUNT = 16;
     const raw = req.body.colorIndex;
     const colorIndex = raw === null ? null : Number(raw);
     if (colorIndex !== null && (!Number.isInteger(colorIndex) || colorIndex < 0 || colorIndex >= PAIR_COUNT)) {

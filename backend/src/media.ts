@@ -62,9 +62,10 @@ export function mediaInUse(mediaId: string): boolean {
             OR EXISTS (SELECT 1 FROM mixtapes WHERE cover_id = ?)
             OR EXISTS (SELECT 1 FROM hotline_messages WHERE media_id = ?)
             OR EXISTS (SELECT 1 FROM news_posts WHERE media_id = ?)
-            OR EXISTS (SELECT 1 FROM reactions WHERE media_id = ?)`,
+            OR EXISTS (SELECT 1 FROM reactions WHERE media_id = ?)
+            OR EXISTS (SELECT 1 FROM private_items WHERE media_id = ?)`,
       )
-      .get(mediaId, mediaId, mediaId, mediaId, mediaId, mediaId, mediaId),
+      .get(mediaId, mediaId, mediaId, mediaId, mediaId, mediaId, mediaId, mediaId),
   );
 }
 

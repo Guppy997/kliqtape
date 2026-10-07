@@ -17,6 +17,7 @@ import { storiesRouter } from './routes/stories.js';
 import { newsRouter } from './routes/news.js';
 import { hotlineRouter } from './routes/hotline.js';
 import { mixtapesRouter } from './routes/mixtapes.js';
+import { privateTapesRouter } from './routes/privateTapes.js';
 
 /*
  * Einstieg des Backends: App, Middleware, Routen, Fehlerbehandlung. Die
@@ -58,6 +59,7 @@ app.use(storiesRouter);
 app.use(newsRouter);
 app.use(hotlineRouter);
 app.use(mixtapesRouter);
+app.use(privateTapesRouter);
 
 /* -------------------------------------------------------------------------
  * Zentrale Fehlerbehandlung — gibt immer JSON zurueck, nie HTML.

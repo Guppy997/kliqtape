@@ -52,10 +52,10 @@ Kamera-Beschränkung Spaß oder nervt sie?
 
 | Fehlt | Stand im Prototyp |
 |---|---|
-| Ende-zu-Ende-Verschlüsselung | **Nichts** ist verschlüsselt, auch Seite B nicht. Die App sagt das selbst (Profil → „Was der Server sieht“). |
+| Ende-zu-Ende-Verschlüsselung | **Nichts** ist verschlüsselt, auch Seite B nicht. Die App sagt das selbst (Profil → Zahnrad → „Was der Server sieht“). |
 | Konten mit Passkey | Ein Name plus Zugangscode pro Gerät, kein Passwort, keine E-Mail |
 | Moderationsoberfläche | Melden speichert die Meldung nur, niemand bearbeitet sie automatisch |
-| Medien nur für Mitglieder | Bilder sind über ihre zufällige ID abrufbar — außer Film und Imposter-Beiträgen vor der Freigabe |
+| Medien nur für Mitglieder | Bilder sind über ihre zufällige ID abrufbar, auch die aus eigenen, privaten Tapes — außer Film und Imposter-Beiträgen vor der Freigabe |
 
 **Also:** nur im eigenen Tailnet betreiben, keine echten privaten Inhalte reinstellen.
 

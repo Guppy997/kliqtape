@@ -280,6 +280,31 @@ db.exec(`
     used_at     INTEGER
   );
 
+  -- Eigene, private Tapes im Profil-Regal: ein Tagebuch-Band, das nur die
+  -- Besitzerin sieht — keine Kassette, keine Runde, niemand sonst. Inhalte
+  -- liegen trotzdem im Klartext auf dem Server (siehe "Was der Server sieht").
+  CREATE TABLE IF NOT EXISTS private_tapes (
+    id          TEXT PRIMARY KEY,
+    owner       TEXT NOT NULL,
+    title       TEXT NOT NULL,
+    color_index INTEGER,
+    created_at  INTEGER NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS private_items (
+    id         TEXT PRIMARY KEY,
+    tape_id    TEXT NOT NULL REFERENCES private_tapes(id) ON DELETE CASCADE,
+    kind       TEXT NOT NULL CHECK (kind IN ('text','photo','video','voice')),
+    body       TEXT NOT NULL DEFAULT '',
+    media_id   TEXT REFERENCES media(id),
+    -- 'camera' oder 'upload', sichtbar unterschieden wie bei posts
+    source     TEXT,
+    note_style TEXT,
+    created_at INTEGER NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_private_tapes_owner ON private_tapes(owner, created_at);
+  CREATE INDEX IF NOT EXISTS idx_private_items_tape ON private_items(tape_id, created_at);
   CREATE INDEX IF NOT EXISTS idx_imposter_cassette ON imposter_weeks(cassette_id, started_at);
   CREATE INDEX IF NOT EXISTS idx_posts_side_time ON posts(side, created_at);
   CREATE INDEX IF NOT EXISTS idx_members_person ON cassette_members(member);

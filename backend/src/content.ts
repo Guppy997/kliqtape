@@ -13,3 +13,11 @@ export const NEWS_KINDS: NewsKind[] = ['text', 'photo', 'video'];
 /** Wie ein Zettel "befestigt" ist — nur fuer kind === 'text' relevant. */
 export const NOTE_STYLES = ['tape', 'pin', 'staple', 'clip', 'fold'] as const;
 export type NoteStyle = (typeof NOTE_STYLES)[number];
+
+/** Anzahl Bandsorten, dupliziert aus frontend/src/lib/cassetteLook.ts
+ *  (PAIR_COUNT) — kein gemeinsames Package fuer eine einzelne Zahl. */
+export const PAIR_COUNT = 16;
+
+/** Was auf ein eigenes, privates Tape passt (Profil-Regal): wie Seite A,
+ *  nur ohne Mixtape — ein Tagebuch-Band aus Fotos, Clips, O-Toenen, Zetteln. */
+export const PRIVATE_KINDS: Kind[] = ['text', 'photo', 'video', 'voice'];

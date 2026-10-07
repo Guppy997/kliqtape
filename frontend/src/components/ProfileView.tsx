@@ -5,6 +5,7 @@ import Avatar from './Avatar';
 import CollectedTapes from './CollectedTapes';
 import MixtapeList from './MixtapeShelf';
 import NavButton from './NavButton';
+import PrivateTapes from './PrivateTapes';
 import SettingsSheet from './Settings';
 import Sheet from './Sheet';
 import ShelfList from './Shelf';
@@ -17,8 +18,9 @@ type Tab = 'regal' | 'mixtapes';
  * ueber alle Runden hinweg teilt, sonst vermischen sich die Kreise
  * (CONCEPT.md, "Bewusst nicht geplant").
  *
- * Regal: oben das Gesammelte (mit dem Stern hineingelegt, selbst
- * beschriftet), darunter alle Tapes aus den eigenen Kassetten. Mixtapes:
+ * Regal: zuerst die eigenen, privaten Tapes (Tagebuch-Baender), dann das
+ * Gesammelte (mit dem Stern hineingelegt, selbst beschriftet), darunter alle
+ * Tapes aus den eigenen Kassetten. Mixtapes:
  * bauen, verschenken, erhaltene. Einstellungen hinter dem Zahnrad.
  */
 export default function ProfileView() {
@@ -102,6 +104,12 @@ export default function ProfileView() {
 
           {tab === 'regal' ? (
             <>
+              <section className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                  Meine Tapes
+                </h3>
+                <PrivateTapes me={me} active={open && tab === 'regal'} />
+              </section>
               <section className="flex flex-col gap-2">
                 <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                   Gesammelt

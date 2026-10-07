@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.47.0',
+    date: '2026-10-07',
+    changes: [
+      'Neu: eigene Tapes im Profil-Regal — Bänder nur für dich, wie ein Tagebuch',
+      'Kleb Fotos, Clips, Zettel und O-Töne ein; nach Tagen geordnet wie auf Seite A',
+      'Hier darf auch die Galerie rein, Galeriebilder bleiben aber sichtbar als solche markiert',
+      'Titel und Bandsorte wählst du beim Anlegen, den Titel kannst du jederzeit ändern',
+    ],
+  },
+  {
     version: '0.46.0',
     date: '2026-10-07',
     changes: [

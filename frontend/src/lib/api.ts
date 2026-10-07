@@ -894,3 +894,82 @@ export function saveProfile(name: string, avatarId: string | null): Promise<Prof
     body: JSON.stringify({ avatarId }),
   }).then(unwrap<Profile>);
 }
+
+/* --- Eigene Tapes (Profil-Regal) ------------------------------------------
+ * Private Baender wie ein Tagebuch — nur fuer die Besitzerin. Alle Aufrufe
+ * schicken `me` mit; fremde Tapes beantwortet der Server mit 404. */
+
+export interface PrivateTape {
+  id: string;
+  title: string;
+  colorIndex: number | null;
+  createdAt: number;
+  itemCount: number;
+  lastAt: number | null;
+  coverMediaId: string | null;
+}
+
+export type PrivateKind = Exclude<Kind, 'tape'>;
+
+export interface PrivateItem {
+  id: string;
+  kind: PrivateKind;
+  body: string;
+  mediaId: string | null;
+  source: 'camera' | 'upload' | null;
+  noteStyle: NoteStyle | null;
+  durationMs: number | null;
+  createdAt: number;
+}
+
+const json = { 'Content-Type': 'application/json' };
+
+export function fetchPrivateTapes(me: string): Promise<PrivateTape[]> {
+  return apiFetch(`/api/me/tapes?me=${encodeURIComponent(me)}`).then(unwrap<PrivateTape[]>);
+}
+
+export function createPrivateTape(me: string, title: string, colorIndex: number | null): Promise<PrivateTape> {
+  return apiFetch('/api/me/tapes', {
+    method: 'POST',
+    headers: json,
+    body: JSON.stringify({ me, title, colorIndex }),
+  }).then(unwrap<PrivateTape>);
+}
+
+export function patchPrivateTape(
+  id: string,
+  me: string,
+  patch: { title?: string; colorIndex?: number | null },
+): Promise<PrivateTape> {
+  return apiFetch(`/api/me/tapes/${id}`, {
+    method: 'PATCH',
+    headers: json,
+    body: JSON.stringify({ ...patch, me }),
+  }).then(unwrap<PrivateTape>);
+}
+
+export function deletePrivateTape(id: string, me: string): Promise<void> {
+  return apiFetch(`/api/me/tapes/${id}?me=${encodeURIComponent(me)}`, { method: 'DELETE' }).then(unwrap<void>);
+}
+
+export function fetchPrivateItems(tapeId: string, me: string): Promise<PrivateItem[]> {
+  return apiFetch(`/api/me/tapes/${tapeId}/items?me=${encodeURIComponent(me)}`).then(unwrap<PrivateItem[]>);
+}
+
+export function addPrivateItem(
+  tapeId: string,
+  me: string,
+  item: { kind: PrivateKind; body?: string; mediaId?: string; source?: 'camera' | 'upload'; noteStyle?: NoteStyle },
+): Promise<PrivateItem> {
+  return apiFetch(`/api/me/tapes/${tapeId}/items`, {
+    method: 'POST',
+    headers: json,
+    body: JSON.stringify({ ...item, me }),
+  }).then(unwrap<PrivateItem>);
+}
+
+export function deletePrivateItem(tapeId: string, itemId: string, me: string): Promise<void> {
+  return apiFetch(`/api/me/tapes/${tapeId}/items/${itemId}?me=${encodeURIComponent(me)}`, {
+    method: 'DELETE',
+  }).then(unwrap<void>);
+}
