@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.48.3',
+    date: '2026-10-07',
+    changes: [
+      'Das Plus oben links dreht sich beim Öffnen zum X — und genau dieses X schließt „Aufnehmen“ wieder',
+      '„Aufnehmen“ steht jetzt mittig, wie der Schriftzug in der Leiste',
+    ],
+  },
+  {
     version: '0.48.2',
     date: '2026-10-07',
     changes: ['Das Plus oben links steht jetzt frei, ohne runden Knopf darum — wie die Glocke gegenüber'],

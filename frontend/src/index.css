@@ -318,8 +318,20 @@ body {
   }
 }
 
+/* Aufnehmen: das Plus dreht sich in der Uebersicht zum X (Composer.tsx). */
+.plus-turn {
+  animation: plus-turn 200ms ease backwards;
+}
+
+@keyframes plus-turn {
+  from {
+    transform: rotate(0deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .imposter-stamp {
+  .imposter-stamp,
+  .plus-turn {
     animation: none;
   }
   .spin,

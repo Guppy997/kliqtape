@@ -132,25 +132,32 @@ export default function Composer({ onPosted }: Props) {
         // gegenueber, die Titelzeile soll ruhig wirken.
         className="hit relative z-50 grid size-8 place-items-center rounded-full transition-transform active:scale-95"
       >
-        {/* Plus statt REC-Punkt, dreht sich beim Oeffnen zum X. */}
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 14 14"
-          fill="none"
-          stroke="var(--ink)"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          aria-hidden="true"
-          style={{ transform: pageOpen ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}
-        >
-          <path d="M7 1v12M1 7h12" />
-        </svg>
+        {/* Liegt beim Oeffnen unter der Uebersicht und steht dort schon auf X —
+            beim Schliessen dreht es sichtbar zurueck zum Plus. */}
+        <PlusMark turned={pageOpen} />
       </button>
 
       {/* Eigene Seite statt kleinem Fenster — erklaert auch, welcher Modus
           was ist, statt nur die 5 Namen hinzuwerfen. */}
-      <Sheet open={pageOpen} onClose={() => setStep(null)} variant="full" title="Aufnehmen">
+      {/* Das Plus wird zum X an derselben Stelle (Sheet `leading`), das X
+          schliesst die Uebersicht wieder; der Titel steht mittig wie die
+          Wortmarke darunter. */}
+      <Sheet
+        open={pageOpen}
+        onClose={() => setStep(null)}
+        variant="full"
+        title="Aufnehmen"
+        leading={
+          <button
+            type="button"
+            onClick={() => setStep(null)}
+            aria-label="Schließen"
+            className="hit grid size-8 place-items-center rounded-full transition-transform active:scale-95"
+          >
+            <PlusMark turned enter />
+          </button>
+        }
+      >
         <div className="flex flex-col gap-2">
           {/* Film nur auf Seite A: er landet nach dem Entwickeln im Archiv. */}
           {side === 'a' && cassetteId && (
@@ -384,5 +391,27 @@ export default function Composer({ onPosted }: Props) {
         )}
       </Sheet>
     </div>
+  );
+}
+
+/** Plus, das sich zum X dreht. `enter`: dreht beim Erscheinen vom Plus aus
+ *  herein — so sieht der Knopf in der Uebersicht aus wie das Plus der Leiste,
+ *  das sich gerade umdreht. */
+function PlusMark({ turned, enter }: { turned: boolean; enter?: boolean }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="var(--ink)"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+      className={enter ? 'plus-turn' : undefined}
+      style={{ transform: turned ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}
+    >
+      <path d="M7 1v12M1 7h12" />
+    </svg>
   );
 }

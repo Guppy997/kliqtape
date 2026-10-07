@@ -392,7 +392,9 @@ Regeln, damit beides sich nicht in die Quere kommt:
   zur größeren Kassette (rund 200 px breit), die sich über Leiste und Inhalt legt. Tipp daneben
   oder Scrollen klappt sie wieder zum Symbol zusammen. Sie geht **nur auf Tipp** auf — die App
   startet zugeklappt, auch ein Seiten- oder Kassettenwechsel öffnet sie nicht mehr.
-- **Obere Leiste:** Titelzeile `[+]  KLIQTAPE  [🔔]` (Aufnehmen, Wortmarke, „Neues“), darunter
+- **Obere Leiste:** Titelzeile `[+]  KLIQTAPE  [🔔]` (Aufnehmen, Wortmarke, „Neues“; das Plus
+  dreht sich beim Öffnen an Ort und Stelle zum X, das die Übersicht „Aufnehmen“ wieder
+  schließt, deren Titel mittig steht wie die Wortmarke), darunter
   eine schmale Zeile für die eingelegte Kassette (Symbol, Name, Seite), rechts der
   **A|B-Schalter** und die Lupe. Die
   Lupe klappt Suche und Filter für die eingelegte Seite auf; beim Schließen wird beides
