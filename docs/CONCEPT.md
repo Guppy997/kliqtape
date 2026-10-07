@@ -377,7 +377,7 @@ Regeln, damit beides sich nicht in die Quere kommt:
   Pillen und Avatare. Materialien behalten ihre eigenen (Abzug, Etikett).
 - **Farben:** `--accent` pro Kassette, dazu feste Bedeutungsfarben (`--on-accent`, `--danger`).
 - **Beiträge** sind Karten (Art, Track, Datum); Melden und Löschen stecken im „…“-Menü,
-  Tonfetzen und Reagieren sind Knöpfe mit Symbol und Text.
+  Tonfetzen (Mikrofon) und Reagieren (Sprechblase) sind zwei schlichte Zeichen.
 - **Die eingelegte Kassette** klappt aus dem Symbol oben links als schwebendes Feld auf
   (rund 200 px breit) und legt sich über den Inhalt.
 - **Untere Leiste:** Fach, Band, Hot Line, Neues. **Obere Leiste:** eine Zeile mit Kassette,

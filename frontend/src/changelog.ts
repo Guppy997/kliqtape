@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.44.3',
+    date: '2026-10-07',
+    changes: [
+      'Reagieren auf Beiträge mit zwei schlichten Zeichen statt Knöpfen mit Text: Mikrofon für einen Tonfetzen (gedrückt halten), Sprechblase fürs Eingehen im Gruppenchat',
+    ],
+  },
+  {
     version: '0.44.2',
     date: '2026-10-07',
     changes: [

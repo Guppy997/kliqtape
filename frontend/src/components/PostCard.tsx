@@ -224,48 +224,22 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
           private, 3 Sekunden kurze Sprachreaktion. Halten statt Seitenwechsel
           — die Geste bleibt auf der Karte, keine eigene Seite dafuer. Nur die
           postende Person erfaehrt, dass — und kann anhoeren, wer. */}
-      {/* Tonfetzen ersetzt "da war ich": statt eines oeffentlichen Zaehlers eine
-          private, 3 Sekunden kurze Sprachreaktion. Halten statt Seitenwechsel
-          — die Geste bleibt auf der Karte, keine eigene Seite dafuer. Nur die
-          postende Person erfaehrt, dass — und kann anhoeren, wer. */}
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-2 flex items-center gap-1">
         {!mine && <TonfetzenButton disabled={item.iSentTonfetzen} onSend={sendReaction} />}
 
         {mine && item.tonfetzenCount > 0 && (
-          <button
-            type="button"
-            onClick={() => setListening(true)}
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs"
-            style={{ border: '1px solid var(--accent)', color: 'var(--accent)' }}
-          >
-            <span aria-hidden="true">🎙</span> {item.tonfetzenCount} Tonfetzen anhören
-          </button>
+          <IconButton label={`${item.tonfetzenCount} Tonfetzen anhören`} onClick={() => setListening(true)} accent>
+            <HeadphonesIcon />
+            <span className="font-mono text-2xs tabular-nums">{item.tonfetzenCount}</span>
+          </IconButton>
         )}
 
         {/* Nur auf Seite A — klappt zu Seite B und haengt den Beitrag dort
             als Zitat an. Fuer alle da, auch fuer eigene Beitraege. */}
         {side === 'a' && (
-          <button
-            type="button"
-            onClick={reactInChat}
-            className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs"
-            style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M2 3.5h12v8H6.5L3 14.5V11.5H2Z" />
-            </svg>
-            Reagieren
-          </button>
+          <IconButton label="Im Gruppenchat darauf eingehen" onClick={reactInChat}>
+            <ChatIcon />
+          </IconButton>
         )}
       </div>
 
@@ -389,24 +363,22 @@ function TonfetzenButton({
   }
 
   const pct = Math.min(1, elapsed / TONFETZEN_MAX_MS);
-  const r = 9;
+  const r = 16;
   const c = 2 * Math.PI * r;
   const label = disabled
-    ? 'Geschickt'
-    : state === 'holding'
-      ? `${(elapsed / 1000).toFixed(1)} s …`
-      : state === 'sending'
-        ? 'Sendet …'
-        : state === 'error'
-          ? 'Kein Mikro'
-          : 'Tonfetzen';
+    ? 'Tonfetzen geschickt'
+    : state === 'sending'
+      ? 'Tonfetzen wird geschickt'
+      : state === 'error'
+        ? 'Kein Mikrofon'
+        : 'Gedrückt halten für einen Tonfetzen';
 
   return (
     <button
       type="button"
       disabled={disabled || state === 'sending'}
-      aria-label={disabled ? 'Tonfetzen geschickt' : 'Gedrückt halten, um einen Tonfetzen zu schicken'}
-      title={disabled ? undefined : 'Gedrückt halten, um einen Tonfetzen zu schicken'}
+      aria-label={label}
+      title={label}
       onPointerDown={(e) => {
         e.preventDefault();
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -418,35 +390,56 @@ function TonfetzenButton({
       }}
       onPointerLeave={() => state === 'holding' && stop()}
       onContextMenu={(e) => e.preventDefault()}
-      className="flex select-none items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors disabled:opacity-70"
+      className="hit relative grid size-9 shrink-0 select-none place-items-center rounded-full transition-colors"
       style={{
         touchAction: 'none',
-        border: `1px solid ${state === 'holding' ? '#C7452A' : disabled ? 'transparent' : 'var(--line)'}`,
-        background: disabled ? 'var(--accent)' : state === 'holding' ? 'rgba(199,69,42,.18)' : 'transparent',
-        color: disabled ? 'var(--on-accent)' : state === 'holding' ? '#C7452A' : 'var(--dim)',
+        background: state === 'holding' ? 'rgba(199,69,42,.18)' : 'transparent',
+        color: disabled ? 'var(--accent)' : state === 'holding' || state === 'error' ? '#C7452A' : 'var(--dim)',
       }}
     >
-      <span className="relative grid size-[1.05rem] shrink-0 place-items-center" aria-hidden="true">
-        {state === 'holding' && (
-          <svg className="absolute inset-0" width="22" height="22" viewBox="0 0 22 22">
-            <circle cx="11" cy="11" r={r} fill="none" stroke="rgba(199,69,42,.3)" strokeWidth="2" />
-            <circle
-              cx="11"
-              cy="11"
-              r={r}
-              fill="none"
-              stroke="#C7452A"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeDasharray={c}
-              strokeDashoffset={c * (1 - pct)}
-              transform="rotate(-90 11 11)"
-            />
-          </svg>
-        )}
-        🎙
-      </span>
-      {label}
+      {state === 'holding' && (
+        <svg className="absolute inset-0" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <circle
+            cx="18"
+            cy="18"
+            r={r}
+            fill="none"
+            stroke="#C7452A"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={c * (1 - pct)}
+            transform="rotate(-90 18 18)"
+          />
+        </svg>
+      )}
+      <MicIcon filled={disabled} />
+    </button>
+  );
+}
+
+/** Runder Icon-Knopf der Aktionszeile — 36 px gross, 44 px Tippflaeche. */
+function IconButton({
+  label,
+  onClick,
+  accent = false,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  accent?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="hit flex h-9 min-w-9 shrink-0 items-center justify-center gap-1 rounded-full px-2"
+      style={{ color: accent ? 'var(--accent)' : 'var(--dim)' }}
+    >
+      {children}
     </button>
   );
 }
@@ -506,6 +499,41 @@ function PostMenu({ mine, onDelete, onReport }: { mine: boolean; onDelete: () =>
         </div>
       )}
     </div>
+  );
+}
+
+const iconStroke = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.6,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+};
+
+function MicIcon({ filled = false }: { filled?: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" {...iconStroke}>
+      <rect x="7" y="2.5" width="6" height="10" rx="3" fill={filled ? 'currentColor' : 'none'} />
+      <path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5" />
+    </svg>
+  );
+}
+
+function ChatIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" {...iconStroke}>
+      <path d="M3 4.5h14v9.5H8.5L5 17v-3H3Z" />
+    </svg>
+  );
+}
+
+function HeadphonesIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" {...iconStroke}>
+      <path d="M3.5 13v-2.5a6.5 6.5 0 0 1 13 0V13" />
+      <rect x="3" y="12" width="3.5" height="5" rx="1.2" />
+      <rect x="13.5" y="12" width="3.5" height="5" rx="1.2" />
+    </svg>
   );
 }
 
