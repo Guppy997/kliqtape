@@ -103,7 +103,9 @@ saubere Typografie, großzügige Abstände, flüssige Bewegung. Kein Sepia über
 - **Tippen auf die Kassette dreht sie um.** Auf halbem Weg steht sie hochkant, dort wechselt der
   Inhalt — man sieht ihn nie umklappen. Eine durchgehende Drehung (hinaus beschleunigend, von der
   Gegenseite herein abbremsend, zusammen etwa 0,6 s), A→B nach rechts, B→A spiegelbildlich
-  zurück. Hintergrund und Inhalt gleiten im zweiten Teil mit.
+  zurück. Hintergrund und Inhalt gleiten im zweiten Teil mit. Im Alltag reicht **ein Tipp auf
+  den A|B-Schalter** in der oberen Leiste: Die kleine Kassette dreht dabei von der Gegenseite
+  herein, die große bleibt zu (seit v0.48 — vorher brauchte ein Wechsel bis zu drei Tipps).
 - **Die Spulen laufen beim Scrollen mit.** Links wird dünner, rechts dicker.
 - **Track-Nummern statt Zeitstempel.** `A3`, `B7` — Position auf dem Band, kein Zeitdruck.
   Auf Seite A zählt die Nummer pro Tape (also pro Berlin-Kalendertag) neu ab `A1`.
@@ -388,9 +390,11 @@ Regeln, damit beides sich nicht in die Quere kommt:
   Tonfetzen (Mikrofon) und Reagieren (Sprechblase) sind zwei schlichte Zeichen.
 - **Die eingelegte Kassette** gibt es nur einmal: Das Symbol oben links wächst an Ort und Stelle
   zur größeren Kassette (rund 200 px breit), die sich über Leiste und Inhalt legt. Tipp daneben
-  oder Scrollen klappt sie wieder zum Symbol zusammen.
+  oder Scrollen klappt sie wieder zum Symbol zusammen. Sie geht **nur auf Tipp** auf — die App
+  startet zugeklappt, auch ein Seiten- oder Kassettenwechsel öffnet sie nicht mehr.
 - **Obere Leiste:** Titelzeile `[+]  KLIQTAPE  [🔔]` (Aufnehmen, Wortmarke, „Neues“), darunter
-  eine schmale Zeile für die eingelegte Kassette (Symbol, Name, Seite) und rechts die Lupe. Die
+  eine schmale Zeile für die eingelegte Kassette (Symbol, Name, Seite), rechts der
+  **A|B-Schalter** und die Lupe. Die
   Lupe klappt Suche und Filter für die eingelegte Seite auf; beim Schließen wird beides
   zurückgesetzt, solange etwas aktiv ist, leuchtet die Lupe. Die Leiste hat **denselben Grund wie
   das Board** (kein Schleier, kein Rahmen, kein Schatten), als **Milchglas** (82 % deckend plus

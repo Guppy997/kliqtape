@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.48.0',
+    date: '2026-10-07',
+    changes: [
+      'Seite A und B wechselst du jetzt mit einem Tipp auf den A|B-Schalter oben — die kleine Kassette dreht sich dabei mit',
+      'Die App startet ruhig mit zugeklappter Kassette; die große gibt es nur noch, wenn du auf die kleine tippst',
+    ],
+  },
+  {
     version: '0.47.2',
     date: '2026-10-07',
     changes: [

@@ -18,7 +18,7 @@ Jede Kassette hat zwei Seiten:
 - **Seite A — bleibt.** Das Archiv der Runde: Bilder, Absprachen, Infos. Filterbar nach Art.
 - **Seite B — läuft weiter.** Der Gruppenchat der Runde, dauerhaft.
 
-Tippen auf die Kassette dreht sie um. Chronologisch, ohne Algorithmus, ohne Werbung,
+Ein Tipp auf den A|B-Schalter oben dreht die Kassette um. Chronologisch, ohne Algorithmus, ohne Werbung,
 ohne Zahlen.
 
 **Plattform:** Dieser Prototyp ist eine **PWA** (React + Vite, im Browser und als installierte

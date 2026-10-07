@@ -15,6 +15,7 @@ import PostCard from '@/components/PostCard';
 import BottomBar from '@/components/BottomBar';
 import AnsweringMachine from '@/components/AnsweringMachine';
 import Lockup from '@/components/Lockup';
+import SideSwitch from '@/components/SideSwitch';
 import NewsView from '@/components/NewsView';
 import StoryView from '@/components/StoryView';
 import TapeHeader, { defaultTapeName, tapeDisplayName } from '@/components/TapeHeader';
@@ -150,8 +151,10 @@ function Deck() {
   const setActiveNav = useBottomNav((s) => s.setActive);
   const viewMode = useViewMode((s) => s.viewMode);
   const setViewMode = useViewMode((s) => s.setViewMode);
-  /** Klappt die Kassette unter der Bedienzeile aus. Beim Ankommen offen. */
-  const [deckOpen, setDeckOpen] = useState(true);
+  /** Klappt die grosse Kassette aus. Nur auf Tipp — beim Ankommen und beim
+   *  Seitenwechsel bleibt sie zu, die App startet ruhig (Seite wechselt der
+   *  A|B-Schalter, siehe SideSwitch.tsx). */
+  const [deckOpen, setDeckOpen] = useState(false);
   // Ohne eingelegte Kassette gibt es nichts zu zeigen — die graue
   // "Kein Band"-Kassette verdeckte dort nur den Leerzustand.
   const panelShown = deckOpen && Boolean(cassetteId);
@@ -384,6 +387,18 @@ function Deck() {
     if (lastSide.current === side) return;
     lastSide.current = side;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Die kleine Kassette dreht von der Gegenseite herein — wie die zweite
+    // Haelfte des grossen Umdrehens (CassetteHeader, flipStyle), in dieselbe
+    // Richtung, B→A spiegelbildlich. So bleibt der Wechsel ueber den A|B-Schalter
+    // spuerbar, ohne dass die grosse Kassette aufgeht.
+    const from = side === 'b' ? -90 : 90;
+    miniRef.current?.animate(
+      [
+        { transform: `perspective(400px) rotateY(${from}deg) scale(.94)` },
+        { transform: 'perspective(400px) rotateY(0deg) scale(1)' },
+      ],
+      { duration: FLIP_IN_MS, easing: 'cubic-bezier(.1,.45,.55,1)' },
+    );
     mainRef.current?.animate(
       [
         { opacity: 0, transform: 'translateY(0.4rem)' },
@@ -396,8 +411,6 @@ function Deck() {
     if (!cassetteId) return;
     const key = `${cassetteId}:${side}`;
     arrival.current = { key, lastSeen: useApp.getState().sideSeenAt[key] ?? 0, jumped: false };
-    // Beim Wechsel der Seite oder der Kassette soll man das Band sehen.
-    setDeckOpen(true);
   }, [cassetteId, side]);
 
   useLayoutEffect(() => {
@@ -482,7 +495,7 @@ function Deck() {
 
           {/* Zweite, schmale Zeile: die eingelegte Kassette. Das Symbol waechst
               beim Antippen an Ort und Stelle zur groesseren Kassette; daneben
-              Name und Seite, rechts die Lupe. */}
+              Name und Seite, rechts der A|B-Schalter und die Lupe. */}
           {cassetteId && (
             <div className="flex items-center gap-2.5">
               <span className="relative shrink-0">
@@ -552,9 +565,10 @@ function Deck() {
                   {current?.name ?? 'Kassette'}
                 </span>
                 <span className="block truncate text-2xs leading-tight" style={{ color: 'var(--dim)' }}>
-                  Seite {side.toUpperCase()} · {SIDE_LABEL[side]}
+                  {SIDE_LABEL[side]}
                 </span>
               </button>
+              <SideSwitch />
               <button
                 type="button"
                 onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
