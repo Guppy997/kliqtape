@@ -393,8 +393,8 @@ Regeln, damit beides sich nicht in die Quere kommt:
   eine schmale Zeile für die eingelegte Kassette (Symbol, Name, Seite) und rechts die Lupe. Die
   Lupe klappt Suche und Filter für die eingelegte Seite auf; beim Schließen wird beides
   zurückgesetzt, solange etwas aktiv ist, leuchtet die Lupe. Die Leiste hat **denselben Grund wie
-  das Board** (kein Schleier, kein Rahmen, kein Schatten); nur wenn darunter gescrollt wird,
-  trennt ein Haarstrich.
+  das Board** (kein Schleier, kein Rahmen, kein Schatten), als **Milchglas** (82 % deckend plus
+  Unschärfe): Beim Scrollen läuft der Inhalt weich darunter durch, dann trennt ein Haarstrich.
 - **Untere Leiste:** Fach, Band, Hot Line, Profil — schlank (rund 54 pt plus Home-Indikator),
   kleine Symbole mit winziger Beschriftung, das aktive in der Akzentfarbe.
 - **Profil** ist die eigene Sammlung, **nur für einen selbst sichtbar** (kein öffentliches

@@ -154,12 +154,19 @@ body {
 }
 
 /* Obere Leiste: gehoert zum Board, ist keine eigene Platte — gleicher Grund
-   wie die Seite, ohne Schleier, Rahmen oder Schatten. Deckend bleibt sie
-   trotzdem, damit durchlaufender Inhalt nicht durchscheint. Erst wenn
-   darunter gescrollt wird, trennt ein Haarstrich (data-scrolled, App.tsx),
-   sonst wirken die Karten an der Kante hart abgeschnitten. */
+   wie die Seite, ohne Schleier, Rahmen oder Schatten. In Ruhe liegt nichts
+   darunter, sie verschmilzt also mit dem Board.
+
+   Milchglas statt reiner Transparenz: 82 % deckend plus Unschaerfe. Der
+   fruehere Glas-Look (siehe .glass) liess Text ohne Unschaerfe durchscheinen
+   und war auf Seite B unlesbar — hier laeuft der Inhalt beim Scrollen nur
+   weich verschwommen darunter durch. Erst dann trennt auch ein Haarstrich
+   (data-scrolled, App.tsx), sonst wirken die Karten an der Kante hart
+   abgeschnitten. */
 .bar-flat {
-  background: var(--screen);
+  background: color-mix(in srgb, var(--screen) 82%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
   border-bottom: 1px solid transparent;
   transition: border-color 160ms ease-out;
 }

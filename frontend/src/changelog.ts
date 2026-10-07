@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.47.2',
+    date: '2026-10-07',
+    changes: [
+      'Die obere Leiste ist jetzt wie Milchglas: Beim Scrollen läuft der Inhalt weich verschwommen darunter durch',
+    ],
+  },
+  {
     version: '0.47.1',
     date: '2026-10-07',
     changes: [
