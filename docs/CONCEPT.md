@@ -389,7 +389,8 @@ Regeln, damit beides sich nicht in die Quere kommt:
 - **Beiträge** sind Karten (Art, Track, Datum); Melden und Löschen stecken im „…“-Menü,
   Tonfetzen (Mikrofon) und Reagieren (Sprechblase) sind zwei schlichte Zeichen.
 - **Die eingelegte Kassette** gibt es nur einmal: Das Symbol oben links wächst an Ort und Stelle
-  zur größeren Kassette (rund 200 px breit), die sich über Leiste und Inhalt legt. Tipp daneben
+  zur größeren Kassette (rund 270 px breit, ohne Karte drumherum — nur die Kassette mit ihrem
+  Schatten), die sich über Leiste und Inhalt legt. Tipp daneben
   oder Scrollen klappt sie wieder zum Symbol zusammen. Sie geht **nur auf Tipp** auf — die App
   startet zugeklappt, auch ein Seiten- oder Kassettenwechsel öffnet sie nicht mehr.
 - **Obere Leiste:** Titelzeile `[+]  KLIQTAPE  [🔔]` (Aufnehmen, Wortmarke, „Neues“; das Plus

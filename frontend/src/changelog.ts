@@ -11,6 +11,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.49.2',
+    date: '2026-10-07',
+    changes: ['Die aufgeklappte Kassette ist größer und kommt ohne Rahmen drumherum — nur die Kassette selbst'],
+  },
+  {
     version: '0.49.1',
     date: '2026-10-07',
     changes: ['Das Einstellungs-Symbol im Profil ist jetzt ein richtiges Zahnrad statt einer Sonne'],

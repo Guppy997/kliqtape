@@ -6,7 +6,7 @@ import { useBottomNav } from '@/store/navStore';
 import { jumpTo, useJump } from '@/store/jumpStore';
 import { useViewMode } from '@/store/viewStore';
 import { berlinDateLabel, tapeIndexOf } from '@/lib/berlinDay';
-import CassetteHeader, { CassetteFacePreview, FLIP_IN_MS } from '@/components/CassetteHeader';
+import CassetteHeader, { CassetteFacePreview, DECK_WIDTH, FLIP_IN_MS } from '@/components/CassetteHeader';
 import { useCassettes, useLookIndex } from '@/components/CassetteDeck';
 import { lookFor } from '@/lib/cassetteLook';
 import ChatThread from '@/components/ChatThread';
@@ -121,10 +121,10 @@ const FILTERS: { key: Kind | 'all'; label: string }[] = [
  *  bedeuten: ein echter, seltener Sonderfall innerhalb des Bands. */
 const FILTERS_B = FILTERS.filter((f) => f.key !== 'text');
 
-/** Breite des Kassetten-Symbols oben links und der aufgeklappten Kassette
- *  (CassetteHeader zeichnet bei HEADER_ZOOM rund 200 px) samt Innenabstand. */
+/** Breite des Kassetten-Symbols oben links und der Innenabstand der
+ *  aufgeklappten Kassette (header p-2 in CassetteHeader); deren Breite selbst
+ *  kommt als DECK_WIDTH aus CassetteHeader.tsx. */
 const MINI_WIDTH = 60;
-const DECK_WIDTH = 200;
 const DECK_PAD = 8;
 
 function Deck() {
@@ -525,13 +525,14 @@ function Deck() {
                   />
                 </button>
                 {/* Die grosse Kassette waechst aus genau diesem Symbol: gleicher
-                                    Ankerpunkt oben links, Start in Symbolgroesse. Sie legt sich
-                                    ueber Leiste und Inhalt; Tipp daneben oder Scrollen klappt
-                                    sie wieder zu. */}
+                    Ankerpunkt oben links, Start in Symbolgroesse. Sie legt sich
+                    ueber Leiste und Inhalt; Tipp daneben oder Scrollen klappt
+                    sie wieder zu. Ohne Karte drumherum — nur die Kassette selbst,
+                    ihr eigener Schlagschatten hebt sie vom Inhalt ab. */}
                 <div
                   ref={panelRef}
                   inert={!panelShown}
-                  className="glass absolute z-[60] rounded-xl"
+                  className="absolute z-[60]"
                   style={{
                     left: -DECK_PAD,
                     top: -DECK_PAD,

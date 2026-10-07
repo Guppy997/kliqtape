@@ -20,9 +20,12 @@ interface Props {
 }
 
 /** Wie gross die ausgeklappte Kassette gezeichnet wird (siehe CassetteHeader):
- *  rund 200 px breit — etwas groesser als das Symbol oben links, nicht mehr
- *  bildschirmfuellend. */
-const HEADER_ZOOM = 0.52;
+ *  rund 270 px breit — deutlich groesser als das Symbol oben links, aber nicht
+ *  bildschirmfuellend. Gezeichnet wird auf 24rem, per zoom verkleinert. */
+const HEADER_ZOOM = 0.7;
+/** Tatsaechliche Breite der ausgeklappten Kassette in px — App.tsx rechnet
+ *  damit die Startgroesse beim Herauswachsen aus dem Symbol. */
+export const DECK_WIDTH = 24 * 16 * HEADER_ZOOM;
 
 const R_MAX = 26;
 const R_MIN = 10;
