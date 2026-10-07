@@ -128,20 +128,18 @@ export default function Composer({ onPosted }: Props) {
           setError(null);
           setStep(pageOpen ? null : 'choose');
         }}
+        // Nur das Zeichen, ohne runden Knopf darum — wie die Glocke rechts
+        // gegenueber, die Titelzeile soll ruhig wirken.
         className="hit relative z-50 grid size-8 place-items-center rounded-full transition-transform active:scale-95"
-        style={{
-          background: 'linear-gradient(180deg, #2E2925, #1A1714)',
-          boxShadow: '0 0.25rem 0.6rem rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.12) inset',
-        }}
       >
         {/* Plus statt REC-Punkt, dreht sich beim Oeffnen zum X. */}
         <svg
-          width="14"
-          height="14"
+          width="20"
+          height="20"
           viewBox="0 0 14 14"
           fill="none"
           stroke="var(--ink)"
-          strokeWidth="1.8"
+          strokeWidth="1.5"
           strokeLinecap="round"
           aria-hidden="true"
           style={{ transform: pageOpen ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}
