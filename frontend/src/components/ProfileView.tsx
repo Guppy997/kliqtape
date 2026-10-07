@@ -40,10 +40,11 @@ export default function ProfileView() {
             className="block rounded-full"
             style={{ boxShadow: open ? '0 0 0 1.5px var(--accent)' : '0 0 0 1px var(--line)' }}
           >
-            <Avatar name={me} side={side} size={1.35} />
+            <Avatar name={me} side={side} size={1.75} />
           </span>
         }
         label="Profil"
+        hideLabel
         active={open}
         onClick={() => setActiveNav('profile')}
       />

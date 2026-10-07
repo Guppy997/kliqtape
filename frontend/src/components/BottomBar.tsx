@@ -12,8 +12,9 @@ interface Props {
 }
 
 /**
- * Untere Leiste — vier gleichwertige Bereiche, schlank wie bei Instagram:
- * Fach (Kassette wechseln), Band (zurueck zur Startansicht), Hot Line
+ * Untere Leiste — vier gleichwertige Bereiche, schlank wie bei Instagram,
+ * als Milchglas wie die obere Leiste (.bar-frost in index.css):
+ * Eject (Kassette wechseln), Band (zurueck zur Startansicht), Hot Line
  * (direkt schreiben), Profil (die eigene Sammlung). Erstellen sitzt oben
  * links, die Glocke ("Neues") oben rechts (siehe App.tsx).
  *
@@ -49,7 +50,7 @@ export default function BottomBar({ onHome }: Props) {
   return (
     <div
       ref={barRef}
-      className="glass fixed inset-x-0 bottom-0 z-[45] px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1"
+      className="bar-frost bar-bottom fixed inset-x-0 bottom-0 z-[45] px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1"
     >
       <div className="mx-auto grid max-w-xl grid-cols-4 place-items-center gap-1">
         <CassetteDeck />

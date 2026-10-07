@@ -3,6 +3,9 @@ import type { ReactNode } from 'react';
 interface Props {
   icon: ReactNode;
   label: string;
+  /** Nur Symbol, ohne sichtbare Beschriftung (Profil: das eigene Bild spricht
+   *  fuer sich, wie bei Instagram). Die Beschriftung bleibt als aria-label. */
+  hideLabel?: boolean;
   /** Kleine Zahl oben rechts am Icon — weggelassen (nicht 0), wenn nichts ansteht. */
   badge?: number;
   /** Das zugehoerige Sheet ist gerade offen. */
@@ -11,16 +14,15 @@ interface Props {
 }
 
 /**
- * Ein Bereich der unteren Leiste (Fach, Band, Hot Line, Neues): Icon, kurze
+ * Ein Bereich der unteren Leiste (Eject, Band, Hot Line, Profil): Icon, kurze
  * Beschriftung darunter, optional ein
  * Zaehler oben rechts. Eject, Hot Line und Neuigkeiten sahen frueher alle
  * unterschiedlich aus (Metallschild, LED, Textpille) — bewusst uneinheitlich.
  * Jetzt wie eine echte Tableiste, angelehnt an Signal & Co.: nur das aktive
- * Icon steckt in einer eng sitzenden, gefuellten Kapsel, alles andere bleibt
- * ohne eigenen Hintergrund — die Leiste selbst (BottomBar) traegt die
- * einheitliche, etwas hellere Flaeche, nicht jeder Knopf einzeln.
+ * Icon ist in der Akzentfarbe, keiner traegt einen eigenen Hintergrund — die
+ * Leiste selbst (BottomBar, Milchglas) ist die Flaeche.
  */
-export default function NavButton({ icon, label, badge, active, onClick }: Props) {
+export default function NavButton({ icon, label, hideLabel, badge, active, onClick }: Props) {
   // Schlank wie bei Instagram: kein Hintergrund ums aktive Symbol, nur die
   // Akzentfarbe — die Leiste soll nicht mehr ein Sechstel des Bildschirms
   // belegen. 44-pt-Tippflaeche bleibt ueber die volle Breite der Spalte.
@@ -33,7 +35,7 @@ export default function NavButton({ icon, label, badge, active, onClick }: Props
       className="flex min-h-11 w-full flex-col items-center justify-center gap-0.5 transition-transform active:scale-95"
       style={{ color: active ? 'var(--accent)' : 'var(--dim)' }}
     >
-      <span className="relative grid h-6 w-7 place-items-center">
+      <span className={`relative grid place-items-center ${hideLabel ? '' : 'h-6 w-7'}`}>
         {icon}
         {!!badge && (
           <span
@@ -44,7 +46,7 @@ export default function NavButton({ icon, label, badge, active, onClick }: Props
           </span>
         )}
       </span>
-      <span className="text-2xs font-medium leading-none">{label}</span>
+      {!hideLabel && <span className="text-2xs font-medium leading-none">{label}</span>}
     </button>
   );
 }

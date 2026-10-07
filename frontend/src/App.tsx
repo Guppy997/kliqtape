@@ -221,7 +221,7 @@ function Deck() {
   }, [panelShown]);
 
   // Haarstrich unter der Leiste nur, solange darunter gescrollt ist — in
-  // Ruhe verschmilzt die Leiste mit dem Board (.bar-flat in index.css).
+  // Ruhe verschmilzt die Leiste mit dem Board (.bar-top in index.css).
   // Gesetzt wird nur beim Ueberschreiten der Kante, nicht bei jedem Pixel.
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -465,7 +465,7 @@ function Deck() {
           laeuft die Zeile bei iPhone und Android dort hinein. */}
       <div
         ref={topbarRef}
-        className="bar-flat sticky top-0 z-30 pt-[max(0.5rem,env(safe-area-inset-top))]"
+        className="bar-frost bar-top sticky top-0 z-30 pt-[max(0.5rem,env(safe-area-inset-top))]"
         data-scrolled={scrolled || undefined}
         // Solange die Kassette ausgeklappt ist, faellt die Trennlinie nach
         // unten weg — Leiste und Panel sind dann eine durchgehende Flaeche.

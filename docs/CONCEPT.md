@@ -399,8 +399,9 @@ Regeln, damit beides sich nicht in die Quere kommt:
   zurückgesetzt, solange etwas aktiv ist, leuchtet die Lupe. Die Leiste hat **denselben Grund wie
   das Board** (kein Schleier, kein Rahmen, kein Schatten), als **Milchglas** (82 % deckend plus
   Unschärfe): Beim Scrollen läuft der Inhalt weich darunter durch, dann trennt ein Haarstrich.
-- **Untere Leiste:** Fach, Band, Hot Line, Profil — schlank (rund 54 pt plus Home-Indikator),
-  kleine Symbole mit winziger Beschriftung, das aktive in der Akzentfarbe.
+- **Untere Leiste:** Eject, Band, Hot Line, Profil — schlank (rund 54 pt plus Home-Indikator),
+  kleine Symbole mit winziger Beschriftung, das aktive in der Akzentfarbe. Das Profil zeigt nur
+  das eigene Bild, ohne Beschriftung. Milchglas wie oben, mit feinem Haarstrich an der Oberkante.
 - **Profil** ist die eigene Sammlung, **nur für einen selbst sichtbar** (kein öffentliches
   Profil): Regal, Mixtapes, Einstellungen hinter dem Zahnrad.
 - **Regal im Profil, „Gesammelt“:** Der Stern an einem Tape legt es ins eigene Regal. Dort liegt

@@ -177,7 +177,7 @@ export default function CassetteDeck() {
             <rect x="0" y="10.5" width="16" height="2.5" rx="1" />
           </svg>
         }
-        label="Fach"
+        label="Eject"
         active={open}
         onClick={() => {
           setError(null);

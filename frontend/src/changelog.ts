@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.48.1',
+    date: '2026-10-07',
+    changes: [
+      'Auch die untere Leiste ist jetzt Milchglas',
+      'Ganz links steht wieder „Eject“ statt „Fach“',
+      'Das Profil zeigt unten nur noch dein Bild, ohne Beschriftung',
+    ],
+  },
+  {
     version: '0.48.0',
     date: '2026-10-07',
     changes: [
