@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.44.4',
+    date: '2026-10-07',
+    changes: [
+      'Die kleine Kassette oben links wird beim Aufklappen selbst größer, statt dass darunter eine zweite erscheint — ein Tipp daneben klappt sie wieder ein',
+    ],
+  },
+  {
     version: '0.44.3',
     date: '2026-10-07',
     changes: [

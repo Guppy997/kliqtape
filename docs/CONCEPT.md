@@ -378,8 +378,9 @@ Regeln, damit beides sich nicht in die Quere kommt:
 - **Farben:** `--accent` pro Kassette, dazu feste Bedeutungsfarben (`--on-accent`, `--danger`).
 - **Beiträge** sind Karten (Art, Track, Datum); Melden und Löschen stecken im „…“-Menü,
   Tonfetzen (Mikrofon) und Reagieren (Sprechblase) sind zwei schlichte Zeichen.
-- **Die eingelegte Kassette** klappt aus dem Symbol oben links als schwebendes Feld auf
-  (rund 200 px breit) und legt sich über den Inhalt.
+- **Die eingelegte Kassette** gibt es nur einmal: Das Symbol oben links wächst an Ort und Stelle
+  zur größeren Kassette (rund 200 px breit), die sich über Leiste und Inhalt legt. Tipp daneben
+  oder Scrollen klappt sie wieder zum Symbol zusammen.
 - **Untere Leiste:** Fach, Band, Hot Line, Neues. **Obere Leiste:** eine Zeile mit Kassette,
   Aufnehmen, Lupe, Regal und Profilbild. Die Lupe klappt Suche und Filter für die eingelegte
   Seite als zweite Zeile auf; beim Schließen wird beides zurückgesetzt, solange etwas aktiv ist,

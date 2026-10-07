@@ -120,6 +120,12 @@ const FILTERS: { key: Kind | 'all'; label: string }[] = [
  *  bedeuten: ein echter, seltener Sonderfall innerhalb des Bands. */
 const FILTERS_B = FILTERS.filter((f) => f.key !== 'text');
 
+/** Breite des Kassetten-Symbols oben links und der aufgeklappten Kassette
+ *  (CassetteHeader zeichnet bei HEADER_ZOOM rund 200 px) samt Innenabstand. */
+const MINI_WIDTH = 60;
+const DECK_WIDTH = 200;
+const DECK_PAD = 8;
+
 function Deck() {
   const me = useApp((s) => s.me);
   const side = useApp((s) => s.side);
@@ -155,6 +161,7 @@ function Deck() {
   // anfangen statt verdeckt zu werden (EmptyState.tsx). ResizeObserver
   // feuert auch waehrend des Auf-/Zuklappens, die Variable gleitet also mit.
   const panelRef = useRef<HTMLDivElement>(null);
+  const miniRef = useRef<HTMLButtonElement>(null);
   const panelShownRef = useRef(panelShown);
   const updateDeckVars = useRef<() => void>(() => {});
   useLayoutEffect(() => {
@@ -172,8 +179,13 @@ function Deck() {
     // offsetHeight statt getBoundingClientRect: das Feld wird beim Auf- und
     // Zuklappen skaliert, gemeint ist aber seine echte Hoehe.
     const update = () => {
-      root.setProperty('--deck-h', panelShownRef.current ? `${el.offsetHeight + 8}px` : '0px');
-      root.setProperty('--topbar-h', `${bar.getBoundingClientRect().height}px`);
+      // Wie weit die offene Kassette unter die Leiste ragt — sie sitzt in der
+      // Leiste, nur der Ueberhang verdeckt Inhalt.
+      const barRect = bar.getBoundingClientRect();
+      const anchorTop = (el.parentElement?.getBoundingClientRect().top ?? barRect.top) - barRect.top;
+      const overhang = anchorTop - DECK_PAD + el.offsetHeight - barRect.height;
+      root.setProperty('--deck-h', panelShownRef.current ? `${Math.max(0, overhang) + 8}px` : '0px');
+      root.setProperty('--topbar-h', `${barRect.height}px`);
     };
     updateDeckVars.current = update;
     update();
@@ -192,6 +204,19 @@ function Deck() {
   // Beitrag, im Chat ans Ende) — ein Scroll-Listener wuerde die Kassette
   // dadurch sofort wieder zuklappen. wheel/touchmove loesen nur echte
   // Eingaben aus, damit braucht es weder Schwellwerte noch Zeitfenster.
+  // Tipp neben die offene Kassette klappt sie zu (das Symbol selbst liegt
+  // darunter und schaltet ohnehin um).
+  useEffect(() => {
+    if (!panelShown) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (panelRef.current?.contains(t) || miniRef.current?.contains(t)) return;
+      setDeckOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [panelShown]);
+
   useEffect(() => {
     const close = () => setDeckOpen(false);
     window.addEventListener('wheel', close, { passive: true });
@@ -424,28 +449,62 @@ function Deck() {
                   links, damit die Stelle gleich bleibt, egal ob der
                   Erstellen-Knopf daneben gerade da ist (im Chat ist er weg). */}
               {cassetteId && (
-                <button
-                  type="button"
-                  onClick={() => setDeckOpen((v) => !v)}
-                  aria-label={deckOpen ? 'Kassette einklappen' : 'Kassette zeigen'}
-                  aria-expanded={deckOpen}
-                  title={current?.name ?? 'Kassette'}
-                  className="shrink-0 transition-transform active:scale-95"
-                >
-                  {/* Dieselbe Zeichnung wie der grosse Kopf, nur herunter-
-                      skaliert (siehe CassetteHeader.tsx) — nicht mehr die
-                      vereinfachte Nachbildung ohne Logo/Tape-Nummer/Datum. */}
-                  <CassetteFacePreview
-                    side={side}
-                    cassetteId={cassetteId}
-                    pairIndex={looks.get(cassetteId)}
-                    label={current?.name ?? 'Kein Band'}
-                    count={data.length}
-                    currentTape={currentTape}
-                    createdAt={current?.createdAt}
-                    width={60}
-                  />
-                </button>
+                <span className="relative shrink-0">
+                  <button
+                    ref={miniRef}
+                    type="button"
+                    onClick={() => setDeckOpen((v) => !v)}
+                    aria-label={deckOpen ? 'Kassette einklappen' : 'Kassette zeigen'}
+                    aria-expanded={deckOpen}
+                    title={current?.name ?? 'Kassette'}
+                    className="block transition-[transform,opacity] active:scale-95"
+                    // Waehrend die grosse Kassette offen ist, ist sie DIESES
+                    // Symbol, nur groesser — das kleine verschwindet so lange.
+                    style={{ opacity: panelShown ? 0 : 1, transitionDuration: panelShown ? '120ms' : '200ms' }}
+                  >
+                    {/* Dieselbe Zeichnung wie die grosse Kassette, nur herunter-
+                        skaliert (siehe CassetteHeader.tsx). */}
+                    <CassetteFacePreview
+                      side={side}
+                      cassetteId={cassetteId}
+                      pairIndex={looks.get(cassetteId)}
+                      label={current?.name ?? 'Kein Band'}
+                      count={data.length}
+                      currentTape={currentTape}
+                      createdAt={current?.createdAt}
+                      width={MINI_WIDTH}
+                    />
+                  </button>
+                  {/* Die grosse Kassette waechst aus genau diesem Symbol: gleicher
+                      Ankerpunkt oben links, Start in Symbolgroesse. Sie legt sich
+                      ueber Leiste und Inhalt; Tipp daneben oder Scrollen klappt
+                      sie wieder zu. */}
+                  <div
+                    ref={panelRef}
+                    inert={!panelShown}
+                    className="glass absolute z-[60] rounded-xl"
+                    style={{
+                      left: -DECK_PAD,
+                      top: -DECK_PAD,
+                      transformOrigin: `${DECK_PAD}px ${DECK_PAD}px`,
+                      transform: panelShown ? 'scale(1)' : `scale(${MINI_WIDTH / DECK_WIDTH})`,
+                      opacity: panelShown ? 1 : 0,
+                      visibility: panelShown ? 'visible' : 'hidden',
+                      transition: panelShown
+                        ? 'transform 360ms cubic-bezier(.2,.8,.2,1), opacity 160ms ease, visibility 0s'
+                        : 'transform 260ms cubic-bezier(.4,0,1,1), opacity 200ms ease 60ms, visibility 0s 260ms',
+                    }}
+                  >
+                    <CassetteHeader
+                      cassetteId={cassetteId}
+                      pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
+                      label={current?.name ?? 'Kein Band'}
+                      count={data.length}
+                      currentTape={currentTape}
+                      createdAt={current?.createdAt}
+                    />
+                  </div>
+                </span>
               )}
               {/* Seite B ungefiltert ist reiner Chat (siehe isCassetteChat unten) —
                   dort soll nichts mit dem Schreiben konkurrieren. Ausserdem nur
@@ -592,38 +651,6 @@ function Deck() {
               })}
             </div>
           )}
-        </div>
-
-        {/* Die Kassette klappt aus dem kleinen Symbol oben links auf — ein
-            schwebendes Feld, das von dort aus waechst (transform-origin oben
-            links), nur etwas groesser als das Symbol. Es legt sich UEBER den
-            Inhalt, statt ihn zu verschieben, damit die Leseposition bleibt.
-            Die Flaeche daneben laesst Tipps auf den Inhalt durch. */}
-        <div className="pointer-events-none absolute inset-x-0 top-full" inert={!panelShown}>
-          <div className="mx-auto max-w-xl px-3 pt-2">
-            <div
-              ref={panelRef}
-              className="glass pointer-events-auto w-fit rounded-xl"
-              style={{
-                transformOrigin: 'top left',
-                transform: panelShown ? 'scale(1)' : 'scale(0.3)',
-                opacity: panelShown ? 1 : 0,
-                visibility: panelShown ? 'visible' : 'hidden',
-                transition: panelShown
-                  ? 'transform 380ms cubic-bezier(.2,.8,.2,1), opacity 220ms ease, visibility 0s'
-                  : 'transform 280ms cubic-bezier(.4,0,1,1), opacity 220ms ease, visibility 0s 280ms',
-              }}
-            >
-              <CassetteHeader
-                cassetteId={cassetteId}
-                pairIndex={cassetteId ? looks.get(cassetteId) : undefined}
-                label={current?.name ?? 'Kein Band'}
-                count={data.length}
-                currentTape={currentTape}
-                createdAt={current?.createdAt}
-              />
-            </div>
-          </div>
         </div>
       </div>
 
