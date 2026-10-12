@@ -154,3 +154,75 @@ describe('Wochen-Challenge', () => {
     expect((await api('POST', '/api/challenge/demo', 'anna', { me: ANNA, type: 'quatsch' })).status).toBe(400);
   });
 });
+
+describe('Wochen-Challenge abschalten', () => {
+  let x: string;
+
+  beforeAll(async () => {
+    x = await cassetteWith('anna', ['ben', 'dora', 'emil'], 'Schalterrunde');
+    // Eine frische Woche, unabhaengig davon, was andere Tests schon aufgeloest haben.
+    expect((await api('POST', '/api/challenge/demo', 'anna', { me: ANNA, type: 'photo' })).status).toBe(201);
+  });
+
+  it('Fremder darf nichts umschalten', async () => {
+    expect((await api('PUT', `/api/cassettes/${x}/challenge`, 'cara', { me: CARA, off: true })).status).toBe(403);
+    expect((await api('PUT', `/api/cassettes/${x}/challenge/mute`, 'cara', { me: CARA, muted: true })).status).toBe(
+      403,
+    );
+    expect(
+      (await api('PUT', `/api/cassettes/${x}/members/${BEN}/admin`, 'cara', { me: CARA, admin: true })).status,
+    ).toBe(403);
+  });
+
+  it('Abschalten duerfen nur Admins — die Gruenderin und wen sie ernennt', async () => {
+    expect((await api('PUT', `/api/cassettes/${x}/challenge`, 'ben', { me: BEN, off: true })).status).toBe(403);
+    expect(
+      (await api('PUT', `/api/cassettes/${x}/members/${DORA}/admin`, 'ben', { me: BEN, admin: true })).status,
+    ).toBe(403);
+    // Gegenprobe: die Gruenderin ernennt Ben, dann darf er
+    expect(
+      (await api('PUT', `/api/cassettes/${x}/members/${BEN}/admin`, 'anna', { me: ANNA, admin: true })).status,
+    ).toBe(200);
+    const members = await api('GET', `/api/cassettes/${x}/members?me=${DORA}`, 'dora');
+    expect(members.body.find((m: any) => m.name === BEN).admin).toBe(true);
+    expect(members.body.find((m: any) => m.name === ANNA).admin).toBe(true);
+    expect((await api('PUT', `/api/cassettes/${x}/challenge`, 'ben', { me: BEN, off: false })).status).toBe(200);
+  });
+
+  it('Die Gruenderin bleibt Admin', async () => {
+    const res = await api('PUT', `/api/cassettes/${x}/members/${ANNA}/admin`, 'ben', { me: BEN, admin: false });
+    expect(res.status).toBe(400);
+  });
+
+  it('Abschalten zieht ausstehende Beitraege zurueck und sperrt neue', async () => {
+    const m = await upload('dora');
+    expect((await api('POST', '/api/challenge/entry', 'dora', { me: DORA, mediaId: m.body.id })).status).toBe(201);
+    expect((await api('POST', `/api/cassettes/${x}/challenge/share`, 'dora', { me: DORA })).status).toBe(201);
+
+    const off = await api('PUT', `/api/cassettes/${x}/challenge`, 'anna', { me: ANNA, off: true });
+    expect(off.body).toEqual({ off: true, withdrawn: 1 });
+    const status = await api('GET', `/api/cassettes/${x}/challenge?me=${DORA}`, 'dora');
+    expect(status.body).toMatchObject({ off: true, mine: { sharedHere: false } });
+    expect(status.body.mine.entry).not.toBeNull();
+    expect((await api('POST', `/api/cassettes/${x}/challenge/share`, 'dora', { me: DORA })).status).toBe(409);
+
+    expect((await api('PUT', `/api/cassettes/${x}/challenge`, 'anna', { me: ANNA, off: false })).status).toBe(200);
+  });
+
+  it('Stummschalten gilt nur fuer einen selbst', async () => {
+    const m = await upload('emil');
+    expect((await api('POST', '/api/challenge/entry', 'emil', { me: EMIL, mediaId: m.body.id })).status).toBe(201);
+    expect((await api('PUT', `/api/cassettes/${x}/challenge/mute`, 'emil', { me: EMIL, muted: true })).status).toBe(
+      200,
+    );
+    expect((await api('POST', `/api/cassettes/${x}/challenge/share`, 'emil', { me: EMIL })).status).toBe(409);
+    const global = await api('GET', `/api/challenge?me=${EMIL}`, 'emil');
+    expect(global.body.openCassetteIds).not.toContain(x);
+    // Die anderen legen weiter hinein
+    expect((await api('POST', `/api/cassettes/${x}/challenge/share`, 'dora', { me: DORA })).status).toBe(201);
+    // Niemand sieht, wer stumm ist: der Status anderer kennt nur den eigenen Schalter
+    const dora = await api('GET', `/api/cassettes/${x}/challenge?me=${DORA}`, 'dora');
+    expect(dora.body.muted).toBe(false);
+    expect(JSON.stringify(dora.body)).not.toContain(EMIL);
+  });
+});

@@ -47,3 +47,23 @@ export function creatorOf(cassetteId: string): string {
   if (!row) throw new HttpError(404, 'Kassette nicht gefunden');
   return row.created_by;
 }
+
+/** Gruppen-Admin: wer die Kassette angelegt hat (bzw. sie uebernommen hat,
+ *  siehe handOver) oder von einem Admin dazu ernannt wurde. Steuert bisher
+ *  nur die Wochen-Challenge der Runde. */
+export function isCassetteAdmin(cassetteId: string, person: string): boolean {
+  const row = db
+    .prepare(
+      `SELECT c.created_by, m.is_admin FROM cassettes c
+         LEFT JOIN cassette_members m ON m.cassette_id = c.id AND m.member = ?
+        WHERE c.id = ?`,
+    )
+    .get(person, cassetteId) as { created_by: string; is_admin: number | null } | undefined;
+  if (!row) throw new HttpError(404, 'Kassette nicht gefunden');
+  return row.created_by === person || row.is_admin === 1;
+}
+
+export function requireCassetteAdmin(req: Request, cassetteId: string, person: string): void {
+  requireMember(req, cassetteId, person);
+  if (!isCassetteAdmin(cassetteId, person)) throw new HttpError(403, 'Das dürfen nur Admins der Runde');
+}

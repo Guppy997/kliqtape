@@ -34,6 +34,12 @@ export interface Cassette {
   /** Fest gewaehlte Bandsorte (0 bis PAIR_COUNT-1) — anders als colorSeed kein Hash-Zufall,
    *  sondern die IMMER angezeigte Sorte. Null = weiterhin automatisch. */
   colorIndex: number | null;
+  /** Wochen-Challenge in dieser Runde aus (stellen Admins ein) … */
+  challengeOff: boolean;
+  /** … bzw. nur fuer mich stummgeschaltet. */
+  challengeMuted: boolean;
+  /** Gruenderin oder ernannte Admin der Runde. */
+  iAmAdmin: boolean;
   memberCount: number;
   sideA: number;
   sideB: number;
@@ -44,6 +50,17 @@ export interface Member {
   name: string;
   addedBy: string;
   joinedAt: number;
+  /** Gruenderin oder ernannt — darf die Wochen-Challenge der Runde schalten. */
+  admin: boolean;
+}
+
+/** Admin ernennen oder zuruecknehmen — nur Admins der Runde. */
+export function setMemberAdmin(cassetteId: string, me: string, name: string, admin: boolean): Promise<void> {
+  return apiFetch(`/api/cassettes/${cassetteId}/members/${encodeURIComponent(name)}/admin`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me, admin }),
+  }).then(unwrap<void>);
 }
 
 /** Eine offene Einladung auf ein Band — muss von invitee erst angenommen
@@ -377,11 +394,17 @@ export interface ChallengeShot {
 export interface ChallengeStatus {
   current: ChallengeWeek | null;
   mine: { entry: ChallengeEntry; cassetteIds: string[] } | null;
+  /** Meine Runden, in die ich etwas legen kann (nicht aus, nicht stumm). */
+  openCassetteIds: string[];
   demoTools: boolean;
 }
 
 export interface CassetteChallenge {
   current: ChallengeWeek | null;
+  /** In dieser Runde ausgeschaltet (Admins) bzw. fuer mich stumm. */
+  off: boolean;
+  muted: boolean;
+  iAmAdmin: boolean;
   mine: { entry: ChallengeEntry | null; sharedHere: boolean };
   /** Die zuletzt aufgeloeste Woche dieser Kassette — die Tuete. */
   developed: (ChallengeWeek & { at: number; shots: ChallengeShot[] }) | null;
@@ -421,6 +444,26 @@ export function unshareChallenge(cassetteId: string, me: string): Promise<void> 
   return apiFetch(`/api/cassettes/${cassetteId}/challenge/share?me=${encodeURIComponent(me)}`, {
     method: 'DELETE',
   }).then(unwrap<void>);
+}
+
+export function setCassetteChallengeOff(
+  cassetteId: string,
+  me: string,
+  off: boolean,
+): Promise<{ off: boolean; withdrawn: number }> {
+  return apiFetch(`/api/cassettes/${cassetteId}/challenge`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me, off }),
+  }).then(unwrap<{ off: boolean; withdrawn: number }>);
+}
+
+export function setChallengeMuted(cassetteId: string, me: string, muted: boolean): Promise<{ muted: boolean }> {
+  return apiFetch(`/api/cassettes/${cassetteId}/challenge/mute`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me, muted }),
+  }).then(unwrap<{ muted: boolean }>);
 }
 
 export interface ChallengePlan {

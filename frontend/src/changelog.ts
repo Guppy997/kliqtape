@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.51.0',
+    date: '2026-10-12',
+    changes: [
+      'Neu: Admins in einer Runde — die Gründerin und wen sie in der Mitgliederliste dazu ernennt',
+      'Admins können die Wochen-Challenge für die ganze Runde ausschalten',
+      'Jede Person kann die Challenge in einer Runde für sich stummschalten — das erfährt niemand',
+    ],
+  },
+  {
     version: '0.50.0',
     date: '2026-10-12',
     changes: [

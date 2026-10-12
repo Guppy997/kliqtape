@@ -7,6 +7,7 @@ import {
   demoReleaseChallenge,
   fetchCassetteChallenge,
   mediaUrl,
+  setChallengeMuted,
   shareChallenge,
   unshareChallenge,
   type Cassette,
@@ -76,9 +77,10 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
   const unshare = useMutation({ mutationFn: () => unshareChallenge(cassette.id, me), onSuccess: refresh });
   const demoStart = useMutation({ mutationFn: (type: ChallengeType) => demoChallenge(me, type), onSuccess: refresh });
   const demoRelease = useMutation({ mutationFn: () => demoReleaseChallenge(me), onSuccess: refresh });
+  const unmute = useMutation({ mutationFn: () => setChallengeMuted(cassette.id, me, false), onSuccess: refresh });
 
   if (!data) return null;
-  const { current, mine, developed, demoTools } = data;
+  const { current, mine, developed, demoTools, off, muted } = data;
   const photos = developed?.shots.filter((s) => s.mediaId) ?? [];
   const bagWaiting = developed && photos.length > 0 && openedWeek(cassette.id) !== developed.id;
 
@@ -142,7 +144,17 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
         </button>
       )}
 
-      {current ? (
+      {off ? null : muted ? (
+        // Fuer mich stumm: nur ein leiser Hinweis, wie man es zurueckholt.
+        current && (
+          <p className="my-3 px-1 text-2xs" style={{ color: 'var(--dim)' }}>
+            Die Wochen-Challenge ist hier für dich stumm.{' '}
+            <button type="button" onClick={() => unmute.mutate()} className="underline">
+              Wieder einschalten
+            </button>
+          </p>
+        )
+      ) : current ? (
         <div
           className="my-3 flex items-start gap-3 rounded-xl px-3.5 py-3"
           style={{ border: '1px dashed var(--accent)' }}

@@ -4,6 +4,7 @@ import {
   deleteCassette,
   fetchFeed,
   fetchMembers,
+  setMemberAdmin,
   inviteMember,
   KIND_LABEL,
   removeMember,
@@ -16,6 +17,7 @@ import { AGE_MAX_STAGE, AGE_STEP_DAYS, ageStageOf, berlinDateLabel } from '@/lib
 import { useApp } from '@/store/appStore';
 import { useJump } from '@/store/jumpStore';
 import Avatar, { useProfiles } from './Avatar';
+import CassetteChallengeSettings from './CassetteChallengeSettings';
 import { CassetteFacePreview } from './CassetteHeader';
 import { ImposterSpecial } from './ImposterCard';
 import AlbumExport from './AlbumExport';
@@ -56,6 +58,15 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
   const { data: members = [] } = useQuery({
     queryKey: ['members', cassette.id],
     queryFn: () => fetchMembers(cassette.id, me),
+  });
+  const doAdmin = useMutation({
+    mutationFn: ({ name, admin }: { name: string; admin: boolean }) => setMemberAdmin(cassette.id, me, name, admin),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['members', cassette.id] });
+      void qc.invalidateQueries({ queryKey: ['challenge', cassette.id] });
+      void qc.invalidateQueries({ queryKey: ['cassettes', me] });
+    },
+    onError: fail,
   });
 
   /* ---- Name -------------------------------------------------------------- */
@@ -426,8 +437,22 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                 </span>
                 <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
                   {creator ? 'hat das Band angelegt' : `eingeladen von ${m.addedBy}`}
+                  {m.admin && ' · Admin'}
                 </span>
               </span>
+              {/* Admins ernennen andere zu Admins (fuer die Wochen-Challenge);
+                  die Gruenderin bleibt es immer. */}
+              {cassette.iAmAdmin && !creator && (
+                <button
+                  type="button"
+                  onClick={() => doAdmin.mutate({ name: m.name, admin: !m.admin })}
+                  disabled={doAdmin.isPending}
+                  className="shrink-0 px-1 text-2xs disabled:opacity-50"
+                  style={{ color: m.admin ? 'var(--dim)' : 'var(--accent)' }}
+                >
+                  {m.admin ? 'kein Admin' : 'zum Admin'}
+                </button>
+              )}
               {m.name !== me && !creator && (
                 <button
                   type="button"
@@ -501,6 +526,9 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
         )}
       </section>
       <AlbumExport open={albumOpen} cassette={cassette} onClose={() => setAlbumOpen(false)} />
+
+      {/* ---- Wochen-Challenge: Admins fuer alle, jede Person fuer sich ---- */}
+      <CassetteChallengeSettings cassette={cassette} />
 
       {/* ---- Special: Imposter-Woche ------------------------------------- */}
       <ImposterSpecial cassette={cassette} onStarted={onJump} onError={fail} />

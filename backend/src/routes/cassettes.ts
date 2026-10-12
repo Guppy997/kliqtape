@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { creatorOf, requireIdentity, requireMember } from '../access.js';
+import { creatorOf, requireCassetteAdmin, requireIdentity, requireMember } from '../access.js';
 import { db } from '../db.js';
 import { HttpError } from '../http.js';
 import { PAIR_COUNT } from '../content.js';
@@ -21,7 +21,8 @@ cassettesRouter.get('/api/cassettes', (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT c.id, c.name, c.created_by, c.created_at, c.color_seed, c.color_index,
+      `SELECT c.id, c.name, c.created_by, c.created_at, c.color_seed, c.color_index, c.challenge_off,
+              m.is_admin, m.challenge_muted,
               (SELECT COUNT(*) FROM cassette_members m2 WHERE m2.cassette_id = c.id) AS members,
               (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'a' AND ${RELEASED}) AS side_a,
               (SELECT COUNT(*) FROM posts p WHERE p.cassette_id = c.id AND p.side = 'b' AND ${RELEASED}) AS side_b,
@@ -37,6 +38,9 @@ cassettesRouter.get('/api/cassettes', (req, res) => {
     created_at: number;
     color_seed: string | null;
     color_index: number | null;
+    challenge_off: number;
+    is_admin: number;
+    challenge_muted: number;
     members: number;
     side_a: number;
     side_b: number;
@@ -51,6 +55,10 @@ cassettesRouter.get('/api/cassettes', (req, res) => {
       createdAt: r.created_at,
       colorSeed: r.color_seed,
       colorIndex: r.color_index,
+      /** Wochen-Challenge in dieser Runde aus (Admins), bzw. fuer mich stumm. */
+      challengeOff: r.challenge_off === 1,
+      challengeMuted: r.challenge_muted === 1,
+      iAmAdmin: r.created_by === me || r.is_admin === 1,
       memberCount: r.members,
       sideA: r.side_a,
       sideB: r.side_b,
@@ -64,10 +72,27 @@ cassettesRouter.get('/api/cassettes/:id/members', (req, res) => {
   // Besetzung jeder Runde auslesen.
   requireMember(req, req.params.id, String(req.query.me ?? '').trim());
   const rows = db
-    .prepare(`SELECT member, added_by, joined_at FROM cassette_members WHERE cassette_id = ? ORDER BY joined_at`)
-    .all(req.params.id) as { member: string; added_by: string; joined_at: number }[];
+    .prepare(
+      `SELECT m.member, m.added_by, m.joined_at, m.is_admin, c.created_by
+         FROM cassette_members m JOIN cassettes c ON c.id = m.cassette_id
+        WHERE m.cassette_id = ? ORDER BY m.joined_at`,
+    )
+    .all(req.params.id) as {
+    member: string;
+    added_by: string;
+    joined_at: number;
+    is_admin: number;
+    created_by: string;
+  }[];
   if (rows.length === 0) throw new HttpError(404, 'Kassette nicht gefunden');
-  res.json(rows.map((r) => ({ name: r.member, addedBy: r.added_by, joinedAt: r.joined_at })));
+  res.json(
+    rows.map((r) => ({
+      name: r.member,
+      addedBy: r.added_by,
+      joinedAt: r.joined_at,
+      admin: r.member === r.created_by || r.is_admin === 1,
+    })),
+  );
 });
 
 cassettesRouter.post('/api/cassettes', (req, res) => {
@@ -98,7 +123,19 @@ cassettesRouter.post('/api/cassettes', (req, res) => {
     );
   })();
 
-  res.status(201).json({ id, name, createdBy: by, colorSeed, colorIndex: null, memberCount: 1, sideA: 0, sideB: 0 });
+  res.status(201).json({
+    id,
+    name,
+    createdBy: by,
+    colorSeed,
+    colorIndex: null,
+    challengeOff: false,
+    challengeMuted: false,
+    iAmAdmin: true,
+    memberCount: 1,
+    sideA: 0,
+    sideB: 0,
+  });
 });
 
 cassettesRouter.patch('/api/cassettes/:id', (req, res) => {
@@ -293,6 +330,26 @@ export function handOverCassettesOf(person: string): void {
   const owned = db.prepare(`SELECT id FROM cassettes WHERE created_by = ?`).all(person) as { id: string }[];
   for (const { id } of owned) handOver(id, person);
 }
+
+/** Admin ernennen oder zuruecknehmen — nur Admins. Die Gruenderin bleibt
+ *  immer Admin, an ihr aendert dieser Schalter nichts. */
+cassettesRouter.put('/api/cassettes/:id/members/:member/admin', (req, res) => {
+  const by = String(req.body?.me ?? '').trim();
+  const target = decodeURIComponent(req.params.member);
+  requireCassetteAdmin(req, req.params.id, by);
+  const isMember = db
+    .prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`)
+    .get(req.params.id, target);
+  if (!isMember) throw new HttpError(404, 'Nicht in dieser Runde');
+  if (target === creatorOf(req.params.id)) throw new HttpError(400, 'Wer die Kassette angelegt hat, bleibt Admin');
+  const admin = req.body?.admin === true;
+  db.prepare(`UPDATE cassette_members SET is_admin = ? WHERE cassette_id = ? AND member = ?`).run(
+    admin ? 1 : 0,
+    req.params.id,
+    target,
+  );
+  res.json({ name: target, admin });
+});
 
 cassettesRouter.delete('/api/cassettes/:id/members/:member', (req, res) => {
   const by = String(req.query.by ?? '').trim();

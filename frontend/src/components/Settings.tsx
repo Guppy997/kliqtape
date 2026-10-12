@@ -16,6 +16,7 @@ import CameraCapture from './CameraCapture';
 import Sheet from './Sheet';
 import Lockup from './Lockup';
 import VersionLog from './VersionLog';
+import SwitchRow from './SwitchRow';
 import { VERSION } from '@/changelog';
 
 /** Was der Server bei Funktionen sieht, die nicht an eine Seite gebunden
@@ -28,6 +29,10 @@ const SERVER_SEES_EXTRA: [string, string][] = [
   [
     'Imposter-Woche',
     'im Klartext: Aufgabe, wer Imposter ist, alle Beiträge und wer auf wen getippt hat. Andere sehen vor der Auflösung nur ihre eigene Karte',
+  ],
+  [
+    'Admins & Stummschalten',
+    'wer in einer Runde Admin ist und ob du die Wochen-Challenge dort für dich stummgeschaltet hast. Dein Stummschalter ist für niemanden sonst sichtbar',
   ],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
   [
@@ -441,34 +446,13 @@ function AlbumOptOut() {
   });
   const on = data?.optOut ?? false;
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
+    <SwitchRow
+      title="Meine Beiträge nicht in Alben"
+      hint="Wer ein Tape als PDF-Album speichert, bekommt deine Beiträge dann nicht mit."
+      on={on}
       disabled={!data || toggle.isPending}
-      onClick={() => toggle.mutate(!on)}
-      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left disabled:opacity-60"
-      style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
-    >
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm" style={{ color: 'var(--ink)' }}>
-          Meine Beiträge nicht in Alben
-        </span>
-        <span className="block text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
-          Wer ein Tape als PDF-Album speichert, bekommt deine Beiträge dann nicht mit.
-        </span>
-      </span>
-      <span
-        aria-hidden="true"
-        className="relative h-5 w-9 shrink-0 rounded-full transition-colors"
-        style={{ background: on ? 'var(--accent)' : 'var(--line)' }}
-      >
-        <span
-          className="absolute top-0.5 size-4 rounded-full bg-white transition-[left]"
-          style={{ left: on ? '1.1rem' : '0.125rem' }}
-        />
-      </span>
-    </button>
+      onToggle={(next) => toggle.mutate(next)}
+    />
   );
 }
 

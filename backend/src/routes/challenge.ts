@@ -1,6 +1,6 @@
 import { type Request, Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { requireIdentity, requireMember } from '../access.js';
+import { isCassetteAdmin, requireCassetteAdmin, requireIdentity, requireMember } from '../access.js';
 import { ADMIN_NAME, DEMO_TOOLS } from '../config.js';
 import { db } from '../db.js';
 import { HttpError } from '../http.js';
@@ -95,6 +95,35 @@ function meOf(req: Request): string {
   return me;
 }
 
+/** Ist die Challenge in dieser Runde aus, oder fuer mich stumm? */
+function blockOf(cassetteId: string, me: string): { off: boolean; muted: boolean } {
+  const row = db
+    .prepare(
+      `SELECT c.challenge_off, m.challenge_muted FROM cassettes c
+         JOIN cassette_members m ON m.cassette_id = c.id AND m.member = ?
+        WHERE c.id = ?`,
+    )
+    .get(me, cassetteId) as { challenge_off: number; challenge_muted: number } | undefined;
+  return { off: row?.challenge_off === 1, muted: row?.challenge_muted === 1 };
+}
+
+/** Noch nicht aufgeloeste Ablagen in einer Runde zurueckziehen — beim
+ *  Abschalten alle, beim Stummschalten nur die eigene. Die Beitraege selbst
+ *  bleiben und lassen sich anderswo weiter teilen. */
+function withdrawPending(cassetteId: string, author?: string): number {
+  const rows = db
+    .prepare(
+      `SELECT s.post_id FROM challenge_shares s
+         JOIN challenge_entries e ON e.id = s.entry_id
+         JOIN challenge_weeks w ON w.id = e.week_id
+        WHERE s.cassette_id = ? AND w.release_at > ? ${author ? 'AND e.author = ?' : ''}`,
+    )
+    .all(...(author ? [cassetteId, Date.now(), author] : [cassetteId, Date.now()])) as { post_id: string }[];
+  const del = db.prepare(`DELETE FROM posts WHERE id = ?`);
+  for (const r of rows) del.run(r.post_id);
+  return rows.length;
+}
+
 /* --- Status ---------------------------------------------------------------- */
 
 /** Die Woche fuer mich: was dran ist und — nur — mein eigener Stand. */
@@ -110,9 +139,20 @@ challengeRouter.get('/api/challenge', (req, res) => {
         }[]
       ).map((r) => r.cassette_id)
     : [];
+  // In welche meiner Runden ich ueberhaupt etwas legen kann — nicht dort, wo
+  // die Challenge aus oder fuer mich stumm ist.
+  const open = (
+    db
+      .prepare(
+        `SELECT c.id FROM cassettes c JOIN cassette_members m ON m.cassette_id = c.id AND m.member = ?
+          WHERE c.challenge_off = 0 AND m.challenge_muted = 0`,
+      )
+      .all(me) as { id: string }[]
+  ).map((r) => r.id);
   res.json({
     current: week ? shapeWeek(week) : null,
     mine: entry ? { entry: shapeEntry(entry), cassetteIds: sharedIn } : null,
+    openCassetteIds: open,
     demoTools: DEMO_TOOLS,
   });
 });
@@ -165,6 +205,8 @@ challengeRouter.get('/api/cassettes/:id/challenge', (req, res) => {
 
   res.json({
     current: week ? shapeWeek(week) : null,
+    ...blockOf(req.params.id, me),
+    iAmAdmin: isCassetteAdmin(req.params.id, me),
     mine: { entry: entry ? shapeEntry(entry) : null, sharedHere },
     developed: last
       ? {
@@ -236,6 +278,9 @@ challengeRouter.post('/api/cassettes/:id/challenge/share', (req, res) => {
     .prepare(`SELECT 1 FROM challenge_shares WHERE entry_id = ? AND cassette_id = ?`)
     .get(entry.id, req.params.id);
   if (already) throw new HttpError(409, 'Liegt hier schon');
+  const block = blockOf(req.params.id, me);
+  if (block.off) throw new HttpError(409, 'In dieser Runde ist die Challenge ausgeschaltet');
+  if (block.muted) throw new HttpError(409, 'Du hast die Challenge hier für dich stummgeschaltet');
 
   const postId = randomUUID();
   db.transaction(() => {
@@ -279,6 +324,34 @@ challengeRouter.delete('/api/cassettes/:id/challenge/share', (req, res) => {
   // Der Post faellt, die Ablage kaskadiert mit; das Medium bleibt am Beitrag.
   db.prepare(`DELETE FROM posts WHERE id = ?`).run(share.post_id);
   res.status(204).end();
+});
+
+/* --- Abschalten: fuer die Runde (Admins) oder fuer sich -------------------- */
+
+challengeRouter.put('/api/cassettes/:id/challenge', (req, res) => {
+  const me = meOf(req);
+  requireCassetteAdmin(req, req.params.id, me);
+  const off = req.body?.off === true;
+  const withdrawn = db.transaction(() => {
+    db.prepare(`UPDATE cassettes SET challenge_off = ? WHERE id = ?`).run(off ? 1 : 0, req.params.id);
+    return off ? withdrawPending(req.params.id) : 0;
+  })();
+  res.json({ off, withdrawn });
+});
+
+challengeRouter.put('/api/cassettes/:id/challenge/mute', (req, res) => {
+  const me = meOf(req);
+  requireMember(req, req.params.id, me);
+  const muted = req.body?.muted === true;
+  db.transaction(() => {
+    db.prepare(`UPDATE cassette_members SET challenge_muted = ? WHERE cassette_id = ? AND member = ?`).run(
+      muted ? 1 : 0,
+      req.params.id,
+      me,
+    );
+    if (muted) withdrawPending(req.params.id, me);
+  })();
+  res.json({ muted });
 });
 
 /* --- Planung durch den Kliqtape-Kanal -------------------------------------- */

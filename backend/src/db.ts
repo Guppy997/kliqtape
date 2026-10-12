@@ -639,6 +639,19 @@ addColumn(
   'label TEXT',
   'eigene Beschriftung im persoenlichen Regal (Profil) — sieht nur diese Person',
 );
+addColumn(
+  'cassettes',
+  'challenge_off',
+  'challenge_off INTEGER NOT NULL DEFAULT 0',
+  'Wochen-Challenge in dieser Runde aus',
+);
+addColumn('cassette_members', 'is_admin', 'is_admin INTEGER NOT NULL DEFAULT 0', 'Gruppen-Admin neben der Gruenderin');
+addColumn(
+  'cassette_members',
+  'challenge_muted',
+  'challenge_muted INTEGER NOT NULL DEFAULT 0',
+  'Wochen-Challenge fuer sich in dieser Runde stumm',
+);
 addColumn('profiles', 'album_opt_out', 'album_opt_out INTEGER NOT NULL DEFAULT 0', 'Meine Beiträge nicht in Alben');
 
 /**

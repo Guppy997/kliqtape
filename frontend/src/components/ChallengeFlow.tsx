@@ -46,8 +46,11 @@ export default function ChallengeFlow({
   }, [open, cassetteId]);
 
   const week = status?.current ?? null;
+  // Nur Runden, in denen die Challenge an und fuer mich nicht stumm ist.
+  const openIds = new Set(status?.openCassetteIds ?? []);
+  const targets = cassettes.filter((c) => openIds.has(c.id));
   const shared = new Set(status?.mine?.cassetteIds ?? []);
-  const fresh = [...picked].filter((id) => !shared.has(id));
+  const fresh = [...picked].filter((id) => openIds.has(id) && !shared.has(id));
 
   async function send(blob: Blob, caption: string) {
     const mediaId = await uploadMedia(blob);
@@ -111,7 +114,7 @@ export default function ChallengeFlow({
                 Dein Beitrag ist im Kasten. In welche Kassetten soll er?
               </p>
               <ul className="flex flex-col gap-1.5">
-                {cassettes.map((c) => {
+                {targets.map((c) => {
                   const done = shared.has(c.id);
                   const on = done || picked.has(c.id);
                   return (

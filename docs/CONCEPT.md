@@ -146,6 +146,14 @@ im Tape des Sonntags.
 **Kein Druck:** keine Streaks, keine Zähler und keine Anzeige, wer schon mitgemacht hat — jeder
 Status verrät nur den eigenen Stand.
 
+**Abschalten:** Für eine ganze Runde schalten die **Admins** die Challenge aus — die Gründerin
+(bzw. wer die Kassette übernommen hat) und alle, die sie in der Mitgliederliste zu Admins
+ernennt; die Gründerin bleibt immer Admin. Ausgeschaltet verschwinden Beiträge, die dort noch
+nicht aufgelöst sind, wieder aus dem Band (die Beiträge selbst bleiben und lassen sich anderswo
+ablegen), und neue lassen sich nicht hineinlegen. Zusätzlich kann jede Person die Challenge
+**für sich** in einer Runde stummschalten: Sie sieht sie dort nicht und legt nichts hinein;
+das erfährt niemand.
+
 **Technisch:** `challenge_weeks` (eine Zeile pro Sonntag, vom Kanal geplant), `challenge_entries`
 (der eine Beitrag pro Person und Woche) und `challenge_shares` (wo er liegt). Jede Ablage ist ein
 normaler Seite-A-Beitrag mit `source = 'challenge'`, `develop_at` = Auflösung, `taken_at` =
@@ -317,8 +325,8 @@ Endarchitektur.
 Gekürzt, die vollständige Fassung steht in `backend/src/db.ts`.
 
 ```sql
-cassettes(id, name, created_by, created_at, color_index)
-cassette_members(cassette_id, member, added_by, joined_at)
+cassettes(id, name, created_by, created_at, color_index, challenge_off)
+cassette_members(cassette_id, member, added_by, joined_at, is_admin, challenge_muted)
 cassette_invites(id, cassette_id, invitee, invited_by, created_at)
 reports(id, cassette_id | post_id, reported_by, reason, note, created_at)
 imposter_weeks(id, cassette_id, task_key, imposter, started_by, started_at, reveal_at, revealed_at)
