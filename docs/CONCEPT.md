@@ -169,7 +169,9 @@ Aufnahmedatum aus den Bilddaten des Originals (`lib/exifDate.ts`), *bevor* das N
 alle Metadaten entfernt; verraten sie keins, gibt man Monat und Jahr an. An den Server geht nur
 dieses Datum, nie die EXIF-Daten selbst. Er verlangt mindestens ein Jahr Abstand, prüfen kann er
 das Datum nicht — ein Vertrauenssystem, und so steht es auch in „Was der Server sieht“. Auf dem
-Abzug steht dann das alte Datum im orangen Aufdruck.
+Abzug steht dann das alte Datum im orangen Aufdruck. Bei **Mixtape** legt man ein eigenes,
+versiegeltes Tape ab — gern ein neues „für die Runde“ (Abschnitt 6); nach der Auflösung führt
+statt der Tüte ein Hinweis direkt zu den Tapes im Band.
 
 **Vorführung:** Mit `DEMO_TOOLS=1` kann jede angemeldete Person sofort eine Woche eines
 beliebigen Typs starten und den Sonntagabend vorziehen, um jeden Typ zu zeigen. Im Betrieb
@@ -241,6 +243,11 @@ erst das **Versiegeln** überreicht es, danach ist es unveränderlich.
 Stil einer J-Card: Cover, Titel, von/für, Titelliste, die Widmung als aufgeklebter Zettel. Die
 Karte entsteht im Browser (Canvas, `frontend/src/lib/mixtapeCard.ts`), auf dem Handy über das
 Teilen-Menü („Bild sichern“), sonst als PNG. Der Server ist daran nicht beteiligt.
+
+**Für die Runde:** Für die Wochen-Challenge „Mixtape“ lässt sich ein Tape auch ohne einzelne
+Empfängerin bauen (`to_name = ''`, angezeigt als „für die Runde“) — wer es bekommt, entscheidet
+erst das Ablegen in die Kassetten. Ein geteiltes Tape (Band, Hot Line, Challenge) lässt sich
+nicht mehr löschen; vorher endete das in einem Serverfehler am Fremdschlüssel.
 
 Das Regal ist **persönlich**, nicht an eine Kassette gebunden. Gebaut, verschenkt und angehört
 werden Mixtapes im **Profil** (Reiter „Mixtapes“) — dort lebt die Werkstatt seit v0.45 wieder,

@@ -1,4 +1,4 @@
-import { mediaUrl, type Mixtape } from '@/lib/api';
+import { mediaUrl, recipientOf, type Mixtape } from '@/lib/api';
 import { berlinDateLabel } from '@/lib/berlinDay';
 
 /**
@@ -177,7 +177,7 @@ export async function renderMixtapeCard(tape: Mixtape): Promise<Blob> {
   ctx.font = `500 22px ${MONO}`;
   spaced(ctx, `VON ${tape.from.toUpperCase()}`, tx, ty, 2);
   ty += 34;
-  spaced(ctx, `FÜR ${tape.to.toUpperCase()}`, tx, ty, 2);
+  spaced(ctx, `FÜR ${recipientOf(tape).toUpperCase()}`, tx, ty, 2);
   if (tape.sealedAt) {
     ty += 34;
     spaced(ctx, `VERSIEGELT ${berlinDateLabel(tape.sealedAt)}`, tx, ty, 2);

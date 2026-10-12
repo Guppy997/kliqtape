@@ -268,3 +268,42 @@ describe('Super-8 und Damals', () => {
     expect(post).toMatchObject({ takenAt: then, challenge: { type: 'damals' } });
   });
 });
+
+describe('Mixtape-Challenge', () => {
+  let x: string;
+  let roundTape: string;
+  let draft: string;
+
+  beforeAll(async () => {
+    x = await cassetteWith('ben', ['anna'], 'Mixtaperunde');
+    expect((await api('POST', '/api/challenge/demo', 'ben', { me: BEN, type: 'mixtape' })).status).toBe(201);
+    const t = await api('POST', '/api/mixtapes', 'ben', { from: BEN, forRound: true, title: 'Herbst' });
+    expect(t.status).toBe(201);
+    expect(t.body.to).toBe('');
+    roundTape = t.body.id;
+    await api('POST', `/api/mixtapes/${roundTape}/tracks`, 'ben', { me: BEN, title: 'Autumn Leaves', artist: 'Chet' });
+    expect((await api('POST', `/api/mixtapes/${roundTape}/seal`, 'ben', { me: BEN })).status).toBe(200);
+    draft = (await api('POST', '/api/mixtapes', 'ben', { from: BEN, forRound: true, title: 'Entwurf' })).body.id;
+  });
+
+  it('Fremdes Tape oder ein Entwurf geht nicht', async () => {
+    expect((await api('POST', '/api/challenge/entry', 'cara', { me: CARA, tapeId: roundTape })).status).toBe(403);
+    expect((await api('POST', '/api/challenge/entry', 'ben', { me: BEN, tapeId: draft })).status).toBe(400);
+  });
+
+  it('Ein Tape fuer die Runde landet nach der Aufloesung im Band', async () => {
+    const entry = await api('POST', '/api/challenge/entry', 'ben', { me: BEN, tapeId: roundTape });
+    expect(entry.status).toBe(201);
+    expect(entry.body).toMatchObject({ kind: 'tape', tapeId: roundTape });
+    expect((await api('POST', `/api/cassettes/${x}/challenge/share`, 'ben', { me: BEN })).status).toBe(201);
+    expect((await api('POST', '/api/challenge/demo/release', 'ben', { me: BEN })).status).toBe(200);
+    const feed = await api('GET', `/api/posts?side=a&cassette=${x}&me=${ANNA}`, 'anna');
+    const post = feed.body.find((p: any) => p.source === 'challenge');
+    expect(post).toMatchObject({ kind: 'tape', tapeId: roundTape, tape: { title: 'Herbst' } });
+  });
+
+  it('Ein geteiltes Tape laesst sich nicht mehr loeschen (409 statt Absturz)', async () => {
+    expect((await api('DELETE', `/api/mixtapes/${roundTape}?me=${BEN}`, 'ben')).status).toBe(409);
+    expect((await api('DELETE', `/api/mixtapes/${draft}?me=${BEN}`, 'ben')).status).toBe(204);
+  });
+});

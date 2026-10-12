@@ -10,7 +10,7 @@ import {
   useHotlineChat,
   type ChatMessage,
 } from '@/lib/chat';
-import { fetchMixtapes, mediaUrl, HOTLINE_MAX } from '@/lib/api';
+import { fetchMixtapes, mediaUrl, recipientOf, HOTLINE_MAX } from '@/lib/api';
 import { baseMime, pickAudioMime } from '@/lib/tapeAudio';
 import { useApp } from '@/store/appStore';
 import { useQuote } from '@/store/quoteStore';
@@ -681,7 +681,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                     {t.title}
                   </span>
                   <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
-                    ursprünglich für {t.to} · {t.trackCount}/12
+                    ursprünglich für {recipientOf(t)} · {t.trackCount}/12
                   </span>
                 </span>
               </button>

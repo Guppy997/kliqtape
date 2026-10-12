@@ -11,6 +11,7 @@ import {
   sealMixtape,
   uploadMedia,
   MAX_TRACKS,
+  recipientOf,
 } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import CameraCapture from './CameraCapture';
@@ -109,7 +110,7 @@ export default function TapeEditor({ id, onClose }: Props) {
   return (
     <div className="flex flex-col gap-5">
       <p className="text-2xs" style={{ color: 'var(--dim)' }}>
-        Entwurf für {tape.to} · {tape.tracks.length}/{MAX_TRACKS} Titel
+        Entwurf für {recipientOf(tape)} · {tape.tracks.length}/{MAX_TRACKS} Titel
       </p>
 
       {/* --- J-Card: Cover, Titel, Widmung --- */}
@@ -271,7 +272,7 @@ export default function TapeEditor({ id, onClose }: Props) {
           type="button"
           disabled={tape.tracks.length === 0 || !(title ?? tape.title).trim() || seal.isPending}
           onClick={() =>
-            confirm(`Tape versiegeln und ${tape.to} überreichen? Danach lässt es sich nicht mehr ändern.`) &&
+            confirm(`Tape versiegeln und ${recipientOf(tape)} überreichen? Danach lässt es sich nicht mehr ändern.`) &&
             seal.mutate()
           }
           className="flex-1 rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"

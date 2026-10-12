@@ -10,6 +10,7 @@ import {
   NOTE_STYLES,
   type Kind,
   type NoteStyle,
+  recipientOf,
 } from '@/lib/api';
 import { filmReleaseLabel } from '@/lib/berlinDay';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
@@ -260,7 +261,7 @@ export default function Composer({ onPosted }: Props) {
                     {t.title}
                   </span>
                   <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
-                    ursprünglich für {t.to} · {t.trackCount}/12
+                    ursprünglich für {recipientOf(t)} · {t.trackCount}/12
                   </span>
                 </span>
               </button>

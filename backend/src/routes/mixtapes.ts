@@ -114,16 +114,20 @@ mixtapesRouter.post('/api/mixtapes', (req, res) => {
     .trim()
     .slice(0, 60);
 
+  // forRound: ein Tape fuer die Runde statt fuer eine Person (to_name = ''),
+  // gebaut fuer die Wochen-Challenge "Mixtape" — wer es bekommt, entscheidet
+  // erst das Teilen in die Kassetten.
+  const forRound = req.body?.forRound === true;
   if (!from) throw new HttpError(400, 'Absender fehlt');
-  if (!to) throw new HttpError(400, 'Für wen ist das Tape?');
-  if (from === to) throw new HttpError(400, 'Ein Mixtape macht man für jemand anderen');
+  if (!forRound && !to) throw new HttpError(400, 'Für wen ist das Tape?');
+  if (!forRound && from === to) throw new HttpError(400, 'Ein Mixtape macht man für jemand anderen');
   requireIdentity(req, from);
 
   const id = randomUUID();
   db.prepare(`INSERT INTO mixtapes (id, from_name, to_name, title, created_at) VALUES (?, ?, ?, ?, ?)`).run(
     id,
     from,
-    to,
+    forRound ? '' : to,
     title,
     Date.now(),
   );
@@ -213,6 +217,16 @@ mixtapesRouter.post('/api/mixtapes/:id/seal', (req, res) => {
 
 mixtapesRouter.delete('/api/mixtapes/:id', (req, res) => {
   const tape = requireTapeOwner(req, req.params.id);
+  // Geteilt (Band, Hot Line, Wochen-Challenge) haengt es an Beitraegen anderer
+  // Leute — frueher endete das Loeschen hier in einem 500er am Fremdschluessel.
+  const shared = db
+    .prepare(
+      `SELECT 1 WHERE EXISTS (SELECT 1 FROM posts WHERE tape_id = ?)
+          OR EXISTS (SELECT 1 FROM hotline_messages WHERE tape_id = ?)
+          OR EXISTS (SELECT 1 FROM challenge_entries WHERE tape_id = ?)`,
+    )
+    .get(tape.id, tape.id, tape.id);
+  if (shared) throw new HttpError(409, 'Das Tape ist geteilt — so lässt es sich nicht mehr löschen');
   db.prepare(`DELETE FROM mixtapes WHERE id = ?`).run(tape.id);
   if (tape.cover_id) dropMedia(tape.cover_id);
   res.status(204).end();

@@ -13,6 +13,7 @@ import { useApp } from '@/store/appStore';
 import CameraCapture from './CameraCapture';
 import { MiniCassette, useCassettes, useLookIndex } from './CassetteDeck';
 import DamalsPicker from './DamalsPicker';
+import MixtapePick from './MixtapePick';
 import Sheet from './Sheet';
 
 /**
@@ -111,7 +112,14 @@ export default function ChallengeFlow({
               <p className="text-sm" style={{ color: 'var(--ink)' }}>
                 {CHALLENGE_TYPE_HINT[week.type]}
               </p>
-              {week.type === 'damals' ? (
+              {week.type === 'mixtape' ? (
+                <MixtapePick
+                  onPick={async (tapeId) => {
+                    await createChallengeEntry(me, { tapeId });
+                    await refetch();
+                  }}
+                />
+              ) : week.type === 'damals' ? (
                 <DamalsPicker onSend={(blob, caption, takenAt) => send(blob, caption, undefined, takenAt)} />
               ) : (
                 // Foto und Super-8 nur mit der Kamera — der Moment, nicht das Archiv.

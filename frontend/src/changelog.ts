@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.53.0',
+    date: '2026-10-12',
+    changes: [
+      'Neuer Challenge-Typ Mixtape: eins deiner versiegelten Tapes — oder ein neues, gebaut für die Runde statt für eine Person',
+      'Nach der Auflösung führt ein Tipp direkt zu den Mixtapes der Woche im Band',
+      'Ein geteiltes Mixtape lässt sich nicht mehr löschen — vorher gab es dabei einen Fehler',
+    ],
+  },
+  {
     version: '0.52.0',
     date: '2026-10-12',
     changes: [

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchMixtape, mediaUrl, platformOf, saveBlob, type Mixtape } from '@/lib/api';
+import { fetchMixtape, mediaUrl, platformOf, recipientOf, saveBlob, type Mixtape } from '@/lib/api';
 import { renderMixtapeCard } from '@/lib/mixtapeCard';
 import { useApp } from '@/store/appStore';
 
@@ -49,7 +49,9 @@ export default function TapeView({ id }: Props) {
           </div>
         )}
         <p className="font-hand mt-2 px-1 text-center text-[1.15rem] leading-tight text-[#3B3226]">{tape.title}</p>
-        <p className="mt-1 text-center text-2xs text-[#3B3226]/60">{mine ? `für ${tape.to}` : `von ${tape.from}`}</p>
+        <p className="mt-1 text-center text-2xs text-[#3B3226]/60">
+          {mine ? `für ${recipientOf(tape)}` : `von ${tape.from}`}
+        </p>
       </div>
 
       {tape.note && (

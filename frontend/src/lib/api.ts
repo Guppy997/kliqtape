@@ -359,12 +359,13 @@ export function fetchFeed(cassetteId: string, side: Side, me: string): Promise<F
  * der Server nichts davon heraus (backend/src/routes/challenge.ts). Jeder
  * Status verraet nur den eigenen Stand — keine Streaks, keine Zaehler. */
 
-export type ChallengeType = 'photo' | 'super8' | 'damals';
+export type ChallengeType = 'photo' | 'super8' | 'damals' | 'mixtape';
 
 export const CHALLENGE_TYPE_LABEL: Record<ChallengeType, string> = {
   photo: 'Foto zum Thema',
   super8: 'Super-8',
   damals: 'Damals',
+  mixtape: 'Mixtape',
 };
 
 /** Ein Satz, was bei diesem Typ verlangt ist. */
@@ -372,6 +373,7 @@ export const CHALLENGE_TYPE_HINT: Record<ChallengeType, string> = {
   photo: 'Ein Foto, nur mit der Kamera — der Moment, nicht das Archiv.',
   super8: 'Ein Clip, höchstens 10 Sekunden, nur mit der Kamera.',
   damals: 'Ein Foto aus deiner Galerie, das mindestens ein Jahr alt ist.',
+  mixtape: 'Ein Mixtape für die Runde — eins deiner versiegelten oder ein neues.',
 };
 
 export interface ChallengeWeek {
@@ -432,7 +434,7 @@ export function fetchCassetteChallenge(cassetteId: string, me: string): Promise<
 
 export function createChallengeEntry(
   me: string,
-  input: { mediaId?: string; caption?: string; takenAt?: number },
+  input: { mediaId?: string; caption?: string; takenAt?: number; tapeId?: string },
 ): Promise<ChallengeEntry> {
   return apiFetch('/api/challenge/entry', {
     method: 'POST',
@@ -837,12 +839,19 @@ export function fetchMixtape(id: string, me: string): Promise<Mixtape> {
   return apiFetch(`/api/mixtapes/${id}?me=${encodeURIComponent(me)}`).then(unwrap<Mixtape>);
 }
 
-export function createMixtape(from: string, to: string, title: string): Promise<Mixtape> {
+/** `to` leer und `forRound`: ein Tape fuer die Runde statt fuer eine Person
+ *  (Wochen-Challenge "Mixtape"). */
+export function createMixtape(from: string, to: string, title: string, forRound = false): Promise<Mixtape> {
   return apiFetch('/api/mixtapes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to, title }),
+    body: JSON.stringify({ from, to, title, forRound }),
   }).then(unwrap<Mixtape>);
+}
+
+/** Fuer wen ein Tape ist — "die Runde", wenn es fuer keine einzelne Person ist. */
+export function recipientOf(tape: { to: string }): string {
+  return tape.to || 'die Runde';
 }
 
 /* Alle veraendernden Tape-Aufrufe schicken `me` mit — der Server prueft

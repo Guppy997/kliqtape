@@ -16,6 +16,7 @@ import {
 } from '@/lib/api';
 import { filmReleaseLabel, filmStampLabel, takenLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
+import { jumpTo } from '@/store/jumpStore';
 import ChallengeFlow from './ChallengeFlow';
 import KindIcon from './KindIcon';
 import PlusMark from './PlusMark';
@@ -46,7 +47,7 @@ const KRAFT_DEEP = '#A9895B';
 const KRAFT_INK = '#3B2E1E';
 
 /** Typen, die sich in der Demo sofort starten lassen. */
-const DEMO_TYPES: ChallengeType[] = ['photo', 'super8', 'damals'];
+const DEMO_TYPES: ChallengeType[] = ['photo', 'super8', 'damals', 'mixtape'];
 
 /**
  * Die Wochen-Challenge auf Seite A dieser Kassette. Laeuft eine, steht sie
@@ -82,7 +83,10 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
   if (!data) return null;
   const { current, mine, developed, demoTools, off, muted } = data;
   const photos = developed?.shots.filter((s) => s.mediaId) ?? [];
-  const bagWaiting = developed && photos.length > 0 && openedWeek(cassette.id) !== developed.id;
+  const unopened = Boolean(developed) && openedWeek(cassette.id) !== developed?.id;
+  const bagWaiting = developed && unopened && photos.length > 0;
+  const tapes = developed?.shots.filter((s) => s.tapeId) ?? [];
+  const tapesWaiting = developed && unopened && tapes.length > 0;
 
   function closeReveal() {
     if (developed) markOpened(cassette.id, developed.id);
@@ -139,6 +143,36 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
               style={{ background: KRAFT, color: KRAFT_INK }}
             >
               Tüte öffnen
+            </span>
+          </span>
+        </button>
+      )}
+
+      {tapesWaiting && (
+        // Mixtape-Woche: keine Tuete, die Tapes liegen schon als Beitraege im
+        // Band — ein Tipp springt zum ersten.
+        <button
+          type="button"
+          onClick={() => {
+            markOpened(cassette.id, developed.id);
+            rerender((n) => n + 1);
+            jumpTo(tapes[0]!.id);
+          }}
+          className="rise my-3 flex items-center gap-4 rounded-xl p-3.5 text-left"
+          style={{ background: 'var(--card)', border: `1px solid ${KRAFT}` }}
+        >
+          <span
+            className="grid size-12 shrink-0 place-items-center rounded-lg"
+            style={{ background: KRAFT, color: KRAFT_INK }}
+          >
+            <KindIcon kind="tape" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-base leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
+              Die Mixtapes der Woche sind da.
+            </span>
+            <span className="mt-0.5 block text-meta" style={{ color: 'var(--dim)' }}>
+              „{developed.theme}“ · von {namesOf(tapes, me)}
             </span>
           </span>
         </button>
@@ -230,6 +264,8 @@ export function TypeIcon({ type }: { type: ChallengeType }) {
       return <KindIcon kind="photo" />;
     case 'super8':
       return <KindIcon kind="video" />;
+    case 'mixtape':
+      return <KindIcon kind="tape" />;
     case 'damals':
       // Ein eingeklebter Abzug mit Fotoecken — wie im alten Album.
       return (

@@ -25,7 +25,7 @@ import { filmReleaseAfter } from '../time.js';
 export const challengeRouter = Router();
 
 /** Welche Typen es gibt — waechst mit jeder Ausbaustufe. */
-export const CHALLENGE_TYPES = ['photo', 'super8', 'damals'] as const;
+export const CHALLENGE_TYPES = ['photo', 'super8', 'damals', 'mixtape'] as const;
 export type ChallengeType = (typeof CHALLENGE_TYPES)[number];
 
 /** Thema, wenn eine Demo-Woche ohne eigenes angelegt wird. */
@@ -33,6 +33,7 @@ const DEMO_THEMES: Record<ChallengeType, string> = {
   photo: 'Etwas, das gerade Sonne abbekommt',
   super8: 'Zehn Sekunden von deinem Lieblingsgeräusch',
   damals: 'Ein Ort, der dir fehlt',
+  mixtape: 'Lieder für den Herbst',
 };
 
 /** Super-8: so lang darf der Clip sein — die gemeldete Dauer kommt vom Handy
@@ -251,6 +252,7 @@ challengeRouter.post('/api/challenge/entry', (req, res) => {
   const now = Date.now();
   let kind: string;
   let takenAt = now;
+  let tapeId: string | null = null;
   /** Frisch hochgeladen und nirgends sonst in Gebrauch — sonst liesse sich ein
    *  fremdes, sichtbares Medium per ID bis Sonntag sperren. */
   const freshMedia = (allowed: (mime: string) => boolean, wrong: string): void => {
@@ -287,6 +289,18 @@ challengeRouter.post('/api/challenge/entry', (req, res) => {
       takenAt = at;
       break;
     }
+    case 'mixtape': {
+      // Ein eigenes, versiegeltes Tape — gern eins "fuer die Runde".
+      kind = 'tape';
+      tapeId = String(req.body?.tapeId ?? '').trim();
+      if (!tapeId) throw new HttpError(400, 'Welches Mixtape?');
+      const tape = db.prepare(`SELECT from_name, sealed_at FROM mixtapes WHERE id = ?`).get(tapeId) as
+        { from_name: string; sealed_at: number | null } | undefined;
+      if (!tape) throw new HttpError(404, 'Mixtape nicht gefunden');
+      if (tape.from_name !== me) throw new HttpError(403, 'Das ist nicht dein Mixtape');
+      if (!tape.sealed_at) throw new HttpError(400, 'Erst versiegeln, dann mitmachen');
+      break;
+    }
     default:
       throw new HttpError(400, 'Unbekannter Challenge-Typ');
   }
@@ -294,8 +308,8 @@ challengeRouter.post('/api/challenge/entry', (req, res) => {
   const id = randomUUID();
   db.prepare(
     `INSERT INTO challenge_entries (id, week_id, author, kind, body, media_id, tape_id, taken_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)`,
-  ).run(id, week.id, me, kind, caption, mediaId || null, takenAt, now);
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(id, week.id, me, kind, caption, mediaId || null, tapeId, takenAt, now);
   res.status(201).json(shapeEntry(myEntry(week.id, me)!));
 });
 

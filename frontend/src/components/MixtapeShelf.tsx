@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createMixtape, fetchMixtapes, mediaUrl, type Mixtape } from '@/lib/api';
+import { createMixtape, fetchMixtapes, mediaUrl, recipientOf, type Mixtape } from '@/lib/api';
 import { useApp } from '@/store/appStore';
 import Avatar, { useProfiles } from './Avatar';
 import Sheet from './Sheet';
@@ -239,7 +239,8 @@ function Group({
                 {t.title || 'Ohne Titel'}
               </span>
               <span className="block truncate text-2xs" style={{ color: 'var(--dim)' }}>
-                {draft ? `für ${t.to}` : t.from === t.to ? '' : `von ${t.from} · für ${t.to}`} · {t.trackCount}/12
+                {draft ? `für ${recipientOf(t)}` : t.from === t.to ? '' : `von ${t.from} · für ${recipientOf(t)}`} ·{' '}
+                {t.trackCount}/12
               </span>
             </span>
 
