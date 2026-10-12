@@ -359,10 +359,19 @@ export function fetchFeed(cassetteId: string, side: Side, me: string): Promise<F
  * der Server nichts davon heraus (backend/src/routes/challenge.ts). Jeder
  * Status verraet nur den eigenen Stand — keine Streaks, keine Zaehler. */
 
-export type ChallengeType = 'photo';
+export type ChallengeType = 'photo' | 'super8' | 'damals';
 
 export const CHALLENGE_TYPE_LABEL: Record<ChallengeType, string> = {
   photo: 'Foto zum Thema',
+  super8: 'Super-8',
+  damals: 'Damals',
+};
+
+/** Ein Satz, was bei diesem Typ verlangt ist. */
+export const CHALLENGE_TYPE_HINT: Record<ChallengeType, string> = {
+  photo: 'Ein Foto, nur mit der Kamera — der Moment, nicht das Archiv.',
+  super8: 'Ein Clip, höchstens 10 Sekunden, nur mit der Kamera.',
+  damals: 'Ein Foto aus deiner Galerie, das mindestens ein Jahr alt ist.',
 };
 
 export interface ChallengeWeek {
@@ -423,7 +432,7 @@ export function fetchCassetteChallenge(cassetteId: string, me: string): Promise<
 
 export function createChallengeEntry(
   me: string,
-  input: { mediaId?: string; caption?: string },
+  input: { mediaId?: string; caption?: string; takenAt?: number },
 ): Promise<ChallengeEntry> {
   return apiFetch('/api/challenge/entry', {
     method: 'POST',

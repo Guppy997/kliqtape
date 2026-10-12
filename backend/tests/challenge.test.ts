@@ -226,3 +226,45 @@ describe('Wochen-Challenge abschalten', () => {
     expect(JSON.stringify(dora.body)).not.toContain(EMIL);
   });
 });
+
+describe('Super-8 und Damals', () => {
+  let x: string;
+  const YEAR = 365 * 86_400_000;
+
+  beforeAll(async () => {
+    x = await cassetteWith('dora', ['emil'], 'Typenrunde');
+  });
+
+  it('Super-8: nur ein Clip, hoechstens 10 Sekunden', async () => {
+    expect((await api('POST', '/api/challenge/demo', 'dora', { me: DORA, type: 'super8' })).status).toBe(201);
+    const photo = await upload('dora');
+    expect((await api('POST', '/api/challenge/entry', 'dora', { me: DORA, mediaId: photo.body.id })).status).toBe(400);
+    const long = await upload('dora', 'video/webm', 12_000);
+    expect((await api('POST', '/api/challenge/entry', 'dora', { me: DORA, mediaId: long.body.id })).status).toBe(400);
+    const clip = await upload('dora', 'video/webm', 9_000);
+    const ok = await api('POST', '/api/challenge/entry', 'dora', { me: DORA, mediaId: clip.body.id });
+    expect(ok.status).toBe(201);
+    expect(ok.body.kind).toBe('video');
+  });
+
+  it('Damals: mindestens ein Jahr alt, das Datum steht dann am Abzug', async () => {
+    expect((await api('POST', '/api/challenge/demo', 'emil', { me: EMIL, type: 'damals' })).status).toBe(201);
+    const m = await upload('emil');
+    const young = await api('POST', '/api/challenge/entry', 'emil', {
+      me: EMIL,
+      mediaId: m.body.id,
+      takenAt: Date.now() - 30 * 86_400_000,
+    });
+    expect(young.status).toBe(400);
+    expect((await api('POST', '/api/challenge/entry', 'emil', { me: EMIL, mediaId: m.body.id })).status).toBe(400);
+
+    const then = Date.now() - 3 * YEAR;
+    const ok = await api('POST', '/api/challenge/entry', 'emil', { me: EMIL, mediaId: m.body.id, takenAt: then });
+    expect(ok.status).toBe(201);
+    expect((await api('POST', `/api/cassettes/${x}/challenge/share`, 'emil', { me: EMIL })).status).toBe(201);
+    expect((await api('POST', '/api/challenge/demo/release', 'emil', { me: EMIL })).status).toBe(200);
+    const feed = await api('GET', `/api/posts?side=a&cassette=${x}&me=${DORA}`, 'dora');
+    const post = feed.body.find((p: any) => p.source === 'challenge');
+    expect(post).toMatchObject({ takenAt: then, challenge: { type: 'damals' } });
+  });
+});

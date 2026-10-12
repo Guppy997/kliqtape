@@ -47,10 +47,18 @@ export async function api<T = any>(
 }
 
 /** Laedt ein winziges Bild hoch — Inhalt egal, der Server prueft nur den Typ. */
-export async function upload(as: Person | null, mime = 'image/jpeg'): Promise<ApiResult<{ id: string }>> {
+export async function upload(
+  as: Person | null,
+  mime = 'image/jpeg',
+  durationMs?: number,
+): Promise<ApiResult<{ id: string }>> {
   const res = await fetch(inject('baseUrl') + '/api/media', {
     method: 'POST',
-    headers: { 'Content-Type': mime, ...(as ? { 'X-Auth-Token': token(as) } : {}) },
+    headers: {
+      'Content-Type': mime,
+      ...(as ? { 'X-Auth-Token': token(as) } : {}),
+      ...(durationMs != null ? { 'X-Duration-Ms': String(durationMs) } : {}),
+    },
     body: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]),
   });
   const text = await res.text();

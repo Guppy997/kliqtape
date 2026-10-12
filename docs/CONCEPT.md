@@ -163,7 +163,13 @@ filtern ihn deshalb bis zur Freigabe genauso heraus wie früher den Film, und `G
 kann jetzt in mehreren Kassetten hängen; `dropMedia` räumt eine Datei erst weg, wenn nichts mehr
 darauf zeigt. Ein Beitrag nimmt nur frisch hochgeladene Bilder an, sonst ließe sich ein fremdes,
 sichtbares Foto per ID bis Sonntag sperren. „Nur Kamera“ kann der Server nicht prüfen — die App
-bietet dort schlicht keine Galerie an.
+bietet dort schlicht keine Galerie an. Bei **Super-8** prüft er die Länge anhand der Dauer, die
+das Handy beim Hochladen meldet (höchstens 10 s). Bei **Damals** liest das Handy das
+Aufnahmedatum aus den Bilddaten des Originals (`lib/exifDate.ts`), *bevor* das Neu-Kodieren
+alle Metadaten entfernt; verraten sie keins, gibt man Monat und Jahr an. An den Server geht nur
+dieses Datum, nie die EXIF-Daten selbst. Er verlangt mindestens ein Jahr Abstand, prüfen kann er
+das Datum nicht — ein Vertrauenssystem, und so steht es auch in „Was der Server sieht“. Auf dem
+Abzug steht dann das alte Datum im orangen Aufdruck.
 
 **Vorführung:** Mit `DEMO_TOOLS=1` kann jede angemeldete Person sofort eine Woche eines
 beliebigen Typs starten und den Sonntagabend vorziehen, um jeden Typ zu zeigen. Im Betrieb

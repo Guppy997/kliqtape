@@ -25,13 +25,21 @@ import { filmReleaseAfter } from '../time.js';
 export const challengeRouter = Router();
 
 /** Welche Typen es gibt — waechst mit jeder Ausbaustufe. */
-export const CHALLENGE_TYPES = ['photo'] as const;
+export const CHALLENGE_TYPES = ['photo', 'super8', 'damals'] as const;
 export type ChallengeType = (typeof CHALLENGE_TYPES)[number];
 
 /** Thema, wenn eine Demo-Woche ohne eigenes angelegt wird. */
 const DEMO_THEMES: Record<ChallengeType, string> = {
   photo: 'Etwas, das gerade Sonne abbekommt',
+  super8: 'Zehn Sekunden von deinem Lieblingsgeräusch',
+  damals: 'Ein Ort, der dir fehlt',
 };
+
+/** Super-8: so lang darf der Clip sein — die gemeldete Dauer kommt vom Handy
+ *  (x-duration-ms beim Hochladen), der Server misst nicht selbst nach. */
+const SUPER8_MAX_MS = 10_500;
+/** Damals: mindestens so alt muss das Foto sein. */
+const DAMALS_MIN_AGE_MS = 365 * 86_400_000;
 
 function isType(t: unknown): t is ChallengeType {
   return (CHALLENGE_TYPES as readonly unknown[]).includes(t);
@@ -242,17 +250,41 @@ challengeRouter.post('/api/challenge/entry', (req, res) => {
   const mediaId = String(req.body?.mediaId ?? '').trim();
   const now = Date.now();
   let kind: string;
+  let takenAt = now;
+  /** Frisch hochgeladen und nirgends sonst in Gebrauch — sonst liesse sich ein
+   *  fremdes, sichtbares Medium per ID bis Sonntag sperren. */
+  const freshMedia = (allowed: (mime: string) => boolean, wrong: string): void => {
+    if (!mediaId) throw new HttpError(400, 'Aufnahme fehlt');
+    const media = db.prepare(`SELECT mime, duration_ms FROM media WHERE id = ?`).get(mediaId) as
+      { mime: string; duration_ms: number | null } | undefined;
+    if (!media) throw new HttpError(400, 'Medium unbekannt');
+    if (!allowed(media.mime)) throw new HttpError(400, wrong);
+    if (mediaInUse(mediaId)) throw new HttpError(400, 'Dieses Medium hängt schon woanders');
+    if (week.type === 'super8' && (media.duration_ms ?? 0) > SUPER8_MAX_MS) {
+      throw new HttpError(400, 'Super-8 heißt höchstens 10 Sekunden');
+    }
+  };
 
   switch (week.type) {
-    case 'photo': {
+    case 'photo':
       // Nur Kamera — pruefbar ist das auf dem Server nicht, die App bietet
       // hier schlicht keine Galerie an (wie frueher beim Film).
       kind = 'photo';
-      if (!mediaId) throw new HttpError(400, 'Aufnahme fehlt');
-      const media = db.prepare(`SELECT mime FROM media WHERE id = ?`).get(mediaId) as { mime: string } | undefined;
-      if (!media) throw new HttpError(400, 'Medium unbekannt');
-      if (!PHOTO_MIME.includes(media.mime)) throw new HttpError(400, 'Hier passt nur ein Foto');
-      if (mediaInUse(mediaId)) throw new HttpError(400, 'Dieses Bild hängt schon woanders');
+      freshMedia((m) => PHOTO_MIME.includes(m), 'Hier passt nur ein Foto');
+      break;
+    case 'super8':
+      kind = 'video';
+      freshMedia((m) => m.startsWith('video/'), 'Hier passt nur ein Clip');
+      break;
+    case 'damals': {
+      // Das Aufnahmedatum liest das Handy aus den Bilddaten (oder man gibt es
+      // an) — ein Vertrauenssystem, der Server kann es nicht nachpruefen.
+      kind = 'photo';
+      freshMedia((m) => PHOTO_MIME.includes(m), 'Hier passt nur ein Foto');
+      const at = Number(req.body?.takenAt);
+      if (!Number.isFinite(at) || at < Date.UTC(1900, 0, 1)) throw new HttpError(400, 'Wann war das?');
+      if (at > now - DAMALS_MIN_AGE_MS) throw new HttpError(400, 'Das Foto muss mindestens ein Jahr alt sein');
+      takenAt = at;
       break;
     }
     default:
@@ -263,7 +295,7 @@ challengeRouter.post('/api/challenge/entry', (req, res) => {
   db.prepare(
     `INSERT INTO challenge_entries (id, week_id, author, kind, body, media_id, tape_id, taken_at, created_at)
      VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)`,
-  ).run(id, week.id, me, kind, caption, mediaId || null, now, now);
+  ).run(id, week.id, me, kind, caption, mediaId || null, takenAt, now);
   res.status(201).json(shapeEntry(myEntry(week.id, me)!));
 });
 

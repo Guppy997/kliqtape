@@ -4,6 +4,7 @@ import {
   mediaUrl,
   sendTonfetzen,
   uploadMedia,
+  CHALLENGE_TYPE_LABEL,
   KIND_LABEL,
   type FeedItem,
   type Tonfetzen,
@@ -151,7 +152,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
             {item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}
             <p className="mt-1 text-center text-2xs text-[#3B3226]/60">
               {item.source === 'challenge'
-                ? `Challenge${item.challenge?.theme ? ` · „${item.challenge.theme}“` : ''}`
+                ? `${item.challenge ? CHALLENGE_TYPE_LABEL[item.challenge.type] : 'Challenge'}${item.challenge?.theme ? ` · „${item.challenge.theme}“` : ''}`
                 : `Film${item.takenAt ? ` · belichtet ${takenLabel(item.takenAt)}` : ''}`}
             </p>
           </div>
@@ -179,7 +180,30 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
           </figure>
         )}
 
-        {item.kind === 'video' && item.mediaId && (
+        {/* Super-8 aus der Wochen-Challenge: ein Filmstreifen mit Perforation. */}
+        {item.kind === 'video' && item.mediaId && item.source === 'challenge' && (
+          <figure className="mx-auto w-full max-w-[17rem]">
+            <div
+              className="rounded-sm px-4 py-2"
+              style={{
+                background: '#141210',
+                backgroundImage:
+                  'repeating-linear-gradient(180deg, #2E2A25 0 6px, transparent 6px 14px), repeating-linear-gradient(180deg, #2E2A25 0 6px, transparent 6px 14px)',
+                backgroundSize: '8px 100%, 8px 100%',
+                backgroundPosition: '4px 0, calc(100% - 4px) 0',
+                backgroundRepeat: 'no-repeat',
+              }}
+            >
+              <video src={mediaUrl(item.mediaId)} controls playsInline preload="metadata" className="w-full" />
+            </div>
+            <figcaption className="mt-1.5 text-center text-2xs" style={{ color: 'var(--dim)' }}>
+              Super-8{item.challenge?.theme ? ` · „${item.challenge.theme}“` : ''}
+              {item.body ? ` — ${item.body}` : ''}
+            </figcaption>
+          </figure>
+        )}
+
+        {item.kind === 'video' && item.mediaId && item.source !== 'challenge' && (
           <div className="print mx-auto w-full max-w-[17rem]">
             <video src={mediaUrl(item.mediaId)} controls playsInline preload="metadata" />
             {item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}

@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.52.0',
+    date: '2026-10-12',
+    changes: [
+      'Neuer Challenge-Typ Super-8: ein Clip, höchstens 10 Sekunden, nur mit der Kamera — im Band als Filmstreifen',
+      'Neuer Challenge-Typ Damals: ein Foto aus der Galerie, mindestens ein Jahr alt — das Datum steht danach im orangen Aufdruck',
+      'Das Aufnahmedatum liest dein Handy aus dem Foto; an den Server geht nur dieses Datum, nie die Bilddaten',
+    ],
+  },
+  {
     version: '0.51.0',
     date: '2026-10-12',
     changes: [

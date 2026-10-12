@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CHALLENGE_TYPE_LABEL, createChallengeEntry, fetchChallenge, shareChallenge, uploadMedia } from '@/lib/api';
+import {
+  CHALLENGE_TYPE_HINT,
+  CHALLENGE_TYPE_LABEL,
+  createChallengeEntry,
+  fetchChallenge,
+  shareChallenge,
+  uploadMedia,
+} from '@/lib/api';
 import { filmReleaseLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import CameraCapture from './CameraCapture';
 import { MiniCassette, useCassettes, useLookIndex } from './CassetteDeck';
+import DamalsPicker from './DamalsPicker';
 import Sheet from './Sheet';
 
 /**
@@ -52,9 +60,9 @@ export default function ChallengeFlow({
   const shared = new Set(status?.mine?.cassetteIds ?? []);
   const fresh = [...picked].filter((id) => openIds.has(id) && !shared.has(id));
 
-  async function send(blob: Blob, caption: string) {
-    const mediaId = await uploadMedia(blob);
-    await createChallengeEntry(me, { mediaId, caption });
+  async function send(blob: Blob, caption: string, durationMs?: number, takenAt?: number) {
+    const mediaId = await uploadMedia(blob, durationMs);
+    await createChallengeEntry(me, { mediaId, caption, takenAt });
     await refetch();
   }
 
@@ -99,15 +107,24 @@ export default function ChallengeFlow({
           </div>
 
           {!status.mine ? (
-            // Nur Kamera — der Moment, nicht das Archiv (wie frueher der Film).
-            <CameraCapture
-              mode="photo"
-              allowUpload={false}
-              sendLabel="Weiter"
-              title="Challenge"
-              onCancel={onClose}
-              onSend={(blob, _ms, caption) => send(blob, caption)}
-            />
+            <>
+              <p className="text-sm" style={{ color: 'var(--ink)' }}>
+                {CHALLENGE_TYPE_HINT[week.type]}
+              </p>
+              {week.type === 'damals' ? (
+                <DamalsPicker onSend={(blob, caption, takenAt) => send(blob, caption, undefined, takenAt)} />
+              ) : (
+                // Foto und Super-8 nur mit der Kamera — der Moment, nicht das Archiv.
+                <CameraCapture
+                  mode={week.type === 'super8' ? 'video' : 'photo'}
+                  allowUpload={false}
+                  sendLabel="Weiter"
+                  title={CHALLENGE_TYPE_LABEL[week.type]}
+                  onCancel={onClose}
+                  onSend={(blob, ms, caption) => send(blob, caption, ms)}
+                />
+              )}
+            </>
           ) : (
             <>
               <p className="text-sm" style={{ color: 'var(--ink)' }}>

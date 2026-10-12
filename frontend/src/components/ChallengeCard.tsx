@@ -46,7 +46,7 @@ const KRAFT_DEEP = '#A9895B';
 const KRAFT_INK = '#3B2E1E';
 
 /** Typen, die sich in der Demo sofort starten lassen. */
-const DEMO_TYPES: ChallengeType[] = ['photo'];
+const DEMO_TYPES: ChallengeType[] = ['photo', 'super8', 'damals'];
 
 /**
  * Die Wochen-Challenge auf Seite A dieser Kassette. Laeuft eine, steht sie
@@ -228,6 +228,25 @@ export function TypeIcon({ type }: { type: ChallengeType }) {
   switch (type) {
     case 'photo':
       return <KindIcon kind="photo" />;
+    case 'super8':
+      return <KindIcon kind="video" />;
+    case 'damals':
+      // Ein eingeklebter Abzug mit Fotoecken — wie im alten Album.
+      return (
+        <svg
+          width="16"
+          height="14"
+          viewBox="0 0 16 14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.3"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="1.5" y="1.5" width="13" height="11" rx="0.6" />
+          <path d="M1.5 4.5 4.5 1.5M11.5 1.5l3 3M14.5 9.5l-3 3M4.5 12.5l-3-3" />
+        </svg>
+      );
   }
 }
 
@@ -323,7 +342,17 @@ function BagReveal({ shots, at, onClose }: { shots: ChallengeShot[]; at: number;
                 transition: `transform 900ms cubic-bezier(.2,.8,.25,1) ${650 + i * 110}ms`,
               }}
             >
-              <img src={mediaUrl(s.mediaId!)} alt="" className="block aspect-square w-full object-cover" />
+              {s.kind === 'video' ? (
+                <video
+                  src={mediaUrl(s.mediaId!)}
+                  muted
+                  playsInline
+                  preload="metadata"
+                  className="block aspect-square w-full object-cover"
+                />
+              ) : (
+                <img src={mediaUrl(s.mediaId!)} alt="" className="block aspect-square w-full object-cover" />
+              )}
             </div>
           ))}
           {/* Vorderseite mit aufgedrucktem Etikett */}
@@ -378,11 +407,24 @@ function BagReveal({ shots, at, onClose }: { shots: ChallengeShot[]; at: number;
             style={{ transform: `rotate(${index % 2 === 0 ? -1 : 0.8}deg)` }}
           >
             <div className="relative">
-              <img
-                src={mediaUrl(shot.mediaId!)}
-                alt={shot.caption || `Abzug von ${shot.author}`}
-                className="aspect-square object-cover"
-              />
+              {shot.kind === 'video' ? (
+                // Super-8: laeuft stumm in Schleife, Ton auf Wunsch ueber die Steuerung.
+                <video
+                  src={mediaUrl(shot.mediaId!)}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controls
+                  className="aspect-square w-full object-cover"
+                />
+              ) : (
+                <img
+                  src={mediaUrl(shot.mediaId!)}
+                  alt={shot.caption || `Abzug von ${shot.author}`}
+                  className="aspect-square object-cover"
+                />
+              )}
               <span
                 className="font-mono absolute bottom-2 right-2.5 text-[0.8rem] font-bold tracking-[0.12em]"
                 style={{ color: '#FF9A3C', textShadow: '0 0 4px rgba(255,120,30,.7)' }}
