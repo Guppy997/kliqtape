@@ -19,8 +19,11 @@ interface FeedItem extends Omit<
   'media_id' | 'tape_id' | 'cassette_id' | 'expires_at' | 'note_style' | 'quoted_post_id' | 'develop_at' | 'taken_at'
 > {
   cassetteId: string;
-  /** Nur beim Film: wann wirklich belichtet wurde (created_at ist die Freigabe). */
+  /** Film und Wochen-Challenge: wann wirklich aufgenommen wurde (created_at
+   *  ist die Freigabe). */
   takenAt: number | null;
+  /** Beitrag zur Wochen-Challenge: Typ und Thema der Woche. */
+  challenge: { type: string; theme: string } | null;
   /** Beitrag aus einer Imposter-Woche: 'entry' vor der Aufloesung, danach
    *  'imposter' oder 'crew'. */
   imposterMark: 'entry' | 'imposter' | 'crew' | null;
@@ -61,13 +64,17 @@ postsRouter.get('/api/posts', (req, res) => {
               q.author AS quoted_author, q.kind AS quoted_kind, q.body AS quoted_body,
               q.media_id AS quoted_media_id,
               -- Wer Imposter war, erst nach der Aufloesung — vorher NULL.
-              CASE WHEN iw.revealed_at IS NOT NULL THEN iw.imposter END AS imposter_name
+              CASE WHEN iw.revealed_at IS NOT NULL THEN iw.imposter END AS imposter_name,
+              cw.type AS challenge_type, cw.theme AS challenge_theme
          FROM posts p
          LEFT JOIN media m ON m.id = p.media_id
          LEFT JOIN mixtapes t ON t.id = p.tape_id
          LEFT JOIN posts q ON q.id = p.quoted_post_id
          LEFT JOIN imposter_entries ie ON ie.post_id = p.id
          LEFT JOIN imposter_weeks iw ON iw.id = ie.week_id
+         LEFT JOIN challenge_shares cs ON cs.post_id = p.id
+         LEFT JOIN challenge_entries ce ON ce.id = cs.entry_id
+         LEFT JOIN challenge_weeks cw ON cw.id = ce.week_id
         WHERE p.side = ? AND p.cassette_id = ? AND ${RELEASED}
         ORDER BY p.created_at ASC`,
     )
@@ -81,6 +88,8 @@ postsRouter.get('/api/posts', (req, res) => {
     quoted_body: string | null;
     quoted_media_id: string | null;
     imposter_name: string | null;
+    challenge_type: string | null;
+    challenge_theme: string | null;
   })[];
 
   // Tonfetzen sind eine private Geste: wie viele Reaktionen ein Beitrag hat, sieht
@@ -129,6 +138,7 @@ postsRouter.get('/api/posts', (req, res) => {
       durationMs: row.duration_ms,
       source: row.source ?? 'camera',
       takenAt: row.taken_at,
+      challenge: row.challenge_type ? { type: row.challenge_type, theme: row.challenge_theme ?? '' } : null,
       imposterMark:
         row.source === 'imposter'
           ? row.imposter_name

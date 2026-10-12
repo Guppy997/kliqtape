@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   createPost,
-  fetchFilm,
+  CHALLENGE_TYPE_LABEL,
+  fetchChallenge,
   fetchMixtapes,
   mediaUrl,
   uploadMedia,
@@ -14,7 +15,8 @@ import { filmReleaseLabel } from '@/lib/berlinDay';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
 import MixtapeRecorder from './MixtapeRecorder';
 import CameraCapture from './CameraCapture';
-import FilmShoot from './FilmShoot';
+import ChallengeFlow from './ChallengeFlow';
+import { TypeIcon } from './ChallengeCard';
 import KindIcon from './KindIcon';
 import PlusMark from './PlusMark';
 import Sheet from './Sheet';
@@ -63,14 +65,17 @@ export default function Composer({ onPosted }: Props) {
   const [noteStyle, setNoteStyle] = useState<NoteStyle>('tape');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filmOpen, setFilmOpen] = useState(false);
+  const [challengeOpen, setChallengeOpen] = useState(false);
 
-  // Ob der Film dieser Woche schon belichtet ist — dann ist der Eintrag zu.
-  const { data: film } = useQuery({
-    queryKey: ['film', cassetteId, me],
-    queryFn: () => fetchFilm(cassetteId!, me),
+  // Die Wochen-Challenge — gleich fuer alle Kassetten. Liegt mein Beitrag
+  // schon in dieser Kassette, ist der Eintrag hier zu.
+  const { data: challenge } = useQuery({
+    queryKey: ['challenge', 'me', me],
+    queryFn: () => fetchChallenge(me),
     enabled: step === 'choose' && side === 'a' && Boolean(cassetteId),
   });
+  const week = challenge?.current ?? null;
+  const sharedHere = Boolean(cassetteId && challenge?.mine?.cassetteIds.includes(cassetteId));
 
   // Nur eigene, versiegelte Tapes lassen sich teilen — ein Entwurf ist privat.
   const { data: tapes = [] } = useQuery({
@@ -162,12 +167,12 @@ export default function Composer({ onPosted }: Props) {
         }
       >
         <div className="flex flex-col gap-2">
-          {/* Film nur auf Seite A: er landet nach dem Entwickeln im Archiv. */}
-          {side === 'a' && cassetteId && (
+          {/* Challenge nur auf Seite A: sie landet nach der Aufloesung im Archiv. */}
+          {side === 'a' && cassetteId && week && (
             <button
               type="button"
-              onClick={() => setFilmOpen(true)}
-              disabled={film?.iShot}
+              onClick={() => setChallengeOpen(true)}
+              disabled={sharedHere}
               className="flex items-start gap-3 rounded-xl p-3 text-left disabled:opacity-60"
               style={{ background: 'var(--card)', border: '1px dashed var(--accent)' }}
             >
@@ -175,29 +180,18 @@ export default function Composer({ onPosted }: Props) {
                 className="grid size-9 shrink-0 place-items-center rounded-full"
                 style={{ background: 'rgba(0,0,0,.18)', color: 'var(--accent)' }}
               >
-                <svg
-                  width="14"
-                  height="16"
-                  viewBox="0 0 14 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.3"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <rect x="1" y="3" width="9" height="12" rx="1.3" />
-                  <rect x="3" y="0.8" width="5" height="2.2" rx=".5" />
-                  <path d="M10 6h3v6h-3" />
-                </svg>
+                <TypeIcon type={week.type} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
-                  Film
+                  Challenge der Woche
                 </span>
                 <span className="block text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
-                  {film?.iShot
-                    ? `Diese Woche schon belichtet. Entwickelt wird ${filmReleaseLabel(film.nextRelease)}.`
-                    : 'Ein Foto pro Woche, nur Kamera. Es wird entwickelt — Sonntagabend sehen es alle gleichzeitig.'}
+                  {CHALLENGE_TYPE_LABEL[week.type]}
+                  {week.theme ? ` · „${week.theme}“` : ''} —{' '}
+                  {sharedHere
+                    ? `liegt schon hier. Aufgelöst ${filmReleaseLabel(week.releaseAt)}.`
+                    : `aufgelöst ${filmReleaseLabel(week.releaseAt)}, bis dahin sieht niemand etwas.`}
                 </span>
               </span>
             </button>
@@ -373,17 +367,15 @@ export default function Composer({ onPosted }: Props) {
         )}
       </Sheet>
 
-      {cassetteId && (
-        <FilmShoot
-          open={filmOpen}
-          cassetteId={cassetteId}
-          onClose={() => setFilmOpen(false)}
-          onShot={() => {
-            setStep(null);
-            onPosted();
-          }}
-        />
-      )}
+      <ChallengeFlow
+        open={challengeOpen}
+        cassetteId={cassetteId}
+        onClose={() => setChallengeOpen(false)}
+        onDone={() => {
+          setStep(null);
+          onPosted();
+        }}
+      />
 
       <Sheet open={step === 'voice'} onClose={() => setStep(null)} variant="full" title="O-Ton">
         {step === 'voice' && (

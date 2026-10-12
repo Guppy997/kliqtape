@@ -315,13 +315,17 @@ cassettesRouter.delete('/api/cassettes/:id/members/:member', (req, res) => {
     n: number;
   };
   if (rest.n === 0) {
-    for (const p of db
-      .prepare(`SELECT media_id FROM posts WHERE cassette_id = ? AND media_id IS NOT NULL`)
-      .all(req.params.id) as { media_id: string }[]) {
-      dropMedia(p.media_id);
-    }
+    // Erst die Beitraege, dann die Medien — dropMedia raeumt nur auf, was
+    // nirgends mehr haengt (ein Challenge-Beitrag kann in mehreren Kassetten
+    // liegen, siehe media.ts).
+    const mediaIds = (
+      db.prepare(`SELECT media_id FROM posts WHERE cassette_id = ? AND media_id IS NOT NULL`).all(req.params.id) as {
+        media_id: string;
+      }[]
+    ).map((p) => p.media_id);
     db.prepare(`DELETE FROM posts WHERE cassette_id = ?`).run(req.params.id);
     db.prepare(`DELETE FROM cassettes WHERE id = ?`).run(req.params.id);
+    for (const id of mediaIds) dropMedia(id);
   }
 
   res.status(204).end();

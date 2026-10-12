@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.50.0',
+    date: '2026-10-12',
+    changes: [
+      'Neu: die Wochen-Challenge — jede Woche eine für alle Kassetten, aufgelöst Sonntag um 19 Uhr',
+      'Du machst sie einmal und legst sie in so viele deiner Kassetten, wie du willst',
+      'Der erste Typ: Foto zum Thema, nur mit der Kamera — er ersetzt den Film und wird genauso in der Fototüte entwickelt',
+      'Keine Streaks, keine Zähler: Niemand sieht, wer schon mitgemacht hat',
+      'Der Kliqtape-Kanal plant die Challenges der nächsten Wochen',
+    ],
+  },
+  {
     version: '0.49.3',
     date: '2026-10-07',
     changes: [

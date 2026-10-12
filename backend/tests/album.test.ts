@@ -32,12 +32,16 @@ describe('Album-Export', () => {
     await post('dora', 'a', 'Archiv von Dora');
     await post('anna', 'b', 'GEHEIM aus dem Gruppenchat');
     await api('POST', '/api/hotlines/threads', 'anna', { from: ANNA, to: BEN, body: 'GEHEIM aus der Hot Line' });
-    const film = await upload('ben');
-    await api('POST', `/api/cassettes/${cassette}/film`, 'ben', {
-      author: BEN,
-      mediaId: film.body.id,
+    // Ein Challenge-Beitrag vor der Aufloesung darf nicht ins Album.
+    expect((await api('POST', '/api/challenge/demo', 'ben', { me: BEN, type: 'photo' })).status).toBe(201);
+    const shot = await upload('ben');
+    const entry = await api('POST', '/api/challenge/entry', 'ben', {
+      me: BEN,
+      mediaId: shot.body.id,
       caption: 'GEHEIM unentwickelt',
     });
+    expect(entry.status).toBe(201);
+    expect((await api('POST', `/api/cassettes/${cassette}/challenge/share`, 'ben', { me: BEN })).status).toBe(201);
     expect((await api('PUT', '/api/me/album', 'dora', { me: DORA, optOut: true })).status).toBe(200);
   });
 

@@ -65,7 +65,13 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
           {item.author}
         </span>
         <span className="text-2xs" style={{ color: 'var(--dim)' }}>
-          {item.source === 'film' ? 'Film' : item.source === 'imposter' ? 'Imposter-Woche' : KIND_LABEL[item.kind]}
+          {item.source === 'film'
+            ? 'Film'
+            : item.source === 'imposter'
+              ? 'Imposter-Woche'
+              : item.source === 'challenge'
+                ? 'Challenge'
+                : KIND_LABEL[item.kind]}
         </span>
         {/* Track-Nummer — Position innerhalb des Tapes. Auf Seite A zusaetzlich
             Datum+Uhrzeit, weil ein Tape mehrere Tracks an verschiedenen
@@ -126,9 +132,10 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
           </div>
         )}
 
-        {/* Entwickelter Film: Abzug mit dem orangen Datumsaufdruck einer
-            Einwegkamera — das Datum der Belichtung, nicht der Freigabe. */}
-        {item.kind === 'photo' && item.mediaId && item.source === 'film' && (
+        {/* Entwickelter Film und Challenge-Foto: Abzug mit dem orangen
+            Datumsaufdruck einer Einwegkamera — das Datum der Aufnahme, nicht
+            der Freigabe am Sonntag. */}
+        {item.kind === 'photo' && item.mediaId && (item.source === 'film' || item.source === 'challenge') && (
           <div className="print mx-auto w-full max-w-[17rem]">
             <div className="relative">
               <img src={mediaUrl(item.mediaId)} alt={item.body || 'Filmbild'} loading="lazy" />
@@ -143,7 +150,9 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
             </div>
             {item.body && <p className="font-hand mt-2 text-center text-[0.95rem] text-[#3B3226]">{item.body}</p>}
             <p className="mt-1 text-center text-2xs text-[#3B3226]/60">
-              Film{item.takenAt ? ` · belichtet ${takenLabel(item.takenAt)}` : ''}
+              {item.source === 'challenge'
+                ? `Challenge${item.challenge?.theme ? ` · „${item.challenge.theme}“` : ''}`
+                : `Film${item.takenAt ? ` · belichtet ${takenLabel(item.takenAt)}` : ''}`}
             </p>
           </div>
         )}

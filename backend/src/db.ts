@@ -303,6 +303,46 @@ db.exec(`
     created_at INTEGER NOT NULL
   );
 
+  -- Wochen-Challenge: eine pro Woche, fuer alle Kassetten weltweit dieselbe,
+  -- geplant vom Kliqtape-Kanal (ADMIN_NAME). release_at ist Sonntag 19:00
+  -- Europe/Berlin (filmReleaseAfter). Demo-Zeilen (DEMO_TOOLS) ueberlagern die
+  -- laufende Woche, damit sich jeder Typ sofort vorfuehren laesst.
+  CREATE TABLE IF NOT EXISTS challenge_weeks (
+    id         TEXT PRIMARY KEY,
+    release_at INTEGER NOT NULL,
+    type       TEXT NOT NULL,
+    theme      TEXT NOT NULL DEFAULT '',
+    set_by     TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    demo       INTEGER NOT NULL DEFAULT 0
+  );
+
+  -- Was man EINMAL pro Woche macht. Geteilt wird es pro Kassette als ganz
+  -- normaler Seite-A-Beitrag (challenge_shares) — damit gilt die bestehende
+  -- Freigabe-Logik (develop_at, RELEASED, isUnreleasedMedia) unveraendert.
+  CREATE TABLE IF NOT EXISTS challenge_entries (
+    id         TEXT PRIMARY KEY,
+    week_id    TEXT NOT NULL REFERENCES challenge_weeks(id) ON DELETE CASCADE,
+    author     TEXT NOT NULL,
+    kind       TEXT NOT NULL,
+    body       TEXT NOT NULL DEFAULT '',
+    media_id   TEXT REFERENCES media(id),
+    tape_id    TEXT REFERENCES mixtapes(id),
+    taken_at   INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    UNIQUE (week_id, author)
+  );
+
+  CREATE TABLE IF NOT EXISTS challenge_shares (
+    entry_id    TEXT NOT NULL REFERENCES challenge_entries(id) ON DELETE CASCADE,
+    cassette_id TEXT NOT NULL REFERENCES cassettes(id) ON DELETE CASCADE,
+    post_id     TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    PRIMARY KEY (entry_id, cassette_id)
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_challenge_planned ON challenge_weeks(release_at) WHERE demo = 0;
+  CREATE INDEX IF NOT EXISTS idx_challenge_shares_post ON challenge_shares(post_id);
+  CREATE INDEX IF NOT EXISTS idx_challenge_shares_cassette ON challenge_shares(cassette_id);
   CREATE INDEX IF NOT EXISTS idx_private_tapes_owner ON private_tapes(owner, created_at);
   CREATE INDEX IF NOT EXISTS idx_private_items_tape ON private_items(tape_id, created_at);
   CREATE INDEX IF NOT EXISTS idx_imposter_cassette ON imposter_weeks(cassette_id, started_at);
@@ -634,7 +674,7 @@ export interface PostRow {
   body: string;
   media_id: string | null;
   tape_id: string | null;
-  source: 'camera' | 'upload' | 'film' | 'imposter' | null;
+  source: 'camera' | 'upload' | 'film' | 'imposter' | 'challenge' | null;
   note_style: string | null;
   quoted_post_id: string | null;
   develop_at: number | null;

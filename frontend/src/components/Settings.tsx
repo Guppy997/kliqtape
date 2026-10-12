@@ -22,8 +22,8 @@ import { VERSION } from '@/changelog';
  *  sind. Ehrlich halten: lieber unangenehm als geschoent (CONCEPT.md §3). */
 const SERVER_SEES_EXTRA: [string, string][] = [
   [
-    'Film',
-    'im Klartext. Bis Sonntagabend gibt der Server das Bild an niemanden heraus, auch nicht an dich — gespeichert ist es aber sofort',
+    'Wochen-Challenge',
+    'im Klartext: dein Beitrag und in welche deiner Kassetten du ihn gelegt hast. Bis Sonntag 19 Uhr gibt der Server ihn an niemanden heraus, auch nicht an dich — gespeichert ist er aber sofort. Wer sonst mitmacht, verrät er niemandem',
   ],
   [
     'Imposter-Woche',

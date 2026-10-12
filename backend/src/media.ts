@@ -27,21 +27,35 @@ export const ALLOWED_MIME: Record<string, string> = {
   'video/mp4': 'mp4',
 };
 
-/** Was als Foto zaehlt (Film, Imposter-Woche). */
+/** Was als Foto zaehlt (Wochen-Challenge, Imposter-Woche). */
 export const PHOTO_MIME = ['image/jpeg', 'image/webp'];
 
-/** Haengt dieses Medium an einem Beitrag, der noch nicht freigegeben ist
- *  (Film in der Entwicklung, verdeckter Imposter-Beitrag)? */
+/** Haengt dieses Medium an etwas, das noch nicht freigegeben ist — ein
+ *  Challenge-Beitrag vor Sonntagabend (auch noch ungeteilt), ein verdeckter
+ *  Imposter-Beitrag, ein alter Film? Dann geht es an niemanden raus. */
 function isUnreleasedMedia(mediaId: string): boolean {
+  const now = Date.now();
   return Boolean(
-    db.prepare(`SELECT 1 FROM posts WHERE media_id = ? AND develop_at > ? LIMIT 1`).get(mediaId, Date.now()),
+    db
+      .prepare(
+        `SELECT 1 WHERE EXISTS (SELECT 1 FROM posts WHERE media_id = ? AND develop_at > ?)
+            OR EXISTS (SELECT 1 FROM challenge_entries e JOIN challenge_weeks w ON w.id = e.week_id
+                        WHERE e.media_id = ? AND w.release_at > ?)`,
+      )
+      .get(mediaId, now, mediaId, now),
   );
 }
 
 /** Wie SELECT ... FROM posts p, nur ohne noch nicht freigegebene Beitraege. */
 export const RELEASED = `(p.develop_at IS NULL OR p.develop_at <= ?)`;
 
+/** Medium samt Datei entfernen — aber nur, wenn nichts mehr darauf zeigt.
+ *  Seit der Wochen-Challenge kann ein Medium in mehreren Kassetten haengen
+ *  (ein Beitrag, mehrfach geteilt); frueher loeschte das Entfernen EINES
+ *  Beitrags die Datei auch fuer alle anderen. Aufrufer entfernen deshalb
+ *  immer zuerst ihre eigene Referenz und rufen erst danach dropMedia. */
 export function dropMedia(id: string): void {
+  if (mediaInUse(id)) return;
   const m = db.prepare(`SELECT mime FROM media WHERE id = ?`).get(id) as { mime: string } | undefined;
   if (!m) return;
   const p = join(MEDIA_DIR, `${id}.${ALLOWED_MIME[m.mime]}`);
@@ -63,9 +77,10 @@ export function mediaInUse(mediaId: string): boolean {
             OR EXISTS (SELECT 1 FROM hotline_messages WHERE media_id = ?)
             OR EXISTS (SELECT 1 FROM news_posts WHERE media_id = ?)
             OR EXISTS (SELECT 1 FROM reactions WHERE media_id = ?)
-            OR EXISTS (SELECT 1 FROM private_items WHERE media_id = ?)`,
+            OR EXISTS (SELECT 1 FROM private_items WHERE media_id = ?)
+            OR EXISTS (SELECT 1 FROM challenge_entries WHERE media_id = ?)`,
       )
-      .get(mediaId, mediaId, mediaId, mediaId, mediaId, mediaId, mediaId, mediaId),
+      .get(mediaId, mediaId, mediaId, mediaId, mediaId, mediaId, mediaId, mediaId, mediaId),
   );
 }
 

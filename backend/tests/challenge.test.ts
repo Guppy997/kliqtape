@@ -1,0 +1,156 @@
+import { beforeAll, describe, expect, it } from 'vitest';
+import { api, cassetteWith, fetchMedia, nameOf, upload } from './fixtures';
+
+// Wochen-Challenge: eine pro Woche fuer alle Kassetten, geplant vom
+// Kliqtape-Kanal. Man macht sie einmal und legt sie in mehrere eigene
+// Kassetten; bis Sonntagabend sieht niemand etwas, auch man selbst nicht.
+
+const ANNA = nameOf('anna');
+const BEN = nameOf('ben');
+const CARA = nameOf('cara');
+const DORA = nameOf('dora');
+const EMIL = nameOf('emil');
+const KANAL = nameOf('kanal');
+
+describe('Wochen-Challenge', () => {
+  let one: string;
+  let two: string;
+  let releaseAt: number;
+  let benMedia: string;
+
+  beforeAll(async () => {
+    one = await cassetteWith('anna', ['ben', 'dora'], 'Challenge eins');
+    two = await cassetteWith('emil', ['ben'], 'Challenge zwei');
+  });
+
+  it('Planen darf nur der Kliqtape-Kanal', async () => {
+    expect((await api('GET', `/api/challenges?me=${ANNA}`, 'anna')).status).toBe(403);
+    expect((await api('GET', `/api/challenges?me=${KANAL}`, null)).status).toBe(401);
+    const plan = await api('GET', `/api/challenges?me=${KANAL}`, 'kanal');
+    expect(plan.status).toBe(200);
+    expect(plan.body.weeks).toHaveLength(8);
+    releaseAt = plan.body.weeks[0].releaseAt;
+    const put = await api('PUT', `/api/challenges/${releaseAt}`, 'anna', { me: ANNA, type: 'photo', theme: 'x' });
+    expect(put.status).toBe(403);
+  });
+
+  it('Der Kanal plant die laufende Woche, alle sehen dieselbe', async () => {
+    const put = await api('PUT', `/api/challenges/${releaseAt}`, 'kanal', {
+      me: KANAL,
+      type: 'photo',
+      theme: 'Etwas Rotes',
+    });
+    expect(put.status).toBe(200);
+    for (const who of ['anna', 'emil'] as const) {
+      const res = await api('GET', `/api/challenge?me=${nameOf(who)}`, who);
+      expect(res.body.current).toMatchObject({ type: 'photo', theme: 'Etwas Rotes', releaseAt });
+      expect(res.body.mine).toBeNull();
+    }
+    // Nur Sonntage 19 Uhr der naechsten Wochen
+    expect((await api('PUT', `/api/challenges/${releaseAt + 1}`, 'kanal', { me: KANAL, type: 'photo' })).status).toBe(
+      400,
+    );
+  });
+
+  it('Mitmachen: einmal pro Woche', async () => {
+    const shot = await upload('ben');
+    benMedia = shot.body.id;
+    const entry = await api('POST', '/api/challenge/entry', 'ben', { me: BEN, mediaId: benMedia, caption: 'rot' });
+    expect(entry.status).toBe(201);
+    const again = await api('POST', '/api/challenge/entry', 'ben', { me: BEN, mediaId: (await upload('ben')).body.id });
+    expect(again.status).toBe(409);
+    expect((await api('POST', '/api/challenge/entry', null, { me: BEN, mediaId: benMedia })).status).toBe(401);
+  });
+
+  it('Ein Bild, das schon woanders haengt, wird abgelehnt', async () => {
+    const m = await upload('dora');
+    const post = await api('POST', '/api/posts', 'dora', {
+      cassetteId: one,
+      side: 'a',
+      author: DORA,
+      kind: 'photo',
+      mediaId: m.body.id,
+    });
+    expect(post.status).toBe(201);
+    const res = await api('POST', '/api/challenge/entry', 'dora', { me: DORA, mediaId: m.body.id });
+    expect(res.status).toBe(400);
+  });
+
+  it('Fremder darf nichts hineinlegen oder herausnehmen', async () => {
+    expect((await api('POST', `/api/cassettes/${one}/challenge/share`, 'cara', { me: CARA })).status).toBe(403);
+    expect((await api('DELETE', `/api/cassettes/${one}/challenge/share?me=${CARA}`, 'cara')).status).toBe(403);
+    expect((await api('GET', `/api/cassettes/${one}/challenge?me=${CARA}`, 'cara')).status).toBe(403);
+  });
+
+  it('Einmal gemacht, in zwei Kassetten gelegt — bis Sonntag fuer niemanden sichtbar', async () => {
+    expect((await api('POST', `/api/cassettes/${one}/challenge/share`, 'ben', { me: BEN })).status).toBe(201);
+    expect((await api('POST', `/api/cassettes/${two}/challenge/share`, 'ben', { me: BEN })).status).toBe(201);
+    expect((await api('POST', `/api/cassettes/${one}/challenge/share`, 'ben', { me: BEN })).status).toBe(409);
+
+    expect(await fetchMedia(benMedia)).toBe(404);
+    const feed = await api('GET', `/api/posts?side=a&cassette=${one}&me=${ANNA}`, 'anna');
+    expect(feed.body.some((p: any) => p.source === 'challenge')).toBe(false);
+
+    const mine = await api('GET', `/api/challenge?me=${BEN}`, 'ben');
+    expect(mine.body.mine.cassetteIds.sort()).toEqual([one, two].sort());
+  });
+
+  it('Der Status verraet nur den eigenen Stand', async () => {
+    const res = await api('GET', `/api/cassettes/${one}/challenge?me=${ANNA}`, 'anna');
+    expect(res.status).toBe(200);
+    expect(res.body.mine).toEqual({ entry: null, sharedHere: false });
+    expect(res.body.developed).toBeNull();
+    const text = JSON.stringify(res.body);
+    expect(text).not.toContain(BEN);
+    expect(text).not.toMatch(/count|anzahl|streak/i);
+  });
+
+  it('Nach dem ersten Beitrag laesst sich die Woche nicht mehr umplanen', async () => {
+    const res = await api('PUT', `/api/challenges/${releaseAt}`, 'kanal', { me: KANAL, type: 'photo', theme: 'neu' });
+    expect(res.status).toBe(409);
+  });
+
+  it('Herausnehmen vor Sonntag: Beitrag bleibt, laesst sich neu ablegen', async () => {
+    const m = await upload('emil');
+    expect((await api('POST', '/api/challenge/entry', 'emil', { me: EMIL, mediaId: m.body.id })).status).toBe(201);
+    expect((await api('POST', `/api/cassettes/${two}/challenge/share`, 'emil', { me: EMIL })).status).toBe(201);
+    expect((await api('DELETE', `/api/cassettes/${two}/challenge/share?me=${EMIL}`, 'emil')).status).toBe(204);
+    const status = await api('GET', `/api/cassettes/${two}/challenge?me=${EMIL}`, 'emil');
+    expect(status.body.mine.sharedHere).toBe(false);
+    expect(status.body.mine.entry).not.toBeNull();
+  });
+
+  it('Sonntag vorziehen (Demo): in beiden Kassetten sichtbar', async () => {
+    expect((await api('POST', '/api/challenge/demo/release', null, { me: ANNA })).status).toBe(401);
+    expect((await api('POST', '/api/challenge/demo/release', 'anna', { me: ANNA })).status).toBe(200);
+    expect(await fetchMedia(benMedia)).toBe(200);
+    for (const [cassette, who] of [
+      [one, 'anna'],
+      [two, 'emil'],
+    ] as const) {
+      const feed = await api('GET', `/api/posts?side=a&cassette=${cassette}&me=${nameOf(who)}`, who);
+      const post = feed.body.find((p: any) => p.source === 'challenge');
+      expect(post).toMatchObject({
+        author: BEN,
+        mediaId: benMedia,
+        challenge: { type: 'photo', theme: 'Etwas Rotes' },
+      });
+    }
+    const status = await api('GET', `/api/cassettes/${one}/challenge?me=${ANNA}`, 'anna');
+    expect(status.body.developed.shots.map((s: any) => s.author)).toEqual([BEN]);
+  });
+
+  it('Einen geteilten Beitrag loeschen laesst das Bild in der anderen Kassette stehen', async () => {
+    const feed = await api('GET', `/api/posts?side=a&cassette=${one}&me=${BEN}`, 'ben');
+    const post = feed.body.find((p: any) => p.source === 'challenge' && p.author === BEN);
+    expect((await api('DELETE', `/api/posts/${post.id}?me=${BEN}`, 'ben')).status).toBe(204);
+    expect(await fetchMedia(benMedia)).toBe(200);
+    const other = await api('GET', `/api/posts?side=a&cassette=${two}&me=${EMIL}`, 'emil');
+    expect(other.body.some((p: any) => p.mediaId === benMedia)).toBe(true);
+  });
+
+  it('Demo-Woche anlegen braucht eine Anmeldung', async () => {
+    expect((await api('POST', '/api/challenge/demo', null, { me: ANNA, type: 'photo' })).status).toBe(401);
+    expect((await api('POST', '/api/challenge/demo', 'anna', { me: ANNA, type: 'quatsch' })).status).toBe(400);
+  });
+});

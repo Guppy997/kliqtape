@@ -55,7 +55,7 @@ Kamera-Beschränkung Spaß oder nervt sie?
 | Ende-zu-Ende-Verschlüsselung | **Nichts** ist verschlüsselt, auch Seite B nicht. Die App sagt das selbst (Profil → Zahnrad → „Was der Server sieht“). |
 | Konten mit Passkey | Ein Name plus Zugangscode pro Gerät, kein Passwort, keine E-Mail |
 | Moderationsoberfläche | Melden speichert die Meldung nur, niemand bearbeitet sie automatisch |
-| Medien nur für Mitglieder | Bilder sind über ihre zufällige ID abrufbar, auch die aus eigenen, privaten Tapes — außer Film und Imposter-Beiträgen vor der Freigabe |
+| Medien nur für Mitglieder | Bilder sind über ihre zufällige ID abrufbar, auch die aus eigenen, privaten Tapes — außer Challenge- und Imposter-Beiträgen vor der Freigabe |
 
 **Also:** nur im eigenen Tailnet betreiben, keine echten privaten Inhalte reinstellen.
 
@@ -88,14 +88,15 @@ Ohne Tailscale testest du am besten direkt auf dem Rechner, auf dem Docker läuf
 Neben Seite A, Seite B, Storys, Mixtapes und Hot Line gibt es ein paar Funktionen, die das
 Konzept in wenigen Minuten erklären (Details in `docs/CONCEPT.md`, Abschnitte 5a–5d):
 
-- **Entwickelter Film** — ein Bild pro Woche und Kassette, sichtbar erst Sonntag 19 Uhr für alle
+- **Wochen-Challenge** — eine pro Woche für alle Kassetten, einmal gemacht und in mehrere Kassetten
+  gelegt, sichtbar erst Sonntag 19 Uhr (ersetzt den früheren Film)
 - **Imposter-Woche** — ein Special ab vier Leuten, mit Auflösung, ohne Punkte
 - **Album als PDF**, **Einladung als Brief** mit QR-Code, **Mixtape als Bild**
 - **Die Kassette altert** alle 10 Tage ein wenig
 
 Damit man in einer Vorführung nicht bis Sonntag warten muss: `DEMO_TOOLS=1` in der `.env`.
-Dann kann die Person, die eine Kassette angelegt hat, den Film sofort entwickeln und die
-Imposter-Woche auf Sonntagabend vorziehen. Im Betrieb bleibt das leer.
+Dann lässt sich jeder Challenge-Typ sofort starten und der Sonntagabend vorziehen, die
+Imposter-Woche ebenso. Im Betrieb bleibt das leer.
 
 ## Testdaten
 

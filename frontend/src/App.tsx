@@ -22,7 +22,7 @@ import TapeHeader, { defaultTapeName, tapeDisplayName } from '@/components/TapeH
 import UpdateNotification from '@/components/UpdateNotification';
 import NameGate from '@/components/NameGate';
 import { EmptyBand, NoCassette } from '@/components/EmptyState';
-import FilmBag from '@/components/FilmBag';
+import ChallengeCard from '@/components/ChallengeCard';
 import ImposterCard from '@/components/ImposterCard';
 import LetterRedeemer from '@/components/LetterRedeemer';
 
@@ -799,12 +799,12 @@ function Deck() {
                       <PostCard key={item.id} item={item} onReacted={invalidate} onDelete={(id) => remove.mutate(id)} />
                     ))}
 
-                {/* Film der Woche: am Ende von Seite A, dort wo man beim
+                {/* Wochen-Challenge: am Ende von Seite A, dort wo man beim
                     Einlegen landet (neuester Stand). Nur ohne Filter. */}
                 {side === 'a' && filter === 'all' && !q && current && !isLoading && (
                   <>
                     <ImposterCard cassette={current} onChanged={invalidate} />
-                    <FilmBag cassette={current} onChanged={invalidate} />
+                    <ChallengeCard cassette={current} onChanged={invalidate} />
                   </>
                 )}
 

@@ -1,27 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { developFilmNow, fetchFilm, mediaUrl, type Cassette, type FilmShot } from '@/lib/api';
+import {
+  CHALLENGE_TYPE_LABEL,
+  demoChallenge,
+  demoReleaseChallenge,
+  fetchCassetteChallenge,
+  mediaUrl,
+  shareChallenge,
+  unshareChallenge,
+  type Cassette,
+  type ChallengeShot,
+  type ChallengeType,
+} from '@/lib/api';
 import { filmReleaseLabel, filmStampLabel, takenLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
-import FilmShoot from './FilmShoot';
+import ChallengeFlow from './ChallengeFlow';
+import KindIcon from './KindIcon';
 import PlusMark from './PlusMark';
 
-/** Welche Freigabe pro Kassette schon geoeffnet wurde — rein lokal, wie der
- *  Gesehen-Stand der Seiten. Speicher kann fehlen (privates Fenster), dann
- *  erscheint die Tuete eben noch einmal. */
-const SEEN_KEY = 'kliqtape-film-opened';
-function openedAt(cassetteId: string): number {
+/** Welche aufgeloeste Woche pro Kassette schon geoeffnet wurde — rein lokal,
+ *  wie der Gesehen-Stand der Seiten. Speicher kann fehlen (privates
+ *  Fenster), dann erscheint die Tuete eben noch einmal. */
+const SEEN_KEY = 'kliqtape-challenge-opened';
+function openedWeek(cassetteId: string): string | null {
   try {
-    return (JSON.parse(localStorage.getItem(SEEN_KEY) ?? '{}') as Record<string, number>)[cassetteId] ?? 0;
+    return (JSON.parse(localStorage.getItem(SEEN_KEY) ?? '{}') as Record<string, string>)[cassetteId] ?? null;
   } catch {
-    return 0;
+    return null;
   }
 }
-function markOpened(cassetteId: string, at: number) {
+function markOpened(cassetteId: string, weekId: string) {
   try {
-    const all = JSON.parse(localStorage.getItem(SEEN_KEY) ?? '{}') as Record<string, number>;
-    all[cassetteId] = at;
+    const all = JSON.parse(localStorage.getItem(SEEN_KEY) ?? '{}') as Record<string, string>;
+    all[cassetteId] = weekId;
     localStorage.setItem(SEEN_KEY, JSON.stringify(all));
   } catch {
     /* ohne Speicher kein Gedaechtnis — harmlos */
@@ -32,47 +44,80 @@ const KRAFT = '#C9A877';
 const KRAFT_DEEP = '#A9895B';
 const KRAFT_INK = '#3B2E1E';
 
+/** Typen, die sich in der Demo sofort starten lassen. */
+const DEMO_TYPES: ChallengeType[] = ['photo'];
+
 /**
- * Der Film der Woche auf Seite A: solange er entwickelt wird, ein Streifen
- * mit Freigabetermin und "Belichten"; ist er entwickelt und noch nicht
- * geoeffnet, eine Fototuete. Oeffnen zeigt die Abzuege einzeln, danach liegen
- * sie als normale Beitraege im Tape des Sonntags.
+ * Die Wochen-Challenge auf Seite A dieser Kassette. Laeuft eine, steht sie
+ * hier mit Thema, Aufloesungstermin und dem EIGENEN Stand — nie, wer sonst
+ * schon mitgemacht hat. Ist die letzte Woche aufgeloest und noch nicht
+ * geoeffnet, liegt eine Fototuete da; danach stehen die Beitraege als normale
+ * Abzuege im Tape des Sonntags.
  */
-export default function FilmBag({ cassette, onChanged }: { cassette: Cassette; onChanged: () => void }) {
+export default function ChallengeCard({ cassette, onChanged }: { cassette: Cassette; onChanged: () => void }) {
   const me = useApp((s) => s.me);
   const qc = useQueryClient();
-  const [shooting, setShooting] = useState(false);
+  const [flow, setFlow] = useState(false);
   const [revealing, setRevealing] = useState(false);
   const [, rerender] = useState(0);
 
-  const { data: film } = useQuery({
-    queryKey: ['film', cassette.id, me],
-    queryFn: () => fetchFilm(cassette.id, me),
+  const { data } = useQuery({
+    queryKey: ['challenge', cassette.id, me],
+    queryFn: () => fetchCassetteChallenge(cassette.id, me),
     // Damit die Tuete Sonntag um 19 Uhr auch ohne Neuladen auftaucht.
     refetchInterval: 60_000,
   });
 
-  const developNow = useMutation({
-    mutationFn: () => developFilmNow(cassette.id, me),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['film', cassette.id] });
-      onChanged();
-    },
-  });
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ['challenge'] });
+    onChanged();
+  };
+  const share = useMutation({ mutationFn: () => shareChallenge(cassette.id, me), onSuccess: refresh });
+  const unshare = useMutation({ mutationFn: () => unshareChallenge(cassette.id, me), onSuccess: refresh });
+  const demoStart = useMutation({ mutationFn: (type: ChallengeType) => demoChallenge(me, type), onSuccess: refresh });
+  const demoRelease = useMutation({ mutationFn: () => demoReleaseChallenge(me), onSuccess: refresh });
 
-  if (!film) return null;
-  const developed = film.developed;
-  const bagWaiting = developed && developed.shots.length > 0 && openedAt(cassette.id) < developed.at;
+  if (!data) return null;
+  const { current, mine, developed, demoTools } = data;
+  const photos = developed?.shots.filter((s) => s.mediaId) ?? [];
+  const bagWaiting = developed && photos.length > 0 && openedWeek(cassette.id) !== developed.id;
 
   function closeReveal() {
-    if (developed) markOpened(cassette.id, developed.at);
+    if (developed) markOpened(cassette.id, developed.id);
     setRevealing(false);
     rerender((n) => n + 1);
   }
 
+  const demoRow = demoTools && (
+    <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs" style={{ color: 'var(--dim)' }}>
+      <span>Demo:</span>
+      {DEMO_TYPES.map((t) => (
+        <button
+          key={t}
+          type="button"
+          onClick={() => demoStart.mutate(t)}
+          disabled={demoStart.isPending}
+          className="underline disabled:opacity-50"
+        >
+          {CHALLENGE_TYPE_LABEL[t]}
+        </button>
+      ))}
+      {current && (
+        <button
+          type="button"
+          onClick={() => demoRelease.mutate()}
+          disabled={demoRelease.isPending}
+          className="underline disabled:opacity-50"
+        >
+          Sonntag vorziehen
+        </button>
+      )}
+    </span>
+  );
+
   return (
     <>
-      {bagWaiting ? (
+      {bagWaiting && (
         <button
           type="button"
           onClick={() => setRevealing(true)}
@@ -82,10 +127,10 @@ export default function FilmBag({ cassette, onChanged }: { cassette: Cassette; o
           <MiniBag />
           <span className="min-w-0 flex-1">
             <span className="block text-base leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
-              Der Film ist entwickelt.
+              Die Challenge ist entwickelt.
             </span>
             <span className="mt-0.5 block text-meta" style={{ color: 'var(--dim)' }}>
-              Abzüge von {namesOf(developed.shots, me)}
+              „{developed.theme}“ · Abzüge von {namesOf(photos, me)}
             </span>
             <span
               className="mt-2 inline-block rounded-full px-3 py-1 text-2xs"
@@ -95,58 +140,86 @@ export default function FilmBag({ cassette, onChanged }: { cassette: Cassette; o
             </span>
           </span>
         </button>
-      ) : (
+      )}
+
+      {current ? (
         <div
-          className="my-3 flex items-center gap-3 rounded-xl px-3.5 py-3"
-          style={{ border: '1px dashed var(--line)' }}
+          className="my-3 flex items-start gap-3 rounded-xl px-3.5 py-3"
+          style={{ border: '1px dashed var(--accent)' }}
         >
-          <Canister />
+          <span
+            className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full"
+            style={{ background: 'rgba(0,0,0,.18)', color: 'var(--accent)' }}
+          >
+            <TypeIcon type={current.type} />
+          </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
-              Film der Woche
+            <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
+              Challenge der Woche · {CHALLENGE_TYPE_LABEL[current.type]}
             </span>
-            <span className="block text-meta leading-snug" style={{ color: 'var(--dim)' }}>
-              Wird {filmReleaseLabel(film.nextRelease)} entwickelt.{' '}
-              {film.iShot ? 'Dein Bild ist belichtet.' : 'Du hast noch ein Bild frei.'}
+            <span className="block text-base leading-snug font-semibold" style={{ color: 'var(--ink)' }}>
+              {current.theme ? `„${current.theme}“` : CHALLENGE_TYPE_LABEL[current.type]}
             </span>
-            {film.demoTools && cassette.createdBy === me && (
+            <span className="mt-0.5 block text-meta leading-snug" style={{ color: 'var(--dim)' }}>
+              Aufgelöst {filmReleaseLabel(current.releaseAt)}.{' '}
+              {mine.sharedHere
+                ? 'Dein Beitrag liegt hier.'
+                : mine.entry
+                  ? 'Du hast schon mitgemacht.'
+                  : 'Bis dahin sieht niemand etwas.'}
+            </span>
+            {mine.sharedHere && (
               <button
                 type="button"
-                onClick={() => developNow.mutate()}
-                disabled={developNow.isPending}
+                onClick={() => unshare.mutate()}
+                disabled={unshare.isPending}
                 className="mt-1 text-2xs underline disabled:opacity-50"
                 style={{ color: 'var(--dim)' }}
               >
-                Demo: jetzt entwickeln
+                Hier wieder herausnehmen
               </button>
             )}
+            {demoRow}
           </span>
-          {!film.iShot && (
+          {!mine.sharedHere && (
             <button
               type="button"
-              onClick={() => setShooting(true)}
-              className="shrink-0 rounded-full px-3 py-1.5 text-2xs"
+              onClick={() => (mine.entry ? share.mutate() : setFlow(true))}
+              disabled={share.isPending}
+              className="shrink-0 rounded-full px-3 py-1.5 text-2xs disabled:opacity-50"
               style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
-              Belichten
+              {mine.entry ? 'Hier auch reinlegen' : 'Mitmachen'}
             </button>
           )}
         </div>
+      ) : (
+        demoTools && (
+          <div className="my-3 rounded-xl px-3.5 py-3" style={{ border: '1px dashed var(--line)' }}>
+            <span className="block text-meta" style={{ color: 'var(--dim)' }}>
+              Diese Woche gibt es keine Challenge.
+            </span>
+            {demoRow}
+          </div>
+        )
       )}
 
-      <FilmShoot
-        open={shooting}
-        cassetteId={cassette.id}
-        releaseAt={film.nextRelease}
-        onClose={() => setShooting(false)}
-      />
+      <ChallengeFlow open={flow} cassetteId={cassette.id} onClose={() => setFlow(false)} onDone={refresh} />
 
-      {revealing && developed && <FilmReveal shots={developed.shots} at={developed.at} onClose={closeReveal} />}
+      {revealing && developed && <BagReveal shots={photos} at={developed.at} onClose={closeReveal} />}
     </>
   );
 }
 
-function namesOf(shots: FilmShot[], me: string): string {
+/** Symbol je Challenge-Typ — dieselben Zeichen wie beim Aufnehmen. */
+export function TypeIcon({ type }: { type: ChallengeType }) {
+  switch (type) {
+    case 'photo':
+      return <KindIcon kind="photo" />;
+  }
+}
+
+function namesOf(shots: ChallengeShot[], me: string): string {
   const names = [...new Set(shots.map((s) => (s.author === me ? 'dir' : s.author)))];
   if (names.length <= 1) return names[0] ?? '';
   return `${names.slice(0, -1).join(', ')} und ${names.at(-1)}`;
@@ -159,7 +232,7 @@ type Phase = 'bag' | 'opening' | 'viewer';
  * dann einzeln durchblaettern. Antippen ueberspringt die Animation; mit
  * reduzierter Bewegung geht es direkt zu den Abzuegen.
  */
-function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onClose: () => void }) {
+function BagReveal({ shots, at, onClose }: { shots: ChallengeShot[]; at: number; onClose: () => void }) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const [phase, setPhase] = useState<Phase>(reduced ? 'viewer' : 'bag');
   const [index, setIndex] = useState(0);
@@ -201,7 +274,7 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Entwickelter Film"
+      aria-label="Entwickelte Challenge"
       className="fixed inset-0 z-[80] flex flex-col items-center justify-center px-5"
       style={{ background: 'rgba(14,12,10,.985)' }}
       onClick={() => phase !== 'viewer' && setPhase('viewer')}
@@ -238,7 +311,7 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
                 transition: `transform 900ms cubic-bezier(.2,.8,.25,1) ${650 + i * 110}ms`,
               }}
             >
-              <img src={mediaUrl(s.mediaId)} alt="" className="block aspect-square w-full object-cover" />
+              <img src={mediaUrl(s.mediaId!)} alt="" className="block aspect-square w-full object-cover" />
             </div>
           ))}
           {/* Vorderseite mit aufgedrucktem Etikett */}
@@ -294,8 +367,8 @@ function FilmReveal({ shots, at, onClose }: { shots: FilmShot[]; at: number; onC
           >
             <div className="relative">
               <img
-                src={mediaUrl(shot.mediaId)}
-                alt={shot.caption || `Filmbild von ${shot.author}`}
+                src={mediaUrl(shot.mediaId!)}
+                alt={shot.caption || `Abzug von ${shot.author}`}
                 className="aspect-square object-cover"
               />
               <span
@@ -373,18 +446,6 @@ function MiniBag() {
       <rect x="9" y="3" width="36" height="20" fill="#ECE5D6" transform="rotate(-6 27 13)" />
       <rect x="12" y="6" width="30" height="13" fill="#7C8C9A" transform="rotate(-6 27 13)" />
       <path d="M14 44h26M18 50h18" stroke={KRAFT_INK} strokeWidth="1.2" opacity=".5" />
-    </svg>
-  );
-}
-
-function Canister() {
-  return (
-    <svg width="30" height="36" viewBox="0 0 30 36" fill="none" aria-hidden="true">
-      <rect x="4" y="6" width="18" height="26" rx="2.5" stroke="var(--accent)" strokeWidth="1.4" />
-      <rect x="8" y="2" width="10" height="4" rx="1" stroke="var(--accent)" strokeWidth="1.4" />
-      <path d="M22 12h5v14h-5" stroke="var(--accent)" strokeWidth="1.4" />
-      <path d="M24.5 14v2M24.5 19v2M24.5 24v0.5" stroke="var(--accent)" strokeWidth="1.2" strokeLinecap="round" />
-      <path d="M8 15h10M8 20h7" stroke="var(--dim)" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   );
 }

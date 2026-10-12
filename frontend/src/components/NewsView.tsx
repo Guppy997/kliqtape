@@ -12,6 +12,7 @@ import {
 import { berlinDateLabel, berlinTimeLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import CameraCapture from './CameraCapture';
+import ChallengePlanner from './ChallengePlanner';
 import Lockup from './Lockup';
 import Sheet from './Sheet';
 
@@ -136,6 +137,9 @@ export default function NewsView({ open, onClose }: Props) {
             </button>
           )}
         </div>
+
+        {/* Wochen-Challenge planen: nur der Kanal-Account (ADMIN_NAME). */}
+        {canPost && <ChallengePlanner />}
 
         {/* Foerderstand: Freitext-Betrag + Notiz, von ADMIN_NAME gepflegt
             (siehe PUT /api/news/funding). Noch ohne klickbaren Spenden-Link —

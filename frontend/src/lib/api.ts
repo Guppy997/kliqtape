@@ -244,11 +244,13 @@ export interface FeedItem {
   durationMs: number | null;
   /** Live aufgenommen, aus der Galerie, entwickelter Film oder Beitrag
    *  einer Imposter-Woche — wird jeweils anders dargestellt. */
-  source: 'camera' | 'upload' | 'film' | 'imposter';
+  source: 'camera' | 'upload' | 'film' | 'imposter' | 'challenge';
   /** Nur beim Film: wann belichtet wurde. created_at ist die Freigabe. */
   takenAt: number | null;
   /** Beitrag aus einer Imposter-Woche: 'entry' vor der Aufloesung, danach
    *  'imposter' oder 'crew'. */
+  /** Beitrag zur Wochen-Challenge: Typ und Thema der Woche. */
+  challenge: { type: ChallengeType; theme: string } | null;
   imposterMark: 'entry' | 'imposter' | 'crew' | null;
   tapeId: string | null;
   tape: { title: string; coverId: string | null; trackCount: number } | null;
@@ -334,52 +336,132 @@ export function fetchFeed(cassetteId: string, side: Side, me: string): Promise<F
   );
 }
 
-/* --- Entwickelter Film ------------------------------------------------------
- * Ein Bild pro Person, Kassette und Woche. Bis Sonntagabend liefert der
- * Server es an niemanden aus (backend/src/media.ts, isUnreleasedMedia). */
+/* --- Wochen-Challenge -------------------------------------------------------
+ * Eine Challenge pro Woche fuer alle Kassetten, geplant vom Kliqtape-Kanal.
+ * Einmal machen, in mehrere eigene Kassetten legen; bis Sonntag 19 Uhr gibt
+ * der Server nichts davon heraus (backend/src/routes/challenge.ts). Jeder
+ * Status verraet nur den eigenen Stand — keine Streaks, keine Zaehler. */
 
-export interface FilmShot {
+export type ChallengeType = 'photo';
+
+export const CHALLENGE_TYPE_LABEL: Record<ChallengeType, string> = {
+  photo: 'Foto zum Thema',
+};
+
+export interface ChallengeWeek {
+  id: string;
+  type: ChallengeType;
+  theme: string;
+  releaseAt: number;
+}
+
+export interface ChallengeEntry {
+  id: string;
+  kind: Kind;
+  body: string;
+  mediaId: string | null;
+  tapeId: string | null;
+  takenAt: number;
+}
+
+export interface ChallengeShot {
   id: string;
   author: string;
-  mediaId: string;
+  kind: Kind;
+  mediaId: string | null;
+  tapeId: string | null;
   caption: string;
   takenAt: number;
 }
 
-export interface FilmStatus {
-  /** Wann der laufende Film entwickelt wird (Sonntag 19:00 Berlin). */
-  nextRelease: number;
-  /** Ob ich diese Woche schon belichtet habe — mehr verraet der Server nicht. */
-  iShot: boolean;
-  /** Der zuletzt entwickelte Film dieser Kassette, falls es einen gibt. */
-  developed: { at: number; shots: FilmShot[] } | null;
+export interface ChallengeStatus {
+  current: ChallengeWeek | null;
+  mine: { entry: ChallengeEntry; cassetteIds: string[] } | null;
   demoTools: boolean;
 }
 
-export function fetchFilm(cassetteId: string, me: string): Promise<FilmStatus> {
-  return apiFetch(`/api/cassettes/${cassetteId}/film?me=${encodeURIComponent(me)}`).then(unwrap<FilmStatus>);
+export interface CassetteChallenge {
+  current: ChallengeWeek | null;
+  mine: { entry: ChallengeEntry | null; sharedHere: boolean };
+  /** Die zuletzt aufgeloeste Woche dieser Kassette — die Tuete. */
+  developed: (ChallengeWeek & { at: number; shots: ChallengeShot[] }) | null;
+  demoTools: boolean;
 }
 
-export function shootFilm(
-  cassetteId: string,
-  author: string,
-  mediaId: string,
-  caption: string,
-): Promise<{ id: string; developAt: number }> {
-  return apiFetch(`/api/cassettes/${cassetteId}/film`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ author, mediaId, caption }),
-  }).then(unwrap<{ id: string; developAt: number }>);
+export function fetchChallenge(me: string): Promise<ChallengeStatus> {
+  return apiFetch(`/api/challenge?me=${encodeURIComponent(me)}`).then(unwrap<ChallengeStatus>);
 }
 
-/** Nur mit DEMO_TOOLS=1 auf dem Server, nur fuer die Gruenderin. */
-export function developFilmNow(cassetteId: string, by: string): Promise<{ developed: number }> {
-  return apiFetch(`/api/cassettes/${cassetteId}/film/develop-now`, {
+export function fetchCassetteChallenge(cassetteId: string, me: string): Promise<CassetteChallenge> {
+  return apiFetch(`/api/cassettes/${cassetteId}/challenge?me=${encodeURIComponent(me)}`).then(
+    unwrap<CassetteChallenge>,
+  );
+}
+
+export function createChallengeEntry(
+  me: string,
+  input: { mediaId?: string; caption?: string },
+): Promise<ChallengeEntry> {
+  return apiFetch('/api/challenge/entry', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ by }),
-  }).then(unwrap<{ developed: number }>);
+    body: JSON.stringify({ ...input, me }),
+  }).then(unwrap<ChallengeEntry>);
+}
+
+export function shareChallenge(cassetteId: string, me: string): Promise<{ postId: string; releaseAt: number }> {
+  return apiFetch(`/api/cassettes/${cassetteId}/challenge/share`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me }),
+  }).then(unwrap<{ postId: string; releaseAt: number }>);
+}
+
+export function unshareChallenge(cassetteId: string, me: string): Promise<void> {
+  return apiFetch(`/api/cassettes/${cassetteId}/challenge/share?me=${encodeURIComponent(me)}`, {
+    method: 'DELETE',
+  }).then(unwrap<void>);
+}
+
+export interface ChallengePlan {
+  types: ChallengeType[];
+  weeks: { releaseAt: number; type: ChallengeType | null; theme: string; started: boolean }[];
+}
+
+/** Nur fuer den Kliqtape-Kanal-Account. */
+export function fetchChallengePlan(me: string): Promise<ChallengePlan> {
+  return apiFetch(`/api/challenges?me=${encodeURIComponent(me)}`).then(unwrap<ChallengePlan>);
+}
+
+export function planChallenge(
+  me: string,
+  releaseAt: number,
+  type: ChallengeType | null,
+  theme: string,
+): Promise<{ releaseAt: number; type: ChallengeType | null; theme: string }> {
+  return apiFetch(`/api/challenges/${releaseAt}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me, type, theme }),
+  }).then(unwrap<{ releaseAt: number; type: ChallengeType | null; theme: string }>);
+}
+
+/** Nur mit DEMO_TOOLS=1: eine Woche beliebigen Typs sofort starten … */
+export function demoChallenge(me: string, type: ChallengeType): Promise<ChallengeWeek> {
+  return apiFetch('/api/challenge/demo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me, type }),
+  }).then(unwrap<ChallengeWeek>);
+}
+
+/** … und Sonntagabend vorziehen. */
+export function demoReleaseChallenge(me: string): Promise<{ released: number }> {
+  return apiFetch('/api/challenge/demo/release', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me }),
+  }).then(unwrap<{ released: number }>);
 }
 
 /* --- Imposter-Woche ---------------------------------------------------------

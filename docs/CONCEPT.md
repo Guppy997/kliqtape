@@ -125,32 +125,48 @@ saubere Typografie, großzügige Abstände, flüssige Bewegung. Kein Sepia über
 | **Clip** | Video, maximal 10 Sekunden |
 | **Zettel** | ein paar Zeilen Text |
 
-## 5a. Entwickelter Film
+## 5a. Wochen-Challenge
 
-Jede Person kann pro Kassette und Woche **ein** Bild auf den Film belichten, nur mit der Kamera.
-Danach sieht es niemand, auch die Person selbst nicht: Der Film wird entwickelt. **Sonntag um
-19 Uhr (Europe/Berlin)** ist er für alle Mitglieder gleichzeitig fertig. Auf Seite A liegt dann
-eine Fototüte, beim Öffnen klappt die Lasche hoch, die Abzüge rutschen heraus, man blättert sie
-einzeln durch. Danach liegen sie als normale Beiträge im Tape des Sonntags, mit dem orangen
-Datumsaufdruck einer Einwegkamera (Tag der Belichtung).
+Jede Woche gibt es **eine** Challenge, für alle Kassetten weltweit dieselbe. Typ und Thema legt
+der **Kliqtape-Kanal** fest (der Betreiber-Account, `ADMIN_NAME`), bis zu acht Wochen im Voraus;
+ohne Eintrag gibt es in der Woche keine Challenge. Aufgelöst wird **Sonntag um 19 Uhr
+(Europe/Berlin)**, wie früher der Film.
 
-**Technisch:** ein Seite-A-Beitrag mit `source = 'film'`, `develop_at` (Freigabe) und
-`taken_at` (Belichtung); `created_at = develop_at`, damit er im Tape des Sonntags steht. Bis zur
-Freigabe filtert der Server ihn aus Feed, Zählern, Tonfetzen, Zitaten und Meldungen, und
-`GET /api/media/:id` antwortet mit 404, auch der Person, die belichtet hat. Wer Sonntag nach
-19 Uhr belichtet, landet im Film der nächsten Woche. Der Status verrät nur, ob man selbst schon
-belichtet hat, nicht wer sonst oder wie viele. Ein Film nimmt nur frisch hochgeladene Bilder
-an; sonst ließe sich ein fremdes, sichtbares Foto per ID bis Sonntag sperren.
+Typen: **Foto zum Thema** (nur Kamera), **Super-8** (Clip bis 10 s, nur Kamera), **Damals**
+(Foto, das mindestens ein Jahr alt ist, aus der Galerie), **Mixtape** und **Imposter** (5b).
+Der Film ist darin aufgegangen: „Foto zum Thema“ wird genauso entwickelt, mit Fototüte und dem
+orangen Datumsaufdruck einer Einwegkamera.
 
-**Vorführung:** Mit `DEMO_TOOLS=1` kann die Person, die die Kassette angelegt hat, den Film
-sofort entwickeln. Im Betrieb bleibt das aus.
+**Einmal machen, mehrfach ablegen.** Man nimmt seinen Beitrag einmal auf und legt ihn in so
+viele eigene Kassetten, wie man will — auch später in der Woche noch, ohne neu aufzunehmen,
+und vor der Auflösung auch wieder heraus. Bis Sonntagabend sieht ihn niemand, auch man selbst
+nicht. Danach liegt auf Seite A eine Fototüte; geöffnet liegen die Abzüge als normale Beiträge
+im Tape des Sonntags.
+
+**Kein Druck:** keine Streaks, keine Zähler und keine Anzeige, wer schon mitgemacht hat — jeder
+Status verrät nur den eigenen Stand.
+
+**Technisch:** `challenge_weeks` (eine Zeile pro Sonntag, vom Kanal geplant), `challenge_entries`
+(der eine Beitrag pro Person und Woche) und `challenge_shares` (wo er liegt). Jede Ablage ist ein
+normaler Seite-A-Beitrag mit `source = 'challenge'`, `develop_at` = Auflösung, `taken_at` =
+Aufnahme und `created_at = develop_at` — Feed, Zähler, Tonfetzen, Zitate, Meldungen und Album
+filtern ihn deshalb bis zur Freigabe genauso heraus wie früher den Film, und `GET
+/api/media/:id` antwortet mit 404, auch bei einem noch gar nicht abgelegten Beitrag. Ein Medium
+kann jetzt in mehreren Kassetten hängen; `dropMedia` räumt eine Datei erst weg, wenn nichts mehr
+darauf zeigt. Ein Beitrag nimmt nur frisch hochgeladene Bilder an, sonst ließe sich ein fremdes,
+sichtbares Foto per ID bis Sonntag sperren. „Nur Kamera“ kann der Server nicht prüfen — die App
+bietet dort schlicht keine Galerie an.
+
+**Vorführung:** Mit `DEMO_TOOLS=1` kann jede angemeldete Person sofort eine Woche eines
+beliebigen Typs starten und den Sonntagabend vorziehen, um jeden Typ zu zeigen. Im Betrieb
+bleibt das aus. Ältere Film-Beiträge (vor v0.50) bleiben unverändert im Band.
 
 ## 5b. Imposter-Woche (Special)
 
 Ein Spiel für die Runde, **nicht jede Woche**: frühestens vier Wochen nach der letzten, nur auf
 Kassetten mit **mindestens vier Leuten**, gestartet von einem Mitglied in der Kassetten-Ansicht.
 Alle bekommen dieselbe Wochenaufgabe (ein Foto oder ein paar Worte), eine zufällige Person ist
-Imposter, weiß das und bekommt nur einen vagen Hinweis. Die Beiträge sind wie der Film bis
+Imposter, weiß das und bekommt nur einen vagen Hinweis. Die Beiträge sind wie die Challenge bis
 **Sonntag 19 Uhr** verborgen, auch die Bilder. Dann sieht die Runde alle Beiträge und tippt, wer
 die Aufgabe nicht kannte; umentscheiden geht bis zur Auflösung. Aufgelöst wird, sobald alle
 getippt haben, durch die Person, die gestartet hat, oder 24 Stunden später von selbst.
@@ -163,7 +179,7 @@ Beiträge bleiben im Tape des Sonntags auf Seite A, der Imposter-Beitrag mit Ste
 
 **Technisch:** `imposter_weeks`, `imposter_entries`, `imposter_votes`; Aufgaben als feste Liste
 in `backend/src/routes/imposter.ts`. Beiträge sind Seite-A-Posts mit `source = 'imposter'` und `develop_at`, also
-dieselbe Sperre wie beim Film. Mit `DEMO_TOOLS=1` kann die Gründerin den Sonntagabend
+dieselbe Sperre wie bei der Challenge. Mit `DEMO_TOOLS=1` kann die Gründerin den Sonntagabend
 vorziehen; die Vier-Wochen-Pause entfällt dann.
 
 ## 5c. Album-Export
@@ -307,8 +323,12 @@ cassette_invites(id, cassette_id, invitee, invited_by, created_at)
 reports(id, cassette_id | post_id, reported_by, reason, note, created_at)
 imposter_weeks(id, cassette_id, task_key, imposter, started_by, started_at, reveal_at, revealed_at)
 imposter_entries(week_id, author, post_id)   imposter_votes(week_id, voter, suspect, created_at)
+challenge_weeks(id, release_at, type, theme, set_by, created_at, demo)
+challenge_entries(id, week_id, author, kind, body, media_id, tape_id, taken_at, created_at)
+challenge_shares(entry_id, cassette_id, post_id)
+      -- Wochen-Challenge: einmal machen, pro Kassette ein Post mit source='challenge'
 posts.develop_at, posts.taken_at
-      -- Film: unsichtbar bis develop_at (Sonntag 19:00 Berlin), created_at = develop_at
+      -- unsichtbar bis develop_at (Sonntag 19:00 Berlin), created_at = develop_at
       -- ohne Fremdschlüssel: Meldungen überleben das Löschen des Gemeldeten
 
 posts(id, cassette_id, side, author, kind, body, media_id, tape_id, source,
@@ -345,7 +365,7 @@ media(id, mime, bytes, duration_ms, created_at)
 Mixtapes bauen, verschenken, teilen · O-Ton mit Bandquietschen · Kamera und Galerie · Hot Line mit
 Anrufbeantworter · Profil mit Export und Löschung · Testdaten-Skript · Storys (24 h) ·
 Kliqtape-Kanal mit Förderstand · Zugangscode-Identität · Einladungen mit Zustimmen ·
-Kassetten-Ansicht mit Suche · Melden · Entwickelter Film · Imposter-Woche · Album-PDF ·
+Kassetten-Ansicht mit Suche · Melden · Wochen-Challenge (ersetzt den Film) · Imposter-Woche · Album-PDF ·
 Einladung als Brief · Kassette altert · Mixtape als Bild · Tests und CI · Profil als eigene
 Sammlung mit Regal (gesammelte Tapes, selbst beschriftet; eigene Tapes wie ein Tagebuch)
 
@@ -552,7 +572,7 @@ die Mitgliedschaft gebunden werden — oder an kurzlebige signierte Links.
 
 **Teilweise behoben (2026-10-06):** Das *Hochladen* (`POST /api/media`) verlangt jetzt einen
 gültigen Zugangscode. Vorher konnte jeder, der die URL kannte, Dateien auf die Platte schreiben.
-Der *Abruf* bleibt wie beschrieben offen — mit einer Ausnahme: Medien von Film und
+Der *Abruf* bleibt wie beschrieben offen — mit einer Ausnahme: Medien von Challenge- und
 Imposter-Beiträgen liefert der Server vor ihrer Freigabe an niemanden aus (Abschnitt 5a).
 
 ### 16.6 Rechtliches vor der öffentlichen Registrierung

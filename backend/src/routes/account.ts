@@ -95,6 +95,8 @@ accountRouter.post('/api/auth/rename', (req, res) => {
     db.prepare(`UPDATE invite_letters SET created_by = ? WHERE created_by = ?`).run(next, from);
     db.prepare(`UPDATE invite_letters SET used_by = ? WHERE used_by = ?`).run(next, from);
     db.prepare(`UPDATE private_tapes SET owner = ? WHERE owner = ?`).run(next, from);
+    db.prepare(`UPDATE challenge_entries SET author = ? WHERE author = ?`).run(next, from);
+    db.prepare(`UPDATE challenge_weeks SET set_by = ? WHERE set_by = ?`).run(next, from);
   })();
 
   res.json({ name: next });
@@ -171,6 +173,13 @@ accountRouter.get('/api/export', (req, res) => {
     imposterTipps: db.prepare(`SELECT * FROM imposter_votes WHERE voter = ?`).all(me),
     mixtapes: tapes,
     eigeneTapes: privateTapesOf(me),
+    challengeBeitraege: db
+      .prepare(
+        `SELECT e.*, w.type AS challenge_type, w.theme AS challenge_theme, w.release_at
+           FROM challenge_entries e JOIN challenge_weeks w ON w.id = e.week_id
+          WHERE e.author = ? ORDER BY e.created_at`,
+      )
+      .all(me),
   });
 });
 
@@ -196,6 +205,9 @@ accountRouter.delete('/api/me', (req, res) => {
         id: string;
       }[]),
       ...privateMediaOf(me).map((id) => ({ id })),
+      ...(db
+        .prepare(`SELECT media_id AS id FROM challenge_entries WHERE author = ? AND media_id IS NOT NULL`)
+        .all(me) as { id: string }[]),
     ].map((r) => r.id);
 
     const posts = db.prepare(`DELETE FROM posts WHERE author = ?`).run(me).changes;
@@ -205,6 +217,9 @@ accountRouter.delete('/api/me', (req, res) => {
     db.prepare(`DELETE FROM news_posts WHERE author = ?`).run(me);
     // Eintraege gehen per ON DELETE CASCADE mit, ihre Medien oben ueber mediaIds.
     db.prepare(`DELETE FROM private_tapes WHERE owner = ?`).run(me);
+    // Challenge-Beitraege: die geteilten Posts gingen oben mit den Posts,
+    // jetzt der Beitrag selbst (Ablagen kaskadieren).
+    db.prepare(`DELETE FROM challenge_entries WHERE author = ?`).run(me);
     // Eine Leitung gehoert zwei Personen — loescht eine ihr Konto, verschwindet
     // die ganze Leitung mit, nicht nur die eigenen Nachrichten darin.
     db.prepare(`DELETE FROM hotline_threads WHERE person_a = ? OR person_b = ?`).run(me, me);

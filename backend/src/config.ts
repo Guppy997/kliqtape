@@ -13,8 +13,8 @@ export const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 300);
 // Name wie jeder andere, nur dieser eine darf dort posten. Leer per Default:
 // ohne gesetzten Namen kann niemand posten, der Kanal ist dann leer.
 export const ADMIN_NAME = process.env.ADMIN_NAME ?? '';
-/** Nur fuer Vorfuehrungen (DEMO_TOOLS=1): Film und Imposter-Woche lassen
- *  sich sofort aufloesen statt bis Sonntagabend zu warten. */
+/** Nur fuer Vorfuehrungen (DEMO_TOOLS=1): jeder Challenge-Typ laesst sich
+ *  sofort starten und aufloesen, statt bis Sonntagabend zu warten. */
 export const DEMO_TOOLS = process.env.DEMO_TOOLS === '1';
 /** Oeffentliche Adresse fuer den QR-Code. Ohne Angabe die, von der aus der
  *  Brief angefordert wurde (Origin-Header). */
