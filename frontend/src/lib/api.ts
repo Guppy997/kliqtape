@@ -52,6 +52,8 @@ export interface Member {
   joinedAt: number;
   /** Gruenderin oder ernannt — darf die Wochen-Challenge der Runde schalten. */
   admin: boolean;
+  /** Freiwillig, Freitext. Kommt nur hier an, also nur fuer Mitglieder. */
+  pronouns: string | null;
 }
 
 /** Admin ernennen oder zuruecknehmen — nur Admins der Runde. */
@@ -1061,6 +1063,20 @@ export function saveOnboarding(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...patch, me }),
   }).then(unwrap<OnboardingState>);
+}
+
+/** Pronomen — freiwillig. Andere sehen sie nur in der Mitgliederliste
+ *  gemeinsamer Kassetten (fetchMembers), sonst nirgends. */
+export function fetchPronouns(me: string): Promise<{ pronouns: string | null }> {
+  return apiFetch(`/api/me/pronouns?me=${encodeURIComponent(me)}`).then(unwrap<{ pronouns: string | null }>);
+}
+
+export function savePronouns(me: string, pronouns: string): Promise<{ pronouns: string | null }> {
+  return apiFetch('/api/me/pronouns', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ me, pronouns }),
+  }).then(unwrap<{ pronouns: string | null }>);
 }
 
 export function fetchProfiles(): Promise<Profile[]> {

@@ -73,8 +73,9 @@ cassettesRouter.get('/api/cassettes/:id/members', (req, res) => {
   requireMember(req, req.params.id, String(req.query.me ?? '').trim());
   const rows = db
     .prepare(
-      `SELECT m.member, m.added_by, m.joined_at, m.is_admin, c.created_by
+      `SELECT m.member, m.added_by, m.joined_at, m.is_admin, c.created_by, p.pronouns
          FROM cassette_members m JOIN cassettes c ON c.id = m.cassette_id
+         LEFT JOIN profiles p ON p.name = m.member
         WHERE m.cassette_id = ? ORDER BY m.joined_at`,
     )
     .all(req.params.id) as {
@@ -83,6 +84,7 @@ cassettesRouter.get('/api/cassettes/:id/members', (req, res) => {
     joined_at: number;
     is_admin: number;
     created_by: string;
+    pronouns: string | null;
   }[];
   if (rows.length === 0) throw new HttpError(404, 'Kassette nicht gefunden');
   res.json(
@@ -91,6 +93,9 @@ cassettesRouter.get('/api/cassettes/:id/members', (req, res) => {
       addedBy: r.added_by,
       joinedAt: r.joined_at,
       admin: r.member === r.created_by || r.is_admin === 1,
+      // Einzige Stelle, an der andere die Pronomen sehen: nur Mitglieder
+      // dieser Kassette kommen bis hier (requireMember oben).
+      pronouns: r.pronouns,
     })),
   );
 });

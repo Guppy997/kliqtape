@@ -434,6 +434,12 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                 <span className="block truncate text-sm" style={{ color: 'var(--ink)' }}>
                   {m.name}
                   {m.name === me && ' (du)'}
+                  {m.pronouns && (
+                    <span className="text-2xs" style={{ color: 'var(--dim)' }}>
+                      {' '}
+                      · {m.pronouns}
+                    </span>
+                  )}
                 </span>
                 <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
                   {creator ? 'hat das Band angelegt' : `eingeladen von ${m.addedBy}`}

@@ -164,6 +164,38 @@ accountRouter.put('/api/me/onboarding', (req, res) => {
 });
 
 /* -------------------------------------------------------------------------
+ * Pronomen — freiwillig, Freitext, nur fuer einen selbst hier lesbar. Andere
+ * sehen sie ausschliesslich in der Mitgliederliste einer gemeinsamen
+ * Kassette (GET /api/cassettes/:id/members). Bewusst NICHT in /api/profiles,
+ * das ohne Mitgliedschaft abrufbar ist.
+ * ---------------------------------------------------------------------- */
+const PRONOUNS_MAX = 30;
+
+accountRouter.get('/api/me/pronouns', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  requireIdentity(req, me);
+  const r = db.prepare(`SELECT pronouns FROM profiles WHERE name = ?`).get(me) as
+    { pronouns: string | null } | undefined;
+  res.json({ pronouns: r?.pronouns ?? null });
+});
+
+accountRouter.put('/api/me/pronouns', (req, res) => {
+  const me = String(req.body?.me ?? '').trim();
+  requireIdentity(req, me);
+  const raw = req.body?.pronouns;
+  if (raw != null && typeof raw !== 'string') throw new HttpError(400, 'Pronomen als Text');
+  // Zeilenumbrueche und Mehrfach-Leerzeichen zusammenfalten, damit es in
+  // der Mitgliederliste eine Zeile bleibt.
+  const pronouns = (raw ?? '').replace(/\s+/g, ' ').trim();
+  if (pronouns.length > PRONOUNS_MAX) throw new HttpError(400, `Höchstens ${PRONOUNS_MAX} Zeichen`);
+  db.prepare(
+    `INSERT INTO profiles (name, pronouns, updated_at) VALUES (?, ?, ?)
+     ON CONFLICT(name) DO UPDATE SET pronouns = excluded.pronouns, updated_at = excluded.updated_at`,
+  ).run(me, pronouns || null, Date.now());
+  res.json({ pronouns: pronouns || null });
+});
+
+/* -------------------------------------------------------------------------
  * Profile
  * ---------------------------------------------------------------------- */
 // Alle Profile auf einmal. Bei dieser Gruppengroesse ist das eine winzige
@@ -227,7 +259,7 @@ accountRouter.get('/api/export', (req, res) => {
     profil:
       db
         .prepare(
-          `SELECT name, avatar_id AS avatarId, onboarded_at AS onboardedAt, age_confirmed_at AS ageConfirmedAt,
+          `SELECT name, avatar_id AS avatarId, pronouns, onboarded_at AS onboardedAt, age_confirmed_at AS ageConfirmedAt,
                   terms_accepted_at AS termsAcceptedAt, terms_version AS termsVersion
              FROM profiles WHERE name = ?`,
         )

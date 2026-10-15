@@ -679,6 +679,10 @@ addColumn(
   'Wochen-Challenge fuer sich in dieser Runde stumm',
 );
 addColumn('profiles', 'album_opt_out', 'album_opt_out INTEGER NOT NULL DEFAULT 0', 'Meine Beiträge nicht in Alben');
+// Freiwillig und Freitext. Sichtbar nur fuer Mitglieder gemeinsamer Kassetten
+// (Mitgliederliste, routes/cassettes.ts), sonst nirgends ausgeliefert und fuer
+// nichts anderes verwendet, auch nicht fuer Grammatik in Texten.
+addColumn('profiles', 'pronouns', 'pronouns TEXT', 'Pronomen, freiwillig');
 
 /**
  * Die EINZIGE Quelle fuer den Album-Export (src/album/). Enthaelt nur

@@ -276,7 +276,10 @@ ohne Fortschrittsbalken, nur „Weiter“ und „Überspringen“:
 
 Die Erklär-Screens (1 bis 3, ohne das Willkommen) lassen sich in den Einstellungen unter
 „Einführung“ jederzeit nochmal ansehen. **Keine Geschlechtsabfrage**, und alle Texte sind
-geschlechtsneutral (Schreibregel in CONTRIBUTING.md). Berechtigungen fragt das Onboarding bewusst **nicht** ab. Gespeichert werden
+geschlechtsneutral (Schreibregel in CONTRIBUTING.md). **Pronomen** gibt es als freiwilliges
+Freitextfeld in den Einstellungen (seit v0.60), nicht im Onboarding. Andere sehen sie nur in der
+Mitgliederliste einer gemeinsamen Kassette (`GET /api/cassettes/:id/members`), nicht in der
+offenen Profilliste; verwendet werden sie für nichts anderes, auch nicht für Grammatik in Texten. Berechtigungen fragt das Onboarding bewusst **nicht** ab. Gespeichert werden
 `profiles.onboarded_at`, `age_confirmed_at`, `terms_accepted_at` und `terms_version`.
 
 **Berechtigungen erst bei Bedarf** (seit v0.57): Kamera beim ersten Foto, Kamera und Mikrofon
@@ -438,7 +441,8 @@ hotline_messages(id, thread_id, from_name, kind, body, media_id, tape_id, source
 stories(id, author, kind, media_id, created_at, expires_at)   -- 24 h
 mixtapes(id, from_name, to_name, title, note, cover_id, sealed_at, created_at)
 mixtape_tracks(id, mixtape_id, position, title, artist, url)
-profiles(name, avatar_id, album_opt_out, updated_at)
+profiles(name, avatar_id, album_opt_out, pronouns, updated_at)
+      -- pronouns: freiwillig, Freitext; nur in der Mitgliederliste gemeinsamer Kassetten
 album_posts   -- VIEW: einzige Quelle für den Album-Export (Abschnitt 5c)
 invite_letters(id, cassette_id, token_hash, created_by, created_at, expires_at, used_by, used_at)
 person_tokens(name, token_hash, created_at)

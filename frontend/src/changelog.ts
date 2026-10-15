@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.60.0',
+    date: '2026-10-15',
+    changes: [
+      'Neu: Pronomen, freiwillig, in den Einstellungen unter deinem Namen',
+      'Sehen können sie nur die Leute aus deinen Kassetten, in der Mitgliederliste. Für nichts anderes',
+    ],
+  },
+  {
     version: '0.59.0',
     date: '2026-10-15',
     changes: [

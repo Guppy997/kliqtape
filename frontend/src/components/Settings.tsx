@@ -5,7 +5,9 @@ import {
   deleteEverything,
   downloadExport,
   fetchAlbumOptOut,
+  fetchPronouns,
   renameIdentity,
+  savePronouns,
   saveProfile,
   setAlbumOptOut,
   uploadMedia,
@@ -45,6 +47,10 @@ const SERVER_SEES_EXTRA: [string, string][] = [
     'nur die Push-Adresse deines Geräts, wenn du sie erlaubst. Die Erinnerung läuft über den Push-Dienst von Apple oder Google und enthält einen festen Satz, nie Inhalte',
   ],
   ['Onboarding', 'wann du das Mindestalter bestätigt und die Rechtstexte akzeptiert hast, und in welcher Fassung'],
+  [
+    'Pronomen',
+    'nur wenn du welche einträgst: im Klartext. Andere sehen sie nur in der Mitgliederliste deiner Kassetten; die App verwendet sie für nichts anderes',
+  ],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
   [
     'Einladung als Brief oder Link',
@@ -235,6 +241,10 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
                 </button>
               </div>
               <Hint>Der Name ist deine Identität — alte Aufnahmen behalten den alten.</Hint>
+            </Block>
+
+            <Block title="Pronomen">
+              <PronounsField />
             </Block>
 
             <Block title="Zugangscode">
@@ -460,6 +470,64 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
           </div>
         )}
       </Sheet>
+    </>
+  );
+}
+
+/** Pronomen, freiwillig und als Freitext. Sehen nur die Mitglieder der
+ *  eigenen Kassetten in der Mitgliederliste; die App verwendet sie fuer
+ *  nichts anderes. Bewusst nicht im Onboarding. */
+function PronounsField() {
+  const me = useApp((s) => s.me);
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ['pronouns', me], queryFn: () => fetchPronouns(me) });
+  // null = noch nichts getippt, dann steht der gespeicherte Wert im Feld.
+  const [draft, setDraft] = useState<string | null>(null);
+  const saved = data?.pronouns ?? '';
+  const value = draft ?? saved;
+  const save = useMutation({
+    mutationFn: (next: string) => savePronouns(me, next),
+    onSuccess: (r) => {
+      qc.setQueryData(['pronouns', me], r);
+      setDraft(null);
+      void qc.invalidateQueries({ queryKey: ['members'] });
+    },
+  });
+  const dirty = value.trim() !== saved;
+  return (
+    <>
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (dirty) save.mutate(value);
+        }}
+      >
+        <input
+          value={value}
+          onChange={(e) => setDraft(e.target.value)}
+          disabled={!data}
+          maxLength={30}
+          aria-label="Pronomen"
+          placeholder="z. B. sie/ihr, er/ihm, they/them"
+          className="min-w-0 flex-1 rounded-lg px-3 py-2.5 text-base outline-none"
+          style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+        />
+        <button
+          type="submit"
+          disabled={!dirty || save.isPending}
+          className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+          style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+        >
+          {save.isPending ? '…' : 'Speichern'}
+        </button>
+      </form>
+      {save.error && (
+        <p className="text-2xs" style={{ color: 'var(--danger)' }}>
+          {(save.error as Error).message}
+        </p>
+      )}
+      <Hint>Freiwillig. Sehen nur die Leute aus deinen Kassetten, in der Mitgliederliste. Für nichts anderes.</Hint>
     </>
   );
 }
