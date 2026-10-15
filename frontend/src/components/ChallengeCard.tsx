@@ -17,6 +17,7 @@ import {
 import { filmReleaseLabel, filmStampLabel, takenLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import { jumpTo } from '@/store/jumpStore';
+import { useCoverX } from '@/store/coverStore';
 import ChallengeFlow from './ChallengeFlow';
 import { MaskIcon } from './ImposterCard';
 import KindIcon from './KindIcon';
@@ -312,6 +313,7 @@ type Phase = 'bag' | 'opening' | 'viewer';
  * reduzierter Bewegung geht es direkt zu den Abzuegen.
  */
 function BagReveal({ shots, at, onClose }: { shots: ChallengeShot[]; at: number; onClose: () => void }) {
+  useCoverX(true);
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const [phase, setPhase] = useState<Phase>(reduced ? 'viewer' : 'bag');
   const [index, setIndex] = useState(0);
@@ -366,7 +368,7 @@ function BagReveal({ shots, at, onClose }: { shots: ChallengeShot[]; at: number;
         // mt-0.5, weil die Titelzeile dort 36 px hoch ist und das Plus mittig sitzt.
         className="hit absolute left-3 top-[max(0.5rem,env(safe-area-inset-top))] mt-0.5 grid size-8 place-items-center rounded-full text-white"
       >
-        <PlusMark turned />
+        <PlusMark turned enter />
       </button>
 
       {phase !== 'viewer' ? (

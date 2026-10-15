@@ -5,6 +5,7 @@ import Avatar from './Avatar';
 import CollectedTapes from './CollectedTapes';
 import MixtapeList from './MixtapeShelf';
 import NavButton from './NavButton';
+import Onboarding from './Onboarding';
 import PrivateTapes from './PrivateTapes';
 import SettingsSheet from './Settings';
 import Sheet from './Sheet';
@@ -31,6 +32,7 @@ export default function ProfileView() {
   const open = navActive === 'profile';
   const [tab, setTab] = useState<Tab>('regal');
   const [settings, setSettings] = useState(false);
+  const [intro, setIntro] = useState(false);
 
   return (
     <>
@@ -73,6 +75,18 @@ export default function ProfileView() {
               <GearIcon />
             </button>
           </div>
+
+          {/* Das Onboarding als Vorschau, zum Zeigen: alle Screens, nichts
+              wird gespeichert (Onboarding.tsx). */}
+          <button
+            type="button"
+            onClick={() => setIntro(true)}
+            className="flex items-center gap-2 self-start rounded-full px-3.5 py-2 text-xs font-medium"
+            style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+          >
+            <RewindIcon />
+            Einführung ansehen
+          </button>
 
           <div
             role="tablist"
@@ -131,7 +145,17 @@ export default function ProfileView() {
       </Sheet>
 
       <SettingsSheet open={settings} onClose={() => setSettings(false)} />
+      {intro && <Onboarding preview onDone={() => setIntro(false)} />}
     </>
+  );
+}
+
+/** Zurueckspulen wie am Kassettendeck — die Einfuehrung nochmal von vorn. */
+function RewindIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="var(--accent)" aria-hidden="true">
+      <path d="M7 3v8L1.5 7zM12.5 3v8L7 7z" />
+    </svg>
   );
 }
 

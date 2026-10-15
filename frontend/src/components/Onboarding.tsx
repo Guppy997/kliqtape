@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   acceptInvite,
@@ -17,6 +18,7 @@ import {
 import { lookFor, PAIR_COUNT } from '@/lib/cassetteLook';
 import { clearLetterToken, pendingLetterToken } from '@/lib/letter';
 import { useApp } from '@/store/appStore';
+import { useCoverX } from '@/store/coverStore';
 import Avatar from './Avatar';
 import CameraCapture from './CameraCapture';
 import { CassetteFacePreview } from './CassetteHeader';
@@ -24,6 +26,7 @@ import { MiniCassette, useCassettes } from './CassetteDeck';
 import { MiniBag } from './ChallengeCard';
 import InviteLinkButton from './InviteLinkButton';
 import Lockup from './Lockup';
+import PlusMark from './PlusMark';
 import Sheet from './Sheet';
 
 /*
@@ -32,8 +35,10 @@ import Sheet from './Sheet';
  * ueberspringen, das Mindestalter und die Rechtstexte nicht. Danach geht es
  * mit einer Einladung direkt in die Kassette, sonst wird die erste angelegt.
  *
- * In den Einstellungen laesst sich die Einfuehrung nochmal ansehen (replay):
- * dann nur die erklaerenden Screens, ohne Willkommen, Profil, Haken und Start.
+ * Vorschau (preview, aus dem Profil und den Einstellungen): alle Screens wie
+ * beim ersten Mal, aber nichts wird gespeichert, angelegt oder eingeloest.
+ * Oben links schliesst ein X jederzeit, der Start zeigt den Weg ohne
+ * Einladung (erste Kassette, dann einladen).
  *
  * Schreibregel fuer alle Texte hier: kurz, keine Gedankenstriche, duzen und
  * ohne Personenbezeichnungen (CONTRIBUTING.md). Kein Fortschrittsbalken, nur
@@ -43,13 +48,19 @@ import Sheet from './Sheet';
 type Step = 'welcome' | 'what' | 'sides' | 'challenge' | 'promise' | 'privacy' | 'profile' | 'consent' | 'start';
 const INTRO: Step[] = ['welcome', 'what', 'sides', 'challenge', 'promise', 'privacy'];
 
-export default function Onboarding({ replay = false, onDone }: { replay?: boolean; onDone: () => void }) {
+/** true in der Vorschau: Schritte mit Wirkung (Name, Bild, Haken, Kassette,
+ *  Einladung) zeigen sich wie echt, speichern aber nichts. */
+const PreviewMode = createContext(false);
+
+export default function Onboarding({ preview = false, onDone }: { preview?: boolean; onDone: () => void }) {
   const me = useApp((s) => s.me);
   const qc = useQueryClient();
-  const [step, setStep] = useState<Step>(replay ? 'what' : 'welcome');
+  const [step, setStep] = useState<Step>('welcome');
+  // Vorschau mit X oben links: das Plus der Leiste dreht beim Schliessen zurueck.
+  useCoverX(preview);
 
   async function finish() {
-    if (!replay) {
+    if (!preview) {
       await saveOnboarding(me, { done: true });
       await qc.invalidateQueries({ queryKey: ['onboarding', me] });
     }
@@ -59,148 +70,185 @@ export default function Onboarding({ replay = false, onDone }: { replay?: boolea
   function next() {
     const i = INTRO.indexOf(step);
     if (i >= 0 && i < INTRO.length - 1) return setStep(INTRO[i + 1]!);
-    if (step === 'privacy') return replay ? onDone() : setStep('profile');
+    if (step === 'privacy') return setStep('profile');
     if (step === 'profile') return setStep('consent');
     if (step === 'consent') return setStep('start');
   }
 
   function skipIntro() {
-    if (replay) return onDone();
     setStep('profile');
   }
 
-  switch (step) {
-    case 'welcome':
-      return (
-        <Frame
-          center
-          art={
-            <div className="flex flex-col items-center gap-5">
-              <img src="/favicon.svg" alt="" width={72} height={72} className="rounded-2xl" />
-              <Lockup size="clamp(3rem, 17vw, 4.6rem)" />
-            </div>
-          }
-          title="Herzlich willkommen."
-          primary="Weiter"
-          onPrimary={next}
-          secondary="Überspringen"
-          onSecondary={skipIntro}
-        >
-          Schön, dass du da bist.
-        </Frame>
-      );
-    case 'what':
-      return (
-        <Frame
-          art={
-            <div className="mx-auto">
-              <CassetteFacePreview
-                side="a"
-                cassetteId="onboarding"
-                pairIndex={0}
-                label="Eure Runde"
-                count={0}
-                width={240}
-              />
-            </div>
-          }
-          title="Eine Kassette ist eure feste Runde."
-          primary="Weiter"
-          onPrimary={next}
-          secondary="Überspringen"
-          onSecondary={skipIntro}
-        >
-          Für jede Runde gibt es ein eigenes Band. Was drauf ist, sehen nur die Leute, die auch drauf sind.
-        </Frame>
-      );
-    case 'sides':
-      return (
-        <Frame
-          art={<SidesArt />}
-          title="Seite A bleibt. Seite B läuft."
-          primary="Weiter"
-          onPrimary={next}
-          secondary="Überspringen"
-          onSecondary={skipIntro}
-        >
-          Auf Seite A sammelt ihr, was bleiben soll: euer gemeinsames Archiv. Seite B ist euer Gruppenchat.
-        </Frame>
-      );
-    case 'challenge':
-      return (
-        <Frame
-          art={
-            <div className="mx-auto [zoom:1.8]">
-              <MiniBag />
-            </div>
-          }
-          title="Jede Woche eine Challenge."
-          primary="Weiter"
-          onPrimary={next}
-          secondary="Überspringen"
-          onSecondary={skipIntro}
-        >
-          Ein Foto, ein kurzer Clip, ein Mixtape oder ein Spiel. Aufgelöst wird sonntags um 19 Uhr, für alle
-          gleichzeitig.
-        </Frame>
-      );
-    case 'promise':
-      return (
-        <Frame
-          title="Was es hier nicht gibt."
-          primary="Weiter"
-          onPrimary={next}
-          secondary="Überspringen"
-          onSecondary={skipIntro}
-        >
-          <List
-            items={[
-              'Keinen Feed, der dich festhält.',
-              'Keine Likes und keine Zahlen.',
-              'Keine Werbung.',
-              'Kein Tracking.',
-            ]}
-          />
-          <p className="mt-5">
-            Und keinen Zwang: Die Challenge ist freiwillig. Sehen dürfen alle, auch wer nicht mitmacht.
-          </p>
-        </Frame>
-      );
-    case 'privacy':
-      return (
-        <Frame
-          title="Deine Daten."
-          primary={replay ? 'Fertig' : 'Weiter'}
-          onPrimary={next}
-          secondary={replay ? undefined : 'Überspringen'}
-          onSecondary={skipIntro}
-        >
-          <List
-            items={[
-              'Der Chat ist Ende-zu-Ende-verschlüsselt.',
-              'Das Archiv liegt verschlüsselt auf Servern in Deutschland.',
-              'Wir schauen nicht rein, außer jemand meldet einen Inhalt. Jeder Zugriff wird veröffentlicht.',
-            ]}
-          />
-          {/* Ehrlich bleiben: Das oben ist das Ziel, nicht der heutige Stand. */}
-          <div
-            className="mt-6 rounded-xl px-4 py-3 text-sm leading-relaxed"
-            style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-line)', color: 'var(--danger)' }}
+  const content = (
+    <PreviewMode.Provider value={preview}>
+      {screen()}
+      {preview && <PreviewBar onClose={onDone} />}
+    </PreviewMode.Provider>
+  );
+  // Die Vorschau geht aus dem Profil auf, das in der unteren Leiste haengt.
+  // Deren Milchglas (backdrop-filter) waere sonst der Bezugsrahmen fuer
+  // position: fixed, deshalb direkt an den body.
+  return preview ? createPortal(content, document.body) : content;
+
+  function screen(): ReactNode {
+    switch (step) {
+      case 'welcome':
+        return (
+          <Frame
+            center
+            art={
+              <div className="flex flex-col items-center gap-5">
+                <img src="/favicon.svg" alt="" width={72} height={72} className="rounded-2xl" />
+                <Lockup size="clamp(3rem, 17vw, 4.6rem)" />
+              </div>
+            }
+            title="Herzlich willkommen."
+            primary="Weiter"
+            onPrimary={next}
+            secondary="Überspringen"
+            onSecondary={skipIntro}
           >
-            <strong className="block tracking-[0.12em]">DEMO-VERSION</strong>
-            So soll es sein, umgesetzt ist es noch nicht. Heute ist nichts verschlüsselt, und ein öffentliches
-            Zugriffsprotokoll gibt es noch nicht. Was wirklich gilt, steht jederzeit in den Einstellungen unter „Was der
-            Server sieht“.
-          </div>
-        </Frame>
-      );
-    case 'profile':
-      return <ProfileStep onNext={next} />;
-    case 'consent':
-      return <ConsentStep onNext={next} />;
-    case 'start':
-      return <StartStep onFinish={() => void finish()} />;
+            Schön, dass du da bist.
+          </Frame>
+        );
+      case 'what':
+        return (
+          <Frame
+            art={
+              <div className="mx-auto">
+                <CassetteFacePreview
+                  side="a"
+                  cassetteId="onboarding"
+                  pairIndex={0}
+                  label="Eure Runde"
+                  count={0}
+                  width={240}
+                />
+              </div>
+            }
+            title="Eine Kassette ist eure feste Runde."
+            primary="Weiter"
+            onPrimary={next}
+            secondary="Überspringen"
+            onSecondary={skipIntro}
+          >
+            Für jede Runde gibt es ein eigenes Band. Was drauf ist, sehen nur die Leute, die auch drauf sind.
+          </Frame>
+        );
+      case 'sides':
+        return (
+          <Frame
+            art={<SidesArt />}
+            title="Seite A bleibt. Seite B läuft."
+            primary="Weiter"
+            onPrimary={next}
+            secondary="Überspringen"
+            onSecondary={skipIntro}
+          >
+            Auf Seite A sammelt ihr, was bleiben soll: euer gemeinsames Archiv. Seite B ist euer Gruppenchat.
+          </Frame>
+        );
+      case 'challenge':
+        return (
+          <Frame
+            art={
+              <div className="mx-auto [zoom:1.8]">
+                <MiniBag />
+              </div>
+            }
+            title="Jede Woche eine Challenge."
+            primary="Weiter"
+            onPrimary={next}
+            secondary="Überspringen"
+            onSecondary={skipIntro}
+          >
+            Ein Foto, ein kurzer Clip, ein Mixtape oder ein Spiel. Aufgelöst wird sonntags um 19 Uhr, für alle
+            gleichzeitig.
+          </Frame>
+        );
+      case 'promise':
+        return (
+          <Frame
+            title="Was es hier nicht gibt."
+            primary="Weiter"
+            onPrimary={next}
+            secondary="Überspringen"
+            onSecondary={skipIntro}
+          >
+            <List
+              items={[
+                'Keinen Feed, der dich festhält.',
+                'Keine Likes und keine Zahlen.',
+                'Keine Werbung.',
+                'Kein Tracking.',
+              ]}
+            />
+            <p className="mt-5">
+              Und keinen Zwang: Die Challenge ist freiwillig. Sehen dürfen alle, auch wer nicht mitmacht.
+            </p>
+          </Frame>
+        );
+      case 'privacy':
+        return (
+          <Frame
+            title="Deine Daten."
+            primary="Weiter"
+            onPrimary={next}
+            secondary="Überspringen"
+            onSecondary={skipIntro}
+          >
+            <List
+              items={[
+                'Der Chat ist Ende-zu-Ende-verschlüsselt.',
+                'Das Archiv liegt verschlüsselt auf Servern in Deutschland.',
+                'Wir schauen nicht rein, außer jemand meldet einen Inhalt. Jeder Zugriff wird veröffentlicht.',
+              ]}
+            />
+            {/* Ehrlich bleiben: Das oben ist das Ziel, nicht der heutige Stand. */}
+            <div
+              className="mt-6 rounded-xl px-4 py-3 text-sm leading-relaxed"
+              style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-line)', color: 'var(--danger)' }}
+            >
+              <strong className="block tracking-[0.12em]">DEMO-VERSION</strong>
+              So soll es sein, umgesetzt ist es noch nicht. Heute ist nichts verschlüsselt, und ein öffentliches
+              Zugriffsprotokoll gibt es noch nicht. Was wirklich gilt, steht jederzeit in den Einstellungen unter „Was
+              der Server sieht“.
+            </div>
+          </Frame>
+        );
+      case 'profile':
+        return <ProfileStep onNext={next} />;
+      case 'consent':
+        return <ConsentStep onNext={next} />;
+      case 'start':
+        return preview ? <PreviewStart onFinish={onDone} /> : <StartStep onFinish={() => void finish()} />;
+    }
   }
+}
+
+/** Kopf der Vorschau: das X sitzt an der Stelle des Plus (wie in Sheet.tsx),
+ *  mittig der Hinweis. Liegt ueber jedem Screen und bleibt beim Blaettern
+ *  stehen, damit das X nicht bei jedem Schritt neu hereindreht. */
+function PreviewBar({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[71] flex justify-center pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <div className="grid min-h-9 w-full max-w-xl grid-cols-[2.75rem_1fr_2.75rem] items-center px-3">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Vorschau schließen"
+          className="hit pointer-events-auto grid size-8 place-items-center rounded-full transition-transform active:scale-95"
+          style={{ color: 'var(--ink)' }}
+        >
+          <PlusMark turned enter />
+        </button>
+        <span className="text-center text-2xs font-semibold tracking-[0.18em]" style={{ color: 'var(--dim)' }}>
+          VORSCHAU
+        </span>
+        <span />
+      </div>
+    </div>
+  );
 }
 
 /* --- Bausteine ------------------------------------------------------------- */
@@ -227,12 +275,15 @@ function Frame({
   secondary?: string;
   onSecondary?: () => void;
 }) {
+  const preview = useContext(PreviewMode);
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-[70] flex flex-col px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]"
+      className={`fixed inset-0 z-[70] flex flex-col px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] ${
+        preview ? 'pt-[calc(max(0.5rem,env(safe-area-inset-top))+2.75rem)]' : 'pt-[max(2rem,env(safe-area-inset-top))]'
+      }`}
       style={{ background: 'var(--screen)' }}
     >
       <div
@@ -323,6 +374,7 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
   const side = useApp((s) => s.side);
   const setIdentity = useApp((s) => s.setIdentity);
   const qc = useQueryClient();
+  const preview = useContext(PreviewMode);
   const [name, setName] = useState(me);
   const [shooting, setShooting] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -330,7 +382,7 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
 
   async function save() {
     const next = name.trim();
-    if (!next || next === me) return onNext();
+    if (preview || !next || next === me) return onNext();
     setBusy(true);
     setError(null);
     try {
@@ -359,9 +411,11 @@ function ProfileStep({ onNext }: { onNext: () => void }) {
             sendLabel="Übernehmen"
             onCancel={() => setShooting(false)}
             onSend={async (blob) => {
-              const id = await uploadMedia(blob);
-              await saveProfile(me, id);
-              await qc.invalidateQueries({ queryKey: ['profiles'] });
+              if (!preview) {
+                const id = await uploadMedia(blob);
+                await saveProfile(me, id);
+                await qc.invalidateQueries({ queryKey: ['profiles'] });
+              }
               setShooting(false);
             }}
           />
@@ -416,8 +470,10 @@ function ConsentStep({ onNext }: { onNext: () => void }) {
   const [legal, setLegal] = useState<null | 'terms' | 'privacy'>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const preview = useContext(PreviewMode);
 
   async function accept() {
+    if (preview) return onNext();
     setBusy(true);
     setError(null);
     try {
@@ -526,7 +582,7 @@ function StartStep({ onFinish }: { onFinish: () => void }) {
   const qc = useQueryClient();
   const { data: cassettes, isLoading: loadingCassettes } = useCassettes();
   const [letterNote, setLetterNote] = useState<string | null>(null);
-  const [created, setCreated] = useState<Cassette | null>(null);
+  const [created, setCreated] = useState<Pick<Cassette, 'id' | 'name'> | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -569,23 +625,7 @@ function StartStep({ onFinish }: { onFinish: () => void }) {
     return <Frame title="Einen Moment." primary="Weiter" onPrimary={() => undefined} primaryDisabled />;
   }
 
-  if (created) {
-    return (
-      <Frame
-        title="Hol deine Leute dazu."
-        primary="Fertig"
-        onPrimary={onFinish}
-        secondary="Überspringen"
-        onSecondary={onFinish}
-      >
-        <div className="flex flex-col gap-2">
-          <p>Wer die Einladung öffnet, muss noch zustimmen. Erst dann ist die Person auf dem Band.</p>
-          <InviteLinkButton cassette={created} />
-          <LetterButton cassette={created} />
-        </div>
-      </Frame>
-    );
-  }
+  if (created) return <InviteStep cassette={created} onFinish={onFinish} />;
 
   if (invites.length > 0) {
     return (
@@ -644,23 +684,51 @@ function StartStep({ onFinish }: { onFinish: () => void }) {
   );
 }
 
+/** Start in der Vorschau: der Weg ohne Einladung, aber ohne etwas anzulegen. */
+function PreviewStart({ onFinish }: { onFinish: () => void }) {
+  const [created, setCreated] = useState<Pick<Cassette, 'id' | 'name'> | null>(null);
+  if (created) return <InviteStep cassette={created} onFinish={onFinish} />;
+  return <CreateFirst note={null} onCreated={setCreated} onSkip={onFinish} />;
+}
+
+function InviteStep({ cassette, onFinish }: { cassette: Pick<Cassette, 'id' | 'name'>; onFinish: () => void }) {
+  const preview = useContext(PreviewMode);
+  return (
+    <Frame
+      title="Hol deine Leute dazu."
+      primary="Fertig"
+      onPrimary={onFinish}
+      secondary="Überspringen"
+      onSecondary={onFinish}
+    >
+      <div className="flex flex-col gap-2">
+        <p>Wer die Einladung öffnet, muss noch zustimmen. Erst dann ist die Person auf dem Band.</p>
+        <InviteLinkButton cassette={cassette} preview={preview} />
+        <LetterButton cassette={cassette} />
+      </div>
+    </Frame>
+  );
+}
+
 function CreateFirst({
   note,
   onCreated,
   onSkip,
 }: {
   note: string | null;
-  onCreated: (c: Cassette) => void;
+  onCreated: (c: Pick<Cassette, 'id' | 'name'>) => void;
   onSkip: () => void;
 }) {
   const me = useApp((s) => s.me);
   const qc = useQueryClient();
+  const preview = useContext(PreviewMode);
   const [name, setName] = useState('');
   const [look, setLook] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function create() {
+    if (preview) return onCreated({ id: 'vorschau', name: name.trim() });
     setBusy(true);
     setError(null);
     try {
@@ -719,14 +787,16 @@ function CreateFirst({
   );
 }
 
-function LetterButton({ cassette }: { cassette: Cassette }) {
+function LetterButton({ cassette }: { cassette: Pick<Cassette, 'id' | 'name'> }) {
   const me = useApp((s) => s.me);
-  const [state, setState] = useState<'idle' | 'busy' | 'done'>('idle');
+  const preview = useContext(PreviewMode);
+  const [state, setState] = useState<'idle' | 'busy' | 'done' | 'preview'>('idle');
   return (
     <button
       type="button"
       disabled={state === 'busy'}
       onClick={() => {
+        if (preview) return setState('preview');
         setState('busy');
         requestLetter(cassette.id, me)
           .then(() => setState('done'))
@@ -735,7 +805,11 @@ function LetterButton({ cassette }: { cassette: Cassette }) {
       className="rounded-lg px-3 py-2.5 text-left text-sm disabled:opacity-60"
       style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
     >
-      {state === 'done' ? 'Brief gespeichert. Ausdrucken und verschenken.' : 'Einladung als Brief (PDF mit QR-Code)'}
+      {state === 'done'
+        ? 'Brief gespeichert. Ausdrucken und verschenken.'
+        : state === 'preview'
+          ? 'Vorschau: Hier entsteht der Brief als PDF.'
+          : 'Einladung als Brief (PDF mit QR-Code)'}
     </button>
   );
 }

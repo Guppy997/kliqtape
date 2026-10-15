@@ -274,8 +274,9 @@ ohne Fortschrittsbalken, nur „Weiter“ und „Überspringen“:
    bei; offene Einladungen per Name erscheinen genauso. Ohne Einladung legt man die erste
    Kassette an (Name, Bandsorte) und lädt per Link oder Brief ein — oder überspringt das.
 
-Die Erklär-Screens (1 bis 3, ohne das Willkommen) lassen sich in den Einstellungen unter
-„Einführung“ jederzeit nochmal ansehen. **Keine Geschlechtsabfrage**, und alle Texte sind
+Im Profil („Einführung ansehen“) und in den Einstellungen lässt sich das ganze Onboarding als
+**Vorschau** durchgehen, zum Zeigen: alle Screens wie beim ersten Mal, oben ein X und
+„VORSCHAU“. Gespeichert, angelegt oder eingelöst wird dabei nichts. **Keine Geschlechtsabfrage**, und alle Texte sind
 geschlechtsneutral (Schreibregel in CONTRIBUTING.md). **Pronomen** gibt es als freiwilliges
 Freitextfeld in den Einstellungen (seit v0.60), nicht im Onboarding. Andere sehen sie nur in der
 Mitgliederliste einer gemeinsamen Kassette (`GET /api/cassettes/:id/members`), nicht in der

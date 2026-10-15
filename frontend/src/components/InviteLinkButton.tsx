@@ -8,12 +8,20 @@ import { useApp } from '@/store/appStore';
  * einmal, 14 Tage, nur fuer diese Kassette, und wer ihn oeffnet, muss noch
  * zustimmen. Genutzt in der Kassetten-Ansicht und im Onboarding.
  */
-export default function InviteLinkButton({ cassette }: { cassette: Pick<Cassette, 'id' | 'name'> }) {
+export default function InviteLinkButton({
+  cassette,
+  preview = false,
+}: {
+  cassette: Pick<Cassette, 'id' | 'name'>;
+  /** Onboarding-Vorschau: nichts erzeugen, nur zeigen, was passieren wuerde. */
+  preview?: boolean;
+}) {
   const me = useApp((s) => s.me);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
   async function share() {
+    if (preview) return setNote('Vorschau: Hier würdest du den Link teilen.');
     setBusy(true);
     setNote(null);
     try {

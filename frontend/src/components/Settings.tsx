@@ -84,7 +84,7 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
 
   const [shooting, setShooting] = useState(false);
   const [showLog, setShowLog] = useState(false);
-  const [replay, setReplay] = useState(false);
+  const [intro, setIntro] = useState(false);
   const [name, setName] = useState(me);
   const [renaming, setRenaming] = useState(false);
   const [tokenVisible, setTokenVisible] = useState(false);
@@ -169,7 +169,7 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
   return (
     <>
       {/* Volle Seite in der Farbe der aktuellen Seite — nichts scheint durch. */}
-      {replay && <Onboarding replay onDone={() => setReplay(false)} />}
+      {intro && <Onboarding preview onDone={() => setIntro(false)} />}
       <Sheet open={open} onClose={onClose} title="Einstellungen" variant="full">
         {shooting ? (
           <CameraCapture
@@ -421,11 +421,11 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
               <ReminderSwitch />
             </Block>
 
-            {/* --- Einfuehrung nochmal ansehen (Onboarding.tsx, nur die Erklaerungen) --- */}
+            {/* --- Einfuehrung nochmal ansehen (Onboarding.tsx als Vorschau) --- */}
             <Block title="Einführung">
               <button
                 type="button"
-                onClick={() => setReplay(true)}
+                onClick={() => setIntro(true)}
                 className="rounded-lg px-3 py-2.5 text-left text-sm"
                 style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
               >

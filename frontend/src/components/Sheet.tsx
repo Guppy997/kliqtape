@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useCoverX } from '@/store/coverStore';
 import PlusMark from './PlusMark';
 
 interface Props {
@@ -38,6 +39,10 @@ export default function Sheet({
   leading,
   children,
 }: Props) {
+  // Vollbild mit X oben links: das Plus der Leiste steht darunter mit auf X
+  // und dreht beim Schliessen zurueck (coverStore.ts).
+  useCoverX(open && variant === 'full' && (leading != null || !hideClose));
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -76,7 +81,9 @@ export default function Sheet({
               className="hit grid size-8 place-items-center rounded-full transition-transform active:scale-95"
               style={{ color: 'var(--ink)' }}
             >
-              <PlusMark turned />
+              {/* Bei Vollbild dreht das X vom Plus aus herein — genau wie
+                  beim Tipp auf das Plus selbst (Composer.tsx). */}
+              <PlusMark turned enter={full} />
             </button>
           ))}
       </span>

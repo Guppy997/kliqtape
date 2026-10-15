@@ -523,7 +523,17 @@ function Deck() {
               weg (der Platz bleibt, damit die Wortmarke mittig steht). */}
           <div className="grid grid-cols-[2.75rem_1fr_2.75rem] items-center">
             <span className="flex justify-start">
-              {!isCassetteChat && navActive === null ? <Composer onPosted={invalidate} /> : <span className="size-8" />}
+              {/* Bei offenem Eject/Hot Line/Neues/Profil bleibt das Plus eingehaengt,
+                  nur unsichtbar und nicht bedienbar: es steht dort mit auf X
+                  (coverStore.ts) und dreht beim Schliessen sichtbar zurueck.
+                  Ausgehaengt kam es frisch als Plus wieder, ohne Drehung. */}
+              {!isCassetteChat ? (
+                <span className={navActive === null ? 'contents' : 'invisible'} inert={navActive !== null}>
+                  <Composer onPosted={invalidate} />
+                </span>
+              ) : (
+                <span className="size-8" />
+              )}
             </span>
             <span className="flex justify-center">
               <Lockup size="1.2rem" />

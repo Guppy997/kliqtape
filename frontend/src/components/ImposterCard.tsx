@@ -14,6 +14,7 @@ import {
 } from '@/lib/api';
 import { filmReleaseLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
+import { useCoverX } from '@/store/coverStore';
 import Avatar from './Avatar';
 import CameraCapture from './CameraCapture';
 import PlusMark from './PlusMark';
@@ -355,6 +356,7 @@ function EntryThumb({ entry, large = false }: { entry: ImposterEntry; large?: bo
  * Punktestand: am Ende nur Aufgabe, Hinweis und ob die Runde richtig lag.
  */
 function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string; onClose: () => void }) {
+  useCoverX(true);
   const result = week.result!;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const crew = week.entries.filter((e) => e.author !== result.imposter);
@@ -388,7 +390,7 @@ function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string;
         // mt-0.5, weil die Titelzeile dort 36 px hoch ist und das Plus mittig sitzt.
         className="hit absolute left-3 top-[max(0.5rem,env(safe-area-inset-top))] mt-0.5 grid size-8 place-items-center rounded-full text-white"
       >
-        <PlusMark turned />
+        <PlusMark turned enter />
       </button>
 
       <p className="text-2xs text-white/60">Imposter-Woche · Auflösung</p>

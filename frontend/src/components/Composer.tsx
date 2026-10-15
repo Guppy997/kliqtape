@@ -14,6 +14,7 @@ import {
 } from '@/lib/api';
 import { filmReleaseLabel } from '@/lib/berlinDay';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
+import { useCoverStore } from '@/store/coverStore';
 import MixtapeRecorder from './MixtapeRecorder';
 import CameraCapture from './CameraCapture';
 import ChallengeFlow from './ChallengeFlow';
@@ -124,6 +125,9 @@ export default function Composer({ onPosted }: Props) {
   // waere eine Sprachnachricht ein Fremdkoerper im kuratierten Archiv.
   const choices = CHOICES.filter((c) => (side === 'b' ? c.kind !== 'text' : c.kind !== 'voice'));
   const pageOpen = step === 'choose';
+  // Liegt irgendeine Vollbild-Ebene mit X darueber (Glocke, Einstellungen …),
+  // steht das Plus darunter mit auf X und dreht beim Schliessen zurueck.
+  const covered = useCoverStore((s) => s.count > 0);
 
   return (
     <div className="relative">
@@ -140,9 +144,10 @@ export default function Composer({ onPosted }: Props) {
         className="hit relative z-50 grid size-8 place-items-center rounded-full transition-transform active:scale-95"
         style={{ color: 'var(--ink)' }}
       >
-        {/* Liegt beim Oeffnen unter der Uebersicht und steht dort schon auf X —
-            beim Schliessen dreht es sichtbar zurueck zum Plus. */}
-        <PlusMark turned={pageOpen} />
+        {/* Liegt beim Oeffnen unter der Uebersicht (oder einer anderen Ebene mit
+            X) und steht dort schon auf X — beim Schliessen dreht es sichtbar
+            zurueck zum Plus. */}
+        <PlusMark turned={pageOpen || covered} />
       </button>
 
       {/* Eigene Seite statt kleinem Fenster — erklaert auch, welcher Modus

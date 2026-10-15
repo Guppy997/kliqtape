@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.61.0',
+    date: '2026-10-15',
+    changes: [
+      'Neu: „Einführung ansehen“ im Profil zeigt das ganze Onboarding als Vorschau, gespeichert wird dabei nichts',
+      'Das X oben links dreht jetzt überall vom Plus aus herein und beim Schließen zurück, auch bei „Neues“',
+    ],
+  },
+  {
     version: '0.60.0',
     date: '2026-10-15',
     changes: [
