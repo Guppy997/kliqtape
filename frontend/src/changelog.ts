@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.61.1',
+    date: '2026-10-15',
+    changes: [
+      'Behoben: „Alles löschen“ ließ eine Kassette stehen, in der du zuletzt allein warst, samt deinem Namen. Sie verschwindet jetzt mit',
+      'Behoben: Nach dem Löschen steht bei anderen nicht mehr „eingeladen von“ mit deinem Namen, offene Einladungen von dir verfallen',
+    ],
+  },
+  {
     version: '0.61.0',
     date: '2026-10-15',
     changes: [

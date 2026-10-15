@@ -372,27 +372,31 @@ cassettesRouter.delete('/api/cassettes/:id/members/:member', (req, res) => {
     db.prepare(`DELETE FROM cassette_members WHERE cassette_id = ? AND member = ?`).run(req.params.id, target);
   })();
 
-  // Leere Kassetten verschwinden mitsamt ihren Beiträgen — sonst blieben
-  // verwaiste Runden liegen, die niemand mehr sehen kann.
-  const rest = db.prepare(`SELECT COUNT(*) AS n FROM cassette_members WHERE cassette_id = ?`).get(req.params.id) as {
-    n: number;
-  };
-  if (rest.n === 0) {
-    // Erst die Beitraege, dann die Medien — dropMedia raeumt nur auf, was
-    // nirgends mehr haengt (ein Challenge-Beitrag kann in mehreren Kassetten
-    // liegen, siehe media.ts).
-    const mediaIds = (
-      db.prepare(`SELECT media_id FROM posts WHERE cassette_id = ? AND media_id IS NOT NULL`).all(req.params.id) as {
-        media_id: string;
-      }[]
-    ).map((p) => p.media_id);
-    db.prepare(`DELETE FROM posts WHERE cassette_id = ?`).run(req.params.id);
-    db.prepare(`DELETE FROM cassettes WHERE id = ?`).run(req.params.id);
-    for (const id of mediaIds) dropMedia(id);
-  }
+  dropIfEmpty(req.params.id);
 
   res.status(204).end();
 });
+
+/** Leere Kassetten verschwinden mitsamt ihren Beitraegen — sonst blieben
+ *  verwaiste Runden liegen, die niemand mehr sehen kann, samt dem Namen,
+ *  wer sie angelegt hat. Beim Verlassen und beim Loeschen des Kontos. */
+export function dropIfEmpty(cassetteId: string): void {
+  const rest = db.prepare(`SELECT COUNT(*) AS n FROM cassette_members WHERE cassette_id = ?`).get(cassetteId) as {
+    n: number;
+  };
+  if (rest.n > 0) return;
+  // Erst die Beitraege, dann die Medien — dropMedia raeumt nur auf, was
+  // nirgends mehr haengt (ein Challenge-Beitrag kann in mehreren Kassetten
+  // liegen, siehe media.ts).
+  const mediaIds = (
+    db.prepare(`SELECT media_id FROM posts WHERE cassette_id = ? AND media_id IS NOT NULL`).all(cassetteId) as {
+      media_id: string;
+    }[]
+  ).map((p) => p.media_id);
+  db.prepare(`DELETE FROM posts WHERE cassette_id = ?`).run(cassetteId);
+  db.prepare(`DELETE FROM cassettes WHERE id = ?`).run(cassetteId);
+  for (const id of mediaIds) dropMedia(id);
+}
 
 // Loeschen darf nur, wer die Kassette angelegt hat. Frueher durfte das
 // jedes Mitglied — eine Person konnte so die Erinnerungen aller anderen

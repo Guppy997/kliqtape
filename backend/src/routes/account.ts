@@ -4,7 +4,7 @@ import { hashToken, requireIdentity } from '../access.js';
 import { db } from '../db.js';
 import { HttpError } from '../http.js';
 import { dropMedia } from '../media.js';
-import { handOverCassettesOf } from './cassettes.js';
+import { dropIfEmpty, handOverCassettesOf } from './cassettes.js';
 import { shapeTape, tracksOf, type TapeRow } from './mixtapes.js';
 import { privateMediaOf, privateTapesOf } from './privateTapes.js';
 
@@ -330,6 +330,8 @@ accountRouter.delete('/api/me', (req, res) => {
     db.prepare(`DELETE FROM profiles WHERE name = ?`).run(me);
     db.prepare(`DELETE FROM reports WHERE reported_by = ?`).run(me);
     db.prepare(`DELETE FROM cassette_invites WHERE invitee = ?`).run(me);
+    // Offene Einladungen der Person verfallen mit ihr, wie die Briefe unten.
+    db.prepare(`DELETE FROM cassette_invites WHERE invited_by = ?`).run(me);
     // Imposter: eigene Tipps weg, Beitraege gehen mit den Posts. Der Name
     // in einer laengst aufgeloesten Woche wird neutralisiert statt die
     // Woche der anderen zu loeschen.
@@ -341,7 +343,15 @@ accountRouter.delete('/api/me', (req, res) => {
     db.prepare(`UPDATE invite_letters SET created_by = '(gelöscht)' WHERE created_by = ?`).run(me);
     db.prepare(`UPDATE invite_letters SET used_by = '(gelöscht)' WHERE used_by = ?`).run(me);
     handOverCassettesOf(me);
+    const mine = db.prepare(`SELECT cassette_id AS id FROM cassette_members WHERE member = ?`).all(me) as {
+      id: string;
+    }[];
     db.prepare(`DELETE FROM cassette_members WHERE member = ?`).run(me);
+    // "eingeladen von …" bei den anderen nennt den Namen nicht mehr.
+    db.prepare(`UPDATE cassette_members SET added_by = '(gelöscht)' WHERE added_by = ?`).run(me);
+    // War die Person allein auf dem Band, bliebe sonst eine leere Kassette
+    // mit ihrem Namen als "angelegt von" stehen.
+    for (const { id } of mine) dropIfEmpty(id);
     db.prepare(`DELETE FROM cassette_tape_favorites WHERE member = ?`).run(me);
     // Ein Tape-Name ist kassettenweit sichtbar, nicht privat — kann beim
     // Loeschen der benennenden Person trotzdem mit verschwinden, konsistent
