@@ -27,6 +27,7 @@ import { EmptyBand, NoCassette } from '@/components/EmptyState';
 import ChallengeCard from '@/components/ChallengeCard';
 import ImposterCard from '@/components/ImposterCard';
 import LetterRedeemer from '@/components/LetterRedeemer';
+import PermissionHost from '@/components/PermissionHost';
 
 export default function App() {
   const me = useApp((s) => s.me);
@@ -101,6 +102,7 @@ export default function App() {
       }}
     >
       <UpdateNotification />
+      <PermissionHost />
       {/* Unter dem Update-Banner: stuerzt das Zeichnen ab, bleibt der Hinweis
           auf eine neue Version trotzdem sichtbar (ErrorBoundary.tsx). */}
       <ErrorBoundary>{me && token ? <SignedIn /> : <NameGate prefill={me} />}</ErrorBoundary>

@@ -19,6 +19,7 @@ import Sheet from './Sheet';
 import TapePlayer from './TapePlayer';
 import TapeView from './TapeView';
 import Zettel from './Zettel';
+import { ensurePermission } from '@/store/permissionStore';
 
 interface Props {
   item: FeedItem;
@@ -344,6 +345,7 @@ function TonfetzenButton({
     if (disabled || state !== 'idle') return;
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('kein Mikro');
+      if (!(await ensurePermission('microphone'))) return;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
       });

@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.57.0',
+    date: '2026-10-15',
+    changes: [
+      'Kamera und Mikrofon fragt Kliqtape erst, wenn du sie brauchst, und sagt vorher in einem Satz, wofür',
+      'Sagst du „Nicht jetzt“, bleibt die Aufnahme offen; wo es geht, kannst du ein Bild aus der Galerie nehmen',
+    ],
+  },
+  {
     version: '0.56.0',
     date: '2026-10-15',
     changes: [

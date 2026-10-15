@@ -276,6 +276,13 @@ Die Erklär-Screens (1 bis 3) lassen sich in den Einstellungen unter „Einführ
 nochmal ansehen. Berechtigungen fragt das Onboarding bewusst **nicht** ab. Gespeichert werden
 `profiles.onboarded_at`, `age_confirmed_at`, `terms_accepted_at` und `terms_version`.
 
+**Berechtigungen erst bei Bedarf** (seit v0.57): Kamera beim ersten Foto, Kamera und Mikrofon
+beim ersten Clip, Mikrofon bei der ersten Sprachaufnahme (O-Ton, Sprachnachricht, Tonfetzen).
+Davor steht jeweils ein Satz, wofür (`PermissionHost.tsx`, `permissionStore.ts`); erst nach
+„Erlauben“ kommt die Abfrage des Systems. Die Erklärung erscheint pro Art einmal und gar nicht,
+wenn die Berechtigung schon erteilt ist. „Nicht jetzt“ lässt die Aufnahme offen, wo erlaubt
+geht es über die Galerie weiter.
+
 ## 6. Das Mixtape — der eigentliche USP
 
 Ein Mixtape ist ein **Geschenk an genau eine Person**. Du baust es über Tage: bis zu **12 Titel**,

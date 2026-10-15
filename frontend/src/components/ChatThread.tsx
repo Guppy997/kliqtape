@@ -21,6 +21,7 @@ import EmojiPicker from './EmojiPicker';
 import EmojiText from './EmojiText';
 import Sheet from './Sheet';
 import TapePlayer from './TapePlayer';
+import { ensurePermission } from '@/store/permissionStore';
 
 /** Sony-Sports-Walkman-Gelb, minimal Richtung Orange gezogen. Warm, leuchtend,
  *  klar vom roten REC unterscheidbar. */
@@ -205,6 +206,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('Mikrofon nicht verfügbar. Browser geben es nur über https oder localhost frei.');
       }
+      if (!(await ensurePermission('microphone'))) return;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
       });

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { capturePhoto, openCamera, processUpload } from '@/lib/photo';
 import { pickVideoMime, baseMime } from '@/lib/tapeAudio';
+import { ensurePermission } from '@/store/permissionStore';
 
 const MAX_VIDEO_MS = 10_000;
 
@@ -57,6 +58,12 @@ export default function CameraCapture({
 
     (async () => {
       try {
+        // Beim ersten Mal ein Satz, wofuer — dann erst die Systemabfrage.
+        // "Nicht jetzt": offen bleiben, wo erlaubt fuehrt die Galerie weiter.
+        if (!(await ensurePermission(mode === 'video' ? 'video' : 'camera'))) {
+          if (!cancelled) setError('Ohne Kamera geht es hier nicht. Du kannst sie jederzeit später erlauben.');
+          return;
+        }
         const stream = await openCamera(facing, mode === 'video');
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());

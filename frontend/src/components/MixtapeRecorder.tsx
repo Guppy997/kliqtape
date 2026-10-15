@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { pickAudioMime, baseMime } from '@/lib/tapeAudio';
 import TapePlayer from './TapePlayer';
+import { ensurePermission } from '@/store/permissionStore';
 
 const MAX_MS = 90_000; // Ein Band hat eine Laufzeit. 90 Sekunden, dann ist Schluss.
 
@@ -47,6 +48,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('Mikrofon nicht verfügbar. Browser geben es nur über https oder localhost frei.');
       }
+      if (!(await ensurePermission('microphone'))) return;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
       });
