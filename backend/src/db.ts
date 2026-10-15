@@ -639,6 +639,10 @@ addColumn(
   'label TEXT',
   'eigene Beschriftung im persoenlichen Regal (Profil) — sieht nur diese Person',
 );
+addColumn('profiles', 'onboarded_at', 'onboarded_at INTEGER', 'Einfuehrung abgeschlossen oder uebersprungen');
+addColumn('profiles', 'age_confirmed_at', 'age_confirmed_at INTEGER', 'Mindestalter 16 bestaetigt');
+addColumn('profiles', 'terms_accepted_at', 'terms_accepted_at INTEGER', 'Nutzungsbedingungen + Datenschutz akzeptiert');
+addColumn('profiles', 'terms_version', 'terms_version TEXT', 'welche Fassung der Rechtstexte');
 addColumn('invite_letters', 'kind', "kind TEXT NOT NULL DEFAULT 'brief'", 'Einladung als Brief oder als Link');
 addColumn(
   'imposter_weeks',

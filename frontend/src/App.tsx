@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { deletePost, fetchFeed, fetchTapes, KIND_LABEL, type FeedItem, type Kind } from '@/lib/api';
+import { deletePost, fetchFeed, fetchOnboarding, fetchTapes, KIND_LABEL, type FeedItem, type Kind } from '@/lib/api';
 import { useApp, SIDE_LABEL } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
 import { jumpTo, useJump } from '@/store/jumpStore';
@@ -21,6 +21,7 @@ import StoryView from '@/components/StoryView';
 import TapeHeader, { defaultTapeName, tapeDisplayName } from '@/components/TapeHeader';
 import UpdateNotification from '@/components/UpdateNotification';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import Onboarding from '@/components/Onboarding';
 import NameGate from '@/components/NameGate';
 import { EmptyBand, NoCassette } from '@/components/EmptyState';
 import ChallengeCard from '@/components/ChallengeCard';
@@ -102,9 +103,25 @@ export default function App() {
       <UpdateNotification />
       {/* Unter dem Update-Banner: stuerzt das Zeichnen ab, bleibt der Hinweis
           auf eine neue Version trotzdem sichtbar (ErrorBoundary.tsx). */}
-      <ErrorBoundary>{me && token ? <Deck /> : <NameGate prefill={me} />}</ErrorBoundary>
+      <ErrorBoundary>{me && token ? <SignedIn /> : <NameGate prefill={me} />}</ErrorBoundary>
     </div>
   );
+}
+
+/** Nach der Anmeldung: einmal das Onboarding (Onboarding.tsx), danach das Band.
+ *  Die alten Daten bleiben waehrend eines Neuladens stehen, sonst wuerde das
+ *  Onboarding z. B. nach dem Umbenennen im Profil-Schritt von vorn beginnen. */
+function SignedIn() {
+  const me = useApp((s) => s.me);
+  const { data, isError } = useQuery({
+    queryKey: ['onboarding', me],
+    queryFn: () => fetchOnboarding(me),
+    placeholderData: (prev) => prev,
+    staleTime: Infinity,
+  });
+  if (!data && !isError) return null;
+  if (data && !data.onboardedAt) return <Onboarding onDone={() => undefined} />;
+  return <Deck />;
 }
 
 /** Filterleiste — auf beiden Seiten, gilt aber jeweils nur fuer die aktuelle. */

@@ -103,6 +103,66 @@ accountRouter.post('/api/auth/rename', (req, res) => {
 });
 
 /* -------------------------------------------------------------------------
+ * Onboarding — einmal nach der ersten Anmeldung. Die Einfuehrung selbst darf
+ * man ueberspringen, das Mindestalter und die Rechtstexte nicht: abgeschlossen
+ * ist es erst mit beiden Bestaetigungen.
+ * ---------------------------------------------------------------------- */
+
+/** Fassung der Rechtstexte. Im Prototyp ein Entwurf, siehe CONCEPT.md §16.6. */
+const TERMS_VERSION = 'entwurf-2026-10';
+
+interface OnboardingRow {
+  onboarded_at: number | null;
+  age_confirmed_at: number | null;
+  terms_accepted_at: number | null;
+  terms_version: string | null;
+}
+
+function onboardingOf(name: string) {
+  const r = db
+    .prepare(`SELECT onboarded_at, age_confirmed_at, terms_accepted_at, terms_version FROM profiles WHERE name = ?`)
+    .get(name) as OnboardingRow | undefined;
+  return {
+    onboardedAt: r?.onboarded_at ?? null,
+    ageConfirmedAt: r?.age_confirmed_at ?? null,
+    termsAcceptedAt: r?.terms_accepted_at ?? null,
+    termsVersion: r?.terms_version ?? null,
+    currentTermsVersion: TERMS_VERSION,
+  };
+}
+
+accountRouter.get('/api/me/onboarding', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  requireIdentity(req, me);
+  res.json(onboardingOf(me));
+});
+
+accountRouter.put('/api/me/onboarding', (req, res) => {
+  const me = String(req.body?.me ?? '').trim();
+  requireIdentity(req, me);
+  const now = Date.now();
+  db.prepare(`INSERT INTO profiles (name, updated_at) VALUES (?, ?) ON CONFLICT(name) DO NOTHING`).run(me, now);
+  if (req.body?.ageConfirmed === true) {
+    db.prepare(`UPDATE profiles SET age_confirmed_at = ? WHERE name = ?`).run(now, me);
+  }
+  if (req.body?.termsAccepted === true) {
+    db.prepare(`UPDATE profiles SET terms_accepted_at = ?, terms_version = ? WHERE name = ?`).run(
+      now,
+      TERMS_VERSION,
+      me,
+    );
+  }
+  if (req.body?.done === true) {
+    const state = onboardingOf(me);
+    if (!state.ageConfirmedAt || !state.termsAcceptedAt) {
+      throw new HttpError(409, 'Erst Mindestalter und Rechtstexte bestätigen');
+    }
+    db.prepare(`UPDATE profiles SET onboarded_at = COALESCE(onboarded_at, ?) WHERE name = ?`).run(now, me);
+  }
+  res.json(onboardingOf(me));
+});
+
+/* -------------------------------------------------------------------------
  * Profile
  * ---------------------------------------------------------------------- */
 // Alle Profile auf einmal. Bei dieser Gruppengroesse ist das eine winzige
@@ -163,7 +223,14 @@ accountRouter.get('/api/export', (req, res) => {
       'Medien (Fotos, Clips, O-Töne, Cover) sind hier nur als IDs aufgeführt. ' +
       'Sie liegen unter /api/media/<id> und lassen sich einzeln herunterladen.',
     name: me,
-    profil: db.prepare(`SELECT name, avatar_id AS avatarId FROM profiles WHERE name = ?`).get(me) ?? null,
+    profil:
+      db
+        .prepare(
+          `SELECT name, avatar_id AS avatarId, onboarded_at AS onboardedAt, age_confirmed_at AS ageConfirmedAt,
+                  terms_accepted_at AS termsAcceptedAt, terms_version AS termsVersion
+             FROM profiles WHERE name = ?`,
+        )
+        .get(me) ?? null,
     beitraege: db.prepare(`SELECT * FROM posts WHERE author = ? ORDER BY created_at`).all(me),
     reaktionen: db.prepare(`SELECT * FROM reactions WHERE author = ? ORDER BY created_at`).all(me),
     hotlineNachrichten: db.prepare(`SELECT * FROM hotline_messages WHERE from_name = ?`).all(me),

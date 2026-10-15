@@ -396,8 +396,8 @@ function CassetteFace({
                   immer nur "Gruppenchat" — Tape-Namen sind ein Konzept
                   des Archivs, nicht des laufenden Gesprächs. */}
               {currentTape
-                ? `${currentTape.dateLabel} — ${isA ? currentTape.fullName : SIDE_LABEL.b}`
-                : `Seite ${side.toUpperCase()} — ${SIDE_LABEL[side]}`}
+                ? `${currentTape.dateLabel} · ${isA ? currentTape.fullName : SIDE_LABEL.b}`
+                : `Seite ${side.toUpperCase()} · ${SIDE_LABEL[side]}`}
             </span>
           </div>
         </div>

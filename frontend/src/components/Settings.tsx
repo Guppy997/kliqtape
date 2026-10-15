@@ -17,6 +17,7 @@ import Sheet from './Sheet';
 import Lockup from './Lockup';
 import VersionLog from './VersionLog';
 import SwitchRow from './SwitchRow';
+import Onboarding from './Onboarding';
 import { VERSION } from '@/changelog';
 
 /** Was der Server bei Funktionen sieht, die nicht an eine Seite gebunden
@@ -38,6 +39,7 @@ const SERVER_SEES_EXTRA: [string, string][] = [
     'Admins & Stummschalten',
     'wer in einer Runde Admin ist und ob du die Wochen-Challenge dort für dich stummgeschaltet hast. Dein Stummschalter ist für niemanden sonst sichtbar',
   ],
+  ['Onboarding', 'wann du das Mindestalter bestätigt und die Rechtstexte akzeptiert hast, und in welcher Fassung'],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
   [
     'Einladung als Brief oder Link',
@@ -71,6 +73,7 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
 
   const [shooting, setShooting] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [replay, setReplay] = useState(false);
   const [name, setName] = useState(me);
   const [renaming, setRenaming] = useState(false);
   const [tokenVisible, setTokenVisible] = useState(false);
@@ -155,6 +158,7 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
   return (
     <>
       {/* Volle Seite in der Farbe der aktuellen Seite — nichts scheint durch. */}
+      {replay && <Onboarding replay onDone={() => setReplay(false)} />}
       <Sheet open={open} onClose={onClose} title="Einstellungen" variant="full">
         {shooting ? (
           <CameraCapture
@@ -395,6 +399,18 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
                   </span>
                 </div>
               ))}
+            </Block>
+
+            {/* --- Einfuehrung nochmal ansehen (Onboarding.tsx, nur die Erklaerungen) --- */}
+            <Block title="Einführung">
+              <button
+                type="button"
+                onClick={() => setReplay(true)}
+                className="rounded-lg px-3 py-2.5 text-left text-sm"
+                style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
+              >
+                Einführung nochmal ansehen
+              </button>
             </Block>
 
             {/* --- Über --- */}

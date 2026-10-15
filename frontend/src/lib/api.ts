@@ -1036,6 +1036,33 @@ export interface Profile {
   avatarId: string | null;
 }
 
+/* --- Onboarding ----------------------------------------------------------
+ * Einmal nach der ersten Anmeldung. Abgeschlossen erst mit Mindestalter und
+ * Rechtstexten (backend/src/routes/account.ts). */
+
+export interface OnboardingState {
+  onboardedAt: number | null;
+  ageConfirmedAt: number | null;
+  termsAcceptedAt: number | null;
+  termsVersion: string | null;
+  currentTermsVersion: string;
+}
+
+export function fetchOnboarding(me: string): Promise<OnboardingState> {
+  return apiFetch(`/api/me/onboarding?me=${encodeURIComponent(me)}`).then(unwrap<OnboardingState>);
+}
+
+export function saveOnboarding(
+  me: string,
+  patch: { ageConfirmed?: true; termsAccepted?: true; done?: true },
+): Promise<OnboardingState> {
+  return apiFetch('/api/me/onboarding', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...patch, me }),
+  }).then(unwrap<OnboardingState>);
+}
+
 export function fetchProfiles(): Promise<Profile[]> {
   return apiFetch('/api/profiles').then(unwrap<Profile[]>);
 }

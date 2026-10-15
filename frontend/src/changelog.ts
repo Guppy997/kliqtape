@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.56.0',
+    date: '2026-10-15',
+    changes: [
+      'Neu: eine kurze Einführung nach der ersten Anmeldung, jederzeit überspringbar',
+      'Mindestalter 16 und Nutzungsbedingungen bestätigen (die Texte sind im Prototyp noch ein Entwurf)',
+      'Mit Einladung geht es direkt in die Kassette, ohne legst du deine erste an und lädst Leute ein',
+      'Die Einführung lässt sich in den Einstellungen nochmal ansehen',
+    ],
+  },
+  {
     version: '0.55.0',
     date: '2026-10-15',
     changes: ['Neu: Einladung als Link — teilen über das Teilen-Menü, gilt wie der Brief einmal und 14 Tage'],

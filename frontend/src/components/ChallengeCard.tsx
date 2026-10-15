@@ -540,7 +540,7 @@ function BagReveal({ shots, at, onClose }: { shots: ChallengeShot[]; at: number;
   );
 }
 
-function MiniBag() {
+export function MiniBag() {
   return (
     <svg width="54" height="62" viewBox="0 0 54 62" aria-hidden="true">
       <rect x="3" y="14" width="48" height="46" rx="3" fill={KRAFT} />

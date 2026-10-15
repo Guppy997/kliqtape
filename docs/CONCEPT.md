@@ -250,6 +250,32 @@ Datenbankzugang.
 (ohne Menü in die Zwischenablage). Es gelten dieselben Regeln — einmal, 14 Tage, nur diese
 Kassette, Zustimmen nötig. `invite_letters.kind` unterscheidet Brief und Link.
 
+## 5e. Onboarding
+
+Läuft **einmal nach der ersten Anmeldung** (auch für Konten, die es schon vorher gab), kurz und
+ohne Fortschrittsbalken, nur „Weiter“ und „Überspringen“:
+
+1. **Willkommen** in drei Screens: Kassette = fester Freundeskreis · Seite A Archiv, Seite B
+   Gruppenchat · Wochen-Challenge mit Auflösung sonntags um 19 Uhr.
+2. **Versprechen:** kein Feed, keine Likes, keine Werbung, kein Tracking; die Challenge ist
+   freiwillig, sehen dürfen alle.
+3. **Datenschutz**, so wie er sein soll (Chat Ende-zu-Ende, Archiv verschlüsselt in Deutschland,
+   jeder Zugriff wird veröffentlicht) — mit einem deutlichen **DEMO-VERSION**-Hinweis direkt
+   darunter: umgesetzt ist das noch nicht, was heute gilt, steht in „Was der Server sieht“.
+4. **Profil:** Name ändern und optional ein Profilbild aufnehmen.
+5. **Mindestalter 16** und **Nutzungsbedingungen/Datenschutzerklärung** bestätigen. Dieser
+   Schritt lässt sich als einziger nicht überspringen; ohne beide Haken ist das Onboarding nicht
+   abgeschlossen (`PUT /api/me/onboarding` antwortet sonst 409). Die Rechtstexte sind im Prototyp
+   ein ausdrücklich markierter **Entwurf** (§16.6), gespeichert wird die Fassung
+   (`terms_version`).
+6. **Start:** Wer über einen Brief oder Link kommt, sieht die Einladung und tritt mit einem Tipp
+   bei; offene Einladungen per Name erscheinen genauso. Ohne Einladung legt man die erste
+   Kassette an (Name, Bandsorte) und lädt per Link oder Brief ein — oder überspringt das.
+
+Die Erklär-Screens (1 bis 3) lassen sich in den Einstellungen unter „Einführung“ jederzeit
+nochmal ansehen. Berechtigungen fragt das Onboarding bewusst **nicht** ab. Gespeichert werden
+`profiles.onboarded_at`, `age_confirmed_at`, `terms_accepted_at` und `terms_version`.
+
 ## 6. Das Mixtape — der eigentliche USP
 
 Ein Mixtape ist ein **Geschenk an genau eine Person**. Du baust es über Tage: bis zu **12 Titel**,
