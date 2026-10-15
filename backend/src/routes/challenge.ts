@@ -8,6 +8,7 @@ import { PHOTO_MIME, mediaInUse } from '../media.js';
 import { filmReleaseAfter } from '../time.js';
 import { CHALLENGE_TYPES, type ChallengeType, currentWeek, isChallengeType, type WeekRow } from '../challengeWeek.js';
 import { dropPendingImposterGame, ensureImposterGame } from './imposter.js';
+import { remindAfterDemoRelease } from './push.js';
 
 /* -------------------------------------------------------------------------
  * Wochen-Challenge — loest Film und Imposter-Woche als getrennte Funktionen
@@ -521,5 +522,7 @@ challengeRouter.post('/api/challenge/demo/release', (req, res) => {
   requireIdentity(req, me);
   const week = currentWeek();
   if (!week) throw new HttpError(409, 'Diese Woche gibt es keine Challenge');
-  res.json({ released: releaseNow(week) });
+  const released = releaseNow(week);
+  remindAfterDemoRelease();
+  res.json({ released });
 });

@@ -18,6 +18,7 @@ import { newsRouter } from './routes/news.js';
 import { hotlineRouter } from './routes/hotline.js';
 import { mixtapesRouter } from './routes/mixtapes.js';
 import { privateTapesRouter } from './routes/privateTapes.js';
+import { pushRouter, sendWeeklyReminders } from './routes/push.js';
 
 /*
  * Einstieg des Backends: App, Middleware, Routen, Fehlerbehandlung. Die
@@ -60,6 +61,7 @@ app.use(newsRouter);
 app.use(hotlineRouter);
 app.use(mixtapesRouter);
 app.use(privateTapesRouter);
+app.use(pushRouter);
 
 /* -------------------------------------------------------------------------
  * Zentrale Fehlerbehandlung — gibt immer JSON zurueck, nie HTML.
@@ -78,6 +80,10 @@ const onError: ErrorRequestHandler = (err, _req, res, _next) => {
   res.status(status).json({ error: message });
 };
 app.use(onError);
+
+// Wochen-Erinnerung: alle fuenf Minuten nachsehen, ob eine Challenge frisch
+// aufgeloest ist — kein Cron noetig, hoechstens eine Erinnerung pro Woche.
+setInterval(() => void sendWeeklyReminders(), 5 * 60_000).unref();
 
 app.listen(PORT, () => {
   console.log(`[kliqtape] Backend läuft auf :${PORT} — Medien in ${MEDIA_DIR}`);

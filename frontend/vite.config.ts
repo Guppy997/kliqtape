@@ -30,6 +30,8 @@ export default defineConfig({
         // Medien nie in den Precache: ein Mixtape kann MB-gross sein und
         // wuerde den Cache-Storage vollaufen lassen.
         navigateFallbackDenylist: [/^\/api/],
+        // Wochen-Erinnerung: Push-Empfang und Antippen (public/push-sw.js).
+        importScripts: ['push-sw.js'],
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
       },
     }),

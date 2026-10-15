@@ -1,10 +1,7 @@
 import Database from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-
-const DATA_DIR = process.env.DATA_DIR ?? './data';
-mkdirSync(DATA_DIR, { recursive: true });
+import { DATA_DIR } from './config.js';
 
 export const db = new Database(join(DATA_DIR, 'kliqtape.sqlite'));
 
@@ -639,6 +636,19 @@ addColumn(
   'label TEXT',
   'eigene Beschriftung im persoenlichen Regal (Profil) — sieht nur diese Person',
 );
+addColumn('challenge_weeks', 'notified_at', 'notified_at INTEGER', 'Wochen-Erinnerung verschickt');
+db.exec(`
+  -- Wochen-Erinnerung per Web-Push: nur die Push-Adresse des Geraets.
+  CREATE TABLE IF NOT EXISTS push_subscriptions (
+    endpoint     TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    p256dh       TEXT NOT NULL,
+    auth         TEXT NOT NULL,
+    created_at   INTEGER NOT NULL,
+    last_sent_at INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS idx_push_name ON push_subscriptions(name);
+`);
 addColumn('profiles', 'onboarded_at', 'onboarded_at INTEGER', 'Einfuehrung abgeschlossen oder uebersprungen');
 addColumn('profiles', 'age_confirmed_at', 'age_confirmed_at INTEGER', 'Mindestalter 16 bestaetigt');
 addColumn('profiles', 'terms_accepted_at', 'terms_accepted_at INTEGER', 'Nutzungsbedingungen + Datenschutz akzeptiert');

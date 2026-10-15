@@ -27,6 +27,7 @@ import { EmptyBand, NoCassette } from '@/components/EmptyState';
 import ChallengeCard from '@/components/ChallengeCard';
 import ImposterCard from '@/components/ImposterCard';
 import LetterRedeemer from '@/components/LetterRedeemer';
+import ReminderPrompt from '@/components/ReminderPrompt';
 import PermissionHost from '@/components/PermissionHost';
 
 export default function App() {
@@ -745,6 +746,7 @@ function Deck() {
       </div>
 
       <LetterRedeemer />
+      <ReminderPrompt />
       <StoryView open={viewMode === 'story'} onClose={() => setViewMode('cassette')} />
       <NewsView open={viewMode === 'news'} onClose={() => setViewMode('cassette')} />
 

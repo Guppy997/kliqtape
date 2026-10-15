@@ -19,6 +19,7 @@ import VersionLog from './VersionLog';
 import SwitchRow from './SwitchRow';
 import Onboarding from './Onboarding';
 import { VERSION } from '@/changelog';
+import { disableReminder, enableReminder, fetchReminder, pushSupported } from '@/lib/push';
 
 /** Was der Server bei Funktionen sieht, die nicht an eine Seite gebunden
  *  sind. Ehrlich halten: lieber unangenehm als geschoent (CONCEPT.md §3). */
@@ -38,6 +39,10 @@ const SERVER_SEES_EXTRA: [string, string][] = [
   [
     'Admins & Stummschalten',
     'wer in einer Runde Admin ist und ob du die Wochen-Challenge dort für dich stummgeschaltet hast. Dein Stummschalter ist für niemanden sonst sichtbar',
+  ],
+  [
+    'Wochen-Erinnerung',
+    'nur die Push-Adresse deines Geräts, wenn du sie erlaubst. Die Erinnerung läuft über den Push-Dienst von Apple oder Google und enthält einen festen Satz, nie Inhalte',
   ],
   ['Onboarding', 'wann du das Mindestalter bestätigt und die Rechtstexte akzeptiert hast, und in welcher Fassung'],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
@@ -401,6 +406,11 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
               ))}
             </Block>
 
+            {/* --- Wochen-Erinnerung (Web-Push, hoechstens eine pro Woche) --- */}
+            <Block title="Erinnerung">
+              <ReminderSwitch />
+            </Block>
+
             {/* --- Einfuehrung nochmal ansehen (Onboarding.tsx, nur die Erklaerungen) --- */}
             <Block title="Einführung">
               <button
@@ -473,6 +483,55 @@ function AlbumOptOut() {
       disabled={!data || toggle.isPending}
       onToggle={(next) => toggle.mutate(next)}
     />
+  );
+}
+
+function ReminderSwitch() {
+  const me = useApp((s) => s.me);
+  const qc = useQueryClient();
+  const supported = pushSupported();
+  const { data } = useQuery({
+    queryKey: ['reminder', me],
+    queryFn: () => fetchReminder(me),
+    enabled: supported,
+  });
+  const toggle = useMutation({
+    mutationFn: async (on: boolean) => {
+      if (on) {
+        if (!(await enableReminder(me))) throw new Error('Benachrichtigungen sind für Kliqtape nicht erlaubt.');
+      } else {
+        await disableReminder(me);
+      }
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ['reminder', me] }),
+  });
+  const on = Boolean(data?.subscribed) && supported && Notification.permission === 'granted';
+
+  if (!supported) {
+    return (
+      <p
+        className="rounded-lg px-3 py-2.5 text-2xs leading-relaxed"
+        style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
+      >
+        Die Wochen-Erinnerung geht nur in der installierten App. Auf dem iPhone über „Teilen“ und „Zum Home-Bildschirm“.
+      </p>
+    );
+  }
+  return (
+    <>
+      <SwitchRow
+        title="Wochen-Erinnerung"
+        hint="Sonntags, wenn die Challenge aufgelöst ist. Höchstens eine pro Woche."
+        on={on}
+        disabled={!data || toggle.isPending}
+        onToggle={(next) => toggle.mutate(next)}
+      />
+      {toggle.error && (
+        <p className="px-1 text-2xs" style={{ color: 'var(--danger)' }}>
+          {(toggle.error as Error).message}
+        </p>
+      )}
+    </>
   );
 }
 

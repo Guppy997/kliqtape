@@ -283,6 +283,15 @@ Davor steht jeweils ein Satz, wofür (`PermissionHost.tsx`, `permissionStore.ts`
 wenn die Berechtigung schon erteilt ist. „Nicht jetzt“ lässt die Aufnahme offen, wo erlaubt
 geht es über die Galerie weiter.
 
+**Wochen-Erinnerung** (seit v0.58): Nach dem ersten Beitritt fragt die App einmal, ob sie
+erinnern darf, wenn die Challenge aufgelöst ist — mit dem Versprechen „höchstens eine
+Erinnerung pro Woche“. Technisch Web-Push (`backend/src/routes/push.ts`, `public/push-sw.js`):
+gespeichert wird nur die Push-Adresse des Geräts; der Text ist ein fester Satz ohne Inhalte und
+läuft über den Push-Dienst von Apple bzw. Google. Der Server prüft alle fünf Minuten, ob eine
+Challenge-Woche frisch aufgelöst ist, erinnert nur, wer in mindestens einer Runde mitspielt (dort
+nicht aus, für sich nicht stumm), und nie zweimal binnen sechs Tagen. Auf dem iPhone geht das
+nur in der installierten App. Abschalten jederzeit in den Einstellungen unter „Erinnerung“.
+
 ## 6. Das Mixtape — der eigentliche USP
 
 Ein Mixtape ist ein **Geschenk an genau eine Person**. Du baust es über Tage: bis zu **12 Titel**,
@@ -398,6 +407,8 @@ imposter_entries(week_id, author, post_id)   imposter_votes(week_id, voter, susp
 challenge_weeks(id, release_at, type, theme, set_by, created_at, demo)
 challenge_entries(id, week_id, author, kind, body, media_id, tape_id, taken_at, created_at)
 challenge_shares(entry_id, cassette_id, post_id)
+push_subscriptions(endpoint, name, p256dh, auth, created_at, last_sent_at)
+      -- Wochen-Erinnerung: nur die Push-Adresse, hoechstens eine pro Woche
       -- Wochen-Challenge: einmal machen, pro Kassette ein Post mit source='challenge'
 posts.develop_at, posts.taken_at
       -- unsichtbar bis develop_at (Sonntag 19:00 Berlin), created_at = develop_at

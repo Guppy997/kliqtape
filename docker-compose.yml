@@ -12,6 +12,9 @@ services:
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-25}
       ADMIN_NAME: ${ADMIN_NAME:-}
       DEMO_TOOLS: ${DEMO_TOOLS:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       PUBLIC_URL: ${PUBLIC_URL:-}
     volumes:
       - kliqtape-data:/data

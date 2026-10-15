@@ -3,7 +3,7 @@ import { useApp, type Side } from '@/store/appStore';
 /** Haengt den Zugangscode aus dem Store an jede Anfrage — einmal hier statt
  *  an jeder der ~35 Stellen unten einzeln. `useApp.getState()` statt eines
  *  Hooks, weil api.ts keine Komponente ist. */
-function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+export function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const token = useApp.getState().token;
   const headers = new Headers(options.headers);
   if (token) headers.set('X-Auth-Token', token);
@@ -306,7 +306,7 @@ export class ApiError extends Error {
   }
 }
 
-async function unwrap<T>(res: Response): Promise<T> {
+export async function unwrap<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const msg = await res
       .json()

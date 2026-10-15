@@ -96,6 +96,7 @@ accountRouter.post('/api/auth/rename', (req, res) => {
     db.prepare(`UPDATE invite_letters SET used_by = ? WHERE used_by = ?`).run(next, from);
     db.prepare(`UPDATE private_tapes SET owner = ? WHERE owner = ?`).run(next, from);
     db.prepare(`UPDATE challenge_entries SET author = ? WHERE author = ?`).run(next, from);
+    db.prepare(`UPDATE push_subscriptions SET name = ? WHERE name = ?`).run(next, from);
     db.prepare(`UPDATE challenge_weeks SET set_by = ? WHERE set_by = ?`).run(next, from);
   })();
 
@@ -240,6 +241,9 @@ accountRouter.get('/api/export', (req, res) => {
     imposterTipps: db.prepare(`SELECT * FROM imposter_votes WHERE voter = ?`).all(me),
     mixtapes: tapes,
     eigeneTapes: privateTapesOf(me),
+    // Nur, dass und seit wann ein Geraet angemeldet ist — die Adresse selbst
+    // ist ein Schluessel fuer den Push-Dienst und gehoert nicht in eine Datei.
+    erinnerungen: db.prepare(`SELECT created_at, last_sent_at FROM push_subscriptions WHERE name = ?`).all(me),
     challengeBeitraege: db
       .prepare(
         `SELECT e.*, w.type AS challenge_type, w.theme AS challenge_theme, w.release_at
@@ -287,6 +291,7 @@ accountRouter.delete('/api/me', (req, res) => {
     // Challenge-Beitraege: die geteilten Posts gingen oben mit den Posts,
     // jetzt der Beitrag selbst (Ablagen kaskadieren).
     db.prepare(`DELETE FROM challenge_entries WHERE author = ?`).run(me);
+    db.prepare(`DELETE FROM push_subscriptions WHERE name = ?`).run(me);
     // Eine Leitung gehoert zwei Personen — loescht eine ihr Konto, verschwindet
     // die ganze Leitung mit, nicht nur die eigenen Nachrichten darin.
     db.prepare(`DELETE FROM hotline_threads WHERE person_a = ? OR person_b = ?`).run(me, me);
