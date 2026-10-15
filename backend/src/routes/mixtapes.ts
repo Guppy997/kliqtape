@@ -118,7 +118,7 @@ mixtapesRouter.post('/api/mixtapes', (req, res) => {
   // gebaut fuer die Wochen-Challenge "Mixtape" — wer es bekommt, entscheidet
   // erst das Teilen in die Kassetten.
   const forRound = req.body?.forRound === true;
-  if (!from) throw new HttpError(400, 'Absender fehlt');
+  if (!from) throw new HttpError(400, 'Dein Name fehlt');
   if (!forRound && !to) throw new HttpError(400, 'Für wen ist das Tape?');
   if (!forRound && from === to) throw new HttpError(400, 'Ein Mixtape macht man für jemand anderen');
   requireIdentity(req, from);

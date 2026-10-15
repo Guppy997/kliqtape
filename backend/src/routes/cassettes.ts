@@ -341,7 +341,8 @@ cassettesRouter.put('/api/cassettes/:id/members/:member/admin', (req, res) => {
     .prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`)
     .get(req.params.id, target);
   if (!isMember) throw new HttpError(404, 'Nicht in dieser Runde');
-  if (target === creatorOf(req.params.id)) throw new HttpError(400, 'Wer die Kassette angelegt hat, bleibt Admin');
+  if (target === creatorOf(req.params.id))
+    throw new HttpError(400, 'Wer die Kassette angelegt hat, verwaltet sie immer mit');
   const admin = req.body?.admin === true;
   db.prepare(`UPDATE cassette_members SET is_admin = ? WHERE cassette_id = ? AND member = ?`).run(
     admin ? 1 : 0,

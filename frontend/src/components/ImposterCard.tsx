@@ -108,7 +108,7 @@ export default function ImposterCard({ cassette, onChanged }: { cassette: Casset
           {revealSeen(cassette.id) === week.id ? (
             <p className="text-sm leading-relaxed" style={{ color: 'var(--ink)' }}>
               <strong>{week.result.imposter === me ? 'Du' : week.result.imposter}</strong>{' '}
-              {week.result.imposter === me ? 'warst' : 'war'} der Imposter —{' '}
+              {week.result.imposter === me ? 'warst' : 'war'} Imposter —{' '}
               {week.result.caught ? 'die Runde lag richtig.' : 'und kam durch.'}
             </p>
           ) : (
@@ -185,7 +185,7 @@ function Playing({
         }}
       >
         <p className="text-2xs" style={{ color: card.imposter ? 'var(--danger)' : 'var(--dim)' }}>
-          {card.imposter ? 'Du bist der Imposter — nur ein Hinweis:' : 'Eure Aufgabe'}
+          {card.imposter ? 'Du bist Imposter — nur ein Hinweis:' : 'Eure Aufgabe'}
         </p>
         <p className="font-hand mt-1 text-[1.2rem] leading-snug" style={{ color: 'var(--ink)' }}>
           {card.text}
@@ -261,7 +261,7 @@ function Voting({ week, cassette, onChanged }: { week: ImposterWeek; cassette: C
     onSuccess: onChanged,
   });
   const reveal = useMutation({ mutationFn: () => revealImposter(cassette.id, me), onSuccess: onChanged });
-  // Frueher aufloesen duerfen die Admins der Runde, sonst alle, sobald jede:r getippt hat.
+  // Frueher aufloesen darf, wer die Runde verwaltet, sonst alle, sobald alle getippt haben.
   const canReveal = cassette.iAmAdmin || week.allVoted;
 
   return (
@@ -320,8 +320,8 @@ function Voting({ week, cassette, onChanged }: { week: ImposterWeek; cassette: C
         </button>
       ) : (
         <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
-          Aufgelöst wird, sobald alle getippt haben, oder von den Admins der Runde — spätestens{' '}
-          {filmReleaseLabel(week.votingEndsAt)} von selbst.
+          Aufgelöst wird, sobald alle getippt haben. Wer die Runde verwaltet, kann früher auflösen. Spätestens{' '}
+          {filmReleaseLabel(week.votingEndsAt)} passiert es von selbst.
         </p>
       )}
     </>

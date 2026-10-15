@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.59.0',
+    date: '2026-10-15',
+    changes: [
+      'Neu: Die Einführung beginnt mit einem Willkommen, mit Logo',
+      'Alle Texte sind jetzt geschlechtsneutral: Statt „Admin“ heißt es „verwaltet die Runde“, statt „der Imposter“ einfach „Imposter“',
+    ],
+  },
+  {
     version: '0.58.0',
     date: '2026-10-15',
     changes: [
@@ -56,7 +64,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     changes: [
       'Die Imposter-Woche ist jetzt ein Typ der Wochen-Challenge — jede Runde ab vier Leuten spielt für sich',
       'Jede Runde zieht ihre eigene Aufgabe, und pro Woche bist du in höchstens einer Runde Imposter',
-      'Kein Start von Hand und keine Vier-Wochen-Pause mehr; früher auflösen dürfen die Admins der Runde',
+      'Kein Start von Hand und keine Vier-Wochen-Pause mehr; früher auflösen kann, wer die Runde verwaltet',
       'Wer schon getippt hat, zeigt die App nicht mehr',
       'In der Demo lässt sich jetzt jeder Challenge-Typ vorführen, eine neue Demo-Woche beendet die vorige',
     ],
@@ -83,8 +91,8 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: '0.51.0',
     date: '2026-10-12',
     changes: [
-      'Neu: Admins in einer Runde — die Gründerin und wen sie in der Mitgliederliste dazu ernennt',
-      'Admins können die Wochen-Challenge für die ganze Runde ausschalten',
+      'Neu: Eine Runde lässt sich gemeinsam verwalten — wer sie angelegt hat, und wer in der Mitgliederliste dazugeholt wird',
+      'Wer die Runde verwaltet, kann die Wochen-Challenge für alle ausschalten',
       'Jede Person kann die Challenge in einer Runde für sich stummschalten — das erfährt niemand',
     ],
   },
@@ -603,14 +611,14 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: '0.23.1',
     date: '2026-08-09',
     changes: [
-      '"self-hosted" aus den Einstellungen und dem Kliqtape-Kanal entfernt — Kliqtape wird zentral gehostet, nicht von Nutzer:innen selbst',
+      '"self-hosted" aus den Einstellungen und dem Kliqtape-Kanal entfernt — Kliqtape wird zentral gehostet, nicht von dir selbst',
     ],
   },
   {
     version: '0.23.0',
     date: '2026-08-09',
     changes: [
-      'Kliqtape-Kanal zeigt jetzt einen echten Förderstand (Kontostand + Ziel-Notiz), von Admin bearbeitbar',
+      'Kliqtape-Kanal zeigt jetzt einen echten Förderstand (Kontostand + Ziel-Notiz), vom Kliqtape-Team bearbeitbar',
       'Kassettenfach: Kliqtape-Zeile erwähnt jetzt auch "unterstütze das Projekt"',
     ],
   },
@@ -1227,7 +1235,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     changes: [
       'Mixtapes — ein echtes Tape für genau eine Person bauen, bis zu 12 Titel',
       'Cover per Kamera, handgeschriebene Widmung, Titel mit Link zu jedem Musikdienst',
-      'Versiegeln: der Empfänger sieht nichts, solange du daran baust',
+      'Versiegeln: Wer das Tape bekommt, sieht nichts, solange du daran baust',
       'Regal für empfangene, laufende und verschenkte Tapes',
       'Seiten heißen jetzt The Crew und The Kliqe',
       'Wortmarke sitzt auf dem Kassettenrücken',

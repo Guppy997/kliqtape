@@ -39,7 +39,7 @@ export default function CassetteChallengeSettings({ cassette }: { cassette: Cass
         hint={
           data?.iAmAdmin
             ? 'Gilt für alle hier. Ausgeschaltet verschwinden Beiträge, die noch nicht aufgelöst sind, wieder aus dem Band.'
-            : 'Für alle ein- und ausschalten dürfen die Admins der Runde.'
+            : 'Für alle ein- und ausschalten kann, wer die Runde verwaltet.'
         }
         on={!(data?.off ?? false)}
         disabled={!data || !data.iAmAdmin || toggleOff.isPending}

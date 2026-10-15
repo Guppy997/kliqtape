@@ -148,8 +148,8 @@ export default function MixtapeList() {
           )}
 
           <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
-            Bis zu 12 Titel. {to.trim() || 'Der Empfänger'} sieht nichts davon, solange du daran baust — erst das
-            Versiegeln überreicht das Tape.
+            Bis zu 12 Titel. {to.trim() ? `${to.trim()} sieht` : 'Wer es bekommt, sieht'} nichts davon, solange du daran
+            baust — erst das Versiegeln überreicht das Tape.
           </p>
 
           <button

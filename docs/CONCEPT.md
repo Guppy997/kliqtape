@@ -148,7 +148,8 @@ Status verrät nur den eigenen Stand.
 
 **Abschalten:** Für eine ganze Runde schalten die **Admins** die Challenge aus — die Gründerin
 (bzw. wer die Kassette übernommen hat) und alle, die sie in der Mitgliederliste zu Admins
-ernennt; die Gründerin bleibt immer Admin. Ausgeschaltet verschwinden Beiträge, die dort noch
+ernennt; die Gründerin bleibt immer Admin. In der App heißt das „verwaltet die Runde“ bzw.
+„verwaltet mit“, ohne Personenbezeichnung. Ausgeschaltet verschwinden Beiträge, die dort noch
 nicht aufgelöst sind, wieder aus dem Band (die Beiträge selbst bleiben und lassen sich anderswo
 ablegen), und neue lassen sich nicht hineinlegen. Zusätzlich kann jede Person die Challenge
 **für sich** in einer Runde stummschalten: Sie sieht sie dort nicht und legt nichts hinein;
@@ -255,8 +256,9 @@ Kassette, Zustimmen nötig. `invite_letters.kind` unterscheidet Brief und Link.
 Läuft **einmal nach der ersten Anmeldung** (auch für Konten, die es schon vorher gab), kurz und
 ohne Fortschrittsbalken, nur „Weiter“ und „Überspringen“:
 
-1. **Willkommen** in drei Screens: Kassette = fester Freundeskreis · Seite A Archiv, Seite B
-   Gruppenchat · Wochen-Challenge mit Auflösung sonntags um 19 Uhr.
+1. **Willkommen** mit Logo („Herzlich willkommen.“), danach drei Screens: Kassette = feste
+   Runde · Seite A Archiv, Seite B Gruppenchat · Wochen-Challenge mit Auflösung sonntags um
+   19 Uhr.
 2. **Versprechen:** kein Feed, keine Likes, keine Werbung, kein Tracking; die Challenge ist
    freiwillig, sehen dürfen alle.
 3. **Datenschutz**, so wie er sein soll (Chat Ende-zu-Ende, Archiv verschlüsselt in Deutschland,
@@ -272,8 +274,9 @@ ohne Fortschrittsbalken, nur „Weiter“ und „Überspringen“:
    bei; offene Einladungen per Name erscheinen genauso. Ohne Einladung legt man die erste
    Kassette an (Name, Bandsorte) und lädt per Link oder Brief ein — oder überspringt das.
 
-Die Erklär-Screens (1 bis 3) lassen sich in den Einstellungen unter „Einführung“ jederzeit
-nochmal ansehen. Berechtigungen fragt das Onboarding bewusst **nicht** ab. Gespeichert werden
+Die Erklär-Screens (1 bis 3, ohne das Willkommen) lassen sich in den Einstellungen unter
+„Einführung“ jederzeit nochmal ansehen. **Keine Geschlechtsabfrage**, und alle Texte sind
+geschlechtsneutral (Schreibregel in CONTRIBUTING.md). Berechtigungen fragt das Onboarding bewusst **nicht** ab. Gespeichert werden
 `profiles.onboarded_at`, `age_confirmed_at`, `terms_accepted_at` und `terms_version`.
 
 **Berechtigungen erst bei Bedarf** (seit v0.57): Kamera beim ersten Foto, Kamera und Mikrofon

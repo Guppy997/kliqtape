@@ -143,8 +143,8 @@ hotlineRouter.post('/api/hotlines/threads', (req, res) => {
   if (!KINDS.includes(kind)) throw new HttpError(400, 'Unbekannte Nachrichtenart');
   if (kind === 'text' && !text) throw new HttpError(400, 'Leere Nachricht');
   if (text.length > HOTLINE_MAX) throw new HttpError(400, `Maximal ${HOTLINE_MAX} Zeichen`);
-  if (!from) throw new HttpError(400, 'Absender fehlt');
-  if (!to) throw new HttpError(400, 'Empfänger fehlt');
+  if (!from) throw new HttpError(400, 'Dein Name fehlt');
+  if (!to) throw new HttpError(400, 'Für wen? Der Name fehlt');
   if (from === to) throw new HttpError(400, 'Man ruft sich nicht selbst an');
   requireIdentity(req, from);
   if (MEDIA_KINDS.includes(kind) && !mediaId) throw new HttpError(400, `Für ${kind} fehlt die Aufnahme`);

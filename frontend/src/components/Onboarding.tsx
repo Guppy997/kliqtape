@@ -23,28 +23,30 @@ import { CassetteFacePreview } from './CassetteHeader';
 import { MiniCassette, useCassettes } from './CassetteDeck';
 import { MiniBag } from './ChallengeCard';
 import InviteLinkButton from './InviteLinkButton';
+import Lockup from './Lockup';
 import Sheet from './Sheet';
 
 /*
- * Onboarding, einmal nach der ersten Anmeldung. Die Einfuehrung (was
+ * Onboarding, einmal nach der ersten Anmeldung. Die Einfuehrung (Willkommen, was
  * Kliqtape ist, das Versprechen, Datenschutz) und das Profil lassen sich
  * ueberspringen, das Mindestalter und die Rechtstexte nicht. Danach geht es
  * mit einer Einladung direkt in die Kassette, sonst wird die erste angelegt.
  *
  * In den Einstellungen laesst sich die Einfuehrung nochmal ansehen (replay):
- * dann nur die erklaerenden Screens, ohne Profil, Haken und Start.
+ * dann nur die erklaerenden Screens, ohne Willkommen, Profil, Haken und Start.
  *
- * Schreibregel fuer alle Texte hier: kurz, keine Gedankenstriche. Kein
- * Fortschrittsbalken, nur "Weiter" und "Ueberspringen".
+ * Schreibregel fuer alle Texte hier: kurz, keine Gedankenstriche, duzen und
+ * ohne Personenbezeichnungen (CONTRIBUTING.md). Kein Fortschrittsbalken, nur
+ * "Weiter" und "Ueberspringen".
  */
 
-type Step = 'what' | 'sides' | 'challenge' | 'promise' | 'privacy' | 'profile' | 'consent' | 'start';
-const INTRO: Step[] = ['what', 'sides', 'challenge', 'promise', 'privacy'];
+type Step = 'welcome' | 'what' | 'sides' | 'challenge' | 'promise' | 'privacy' | 'profile' | 'consent' | 'start';
+const INTRO: Step[] = ['welcome', 'what', 'sides', 'challenge', 'promise', 'privacy'];
 
 export default function Onboarding({ replay = false, onDone }: { replay?: boolean; onDone: () => void }) {
   const me = useApp((s) => s.me);
   const qc = useQueryClient();
-  const [step, setStep] = useState<Step>('what');
+  const [step, setStep] = useState<Step>(replay ? 'what' : 'welcome');
 
   async function finish() {
     if (!replay) {
@@ -68,6 +70,25 @@ export default function Onboarding({ replay = false, onDone }: { replay?: boolea
   }
 
   switch (step) {
+    case 'welcome':
+      return (
+        <Frame
+          center
+          art={
+            <div className="flex flex-col items-center gap-5">
+              <img src="/favicon.svg" alt="" width={72} height={72} className="rounded-2xl" />
+              <Lockup size="clamp(3rem, 17vw, 4.6rem)" />
+            </div>
+          }
+          title="Herzlich willkommen."
+          primary="Weiter"
+          onPrimary={next}
+          secondary="Überspringen"
+          onSecondary={skipIntro}
+        >
+          Schön, dass du da bist.
+        </Frame>
+      );
     case 'what':
       return (
         <Frame
@@ -83,7 +104,7 @@ export default function Onboarding({ replay = false, onDone }: { replay?: boolea
               />
             </div>
           }
-          title="Eine Kassette ist ein fester Freundeskreis."
+          title="Eine Kassette ist eure feste Runde."
           primary="Weiter"
           onPrimary={next}
           secondary="Überspringen"
@@ -185,6 +206,7 @@ export default function Onboarding({ replay = false, onDone }: { replay?: boolea
 /* --- Bausteine ------------------------------------------------------------- */
 
 function Frame({
+  center,
   art,
   title,
   children,
@@ -194,6 +216,8 @@ function Frame({
   secondary,
   onSecondary,
 }: {
+  /** Mittig gesetzt, nur fuer den Willkommens-Screen. */
+  center?: boolean;
   art?: ReactNode;
   title: string;
   children?: ReactNode;
@@ -211,7 +235,9 @@ function Frame({
       className="fixed inset-0 z-[70] flex flex-col px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]"
       style={{ background: 'var(--screen)' }}
     >
-      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 overflow-y-auto py-4">
+      <div
+        className={`mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 overflow-y-auto py-4 ${center ? 'text-center' : ''}`}
+      >
         {art}
         <h1 className="text-2xl leading-tight font-semibold text-balance" style={{ color: 'var(--ink)' }}>
           {title}

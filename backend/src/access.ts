@@ -65,5 +65,5 @@ export function isCassetteAdmin(cassetteId: string, person: string): boolean {
 
 export function requireCassetteAdmin(req: Request, cassetteId: string, person: string): void {
   requireMember(req, cassetteId, person);
-  if (!isCassetteAdmin(cassetteId, person)) throw new HttpError(403, 'Das dürfen nur Admins der Runde');
+  if (!isCassetteAdmin(cassetteId, person)) throw new HttpError(403, 'Das kann nur, wer die Runde verwaltet');
 }

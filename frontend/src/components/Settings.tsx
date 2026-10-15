@@ -37,8 +37,8 @@ const SERVER_SEES_EXTRA: [string, string][] = [
     'nur das Aufnahmedatum, das dein Handy aus dem Foto liest oder das du angibst — nicht die Bilddaten selbst. Prüfen kann der Server das Datum nicht',
   ],
   [
-    'Admins & Stummschalten',
-    'wer in einer Runde Admin ist und ob du die Wochen-Challenge dort für dich stummgeschaltet hast. Dein Stummschalter ist für niemanden sonst sichtbar',
+    'Verwalten & Stummschalten',
+    'wer eine Runde mitverwaltet und ob du die Wochen-Challenge dort für dich stummgeschaltet hast. Dein Stummschalter ist für niemanden sonst sichtbar',
   ],
   [
     'Wochen-Erinnerung',

@@ -54,7 +54,7 @@ export default function AlbumExport({
       <div className="flex flex-col gap-4">
         <p className="text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
           Wähle die Tapes von Seite A, die ins Album sollen. Seite B und Hot Line kommen nie hinein, Clips und O-Töne
-          lassen sich nicht drucken. Wer seine Beiträge aus Alben ausgenommen hat, fehlt bewusst.
+          lassen sich nicht drucken. Wer die eigenen Beiträge aus Alben ausgenommen hat, fehlt bewusst.
         </p>
 
         {isLoading && (

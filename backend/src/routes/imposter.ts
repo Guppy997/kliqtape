@@ -361,7 +361,7 @@ imposterRouter.post('/api/cassettes/:id/imposter/reveal', (req, res) => {
   // getippt hat. Sonst nimmt jemand den anderen das Raten weg; spaetestens
   // 24 Stunden nach Sonntagabend loest es sich von selbst auf.
   if (!isCassetteAdmin(req.params.id, by) && !everyoneVoted(req.params.id, w.id)) {
-    throw new HttpError(403, 'Auflösen können die Admins der Runde, oder alle, sobald jede:r getippt hat');
+    throw new HttpError(403, 'Auflösen kann, wer die Runde verwaltet, oder alle, sobald alle getippt haben');
   }
   db.prepare(`UPDATE imposter_weeks SET revealed_at = ? WHERE id = ?`).run(Date.now(), w.id);
   res.json({ ok: true });

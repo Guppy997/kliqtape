@@ -33,7 +33,7 @@ export default function ReportForm({ target, what, onDone }: Props) {
         </p>
         <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
           Die Meldung ist gespeichert. Im Prototyp gibt es noch kein Moderationsteam, das sie automatisch bearbeitet —
-          sie liegt bei den Betreiber:innen. Niemand auf dem Band erfährt, dass du gemeldet hast.
+          sie liegt beim Kliqtape-Team. Niemand auf dem Band erfährt, dass du gemeldet hast.
         </p>
         <button type="button" onClick={onDone} className="mt-1 self-start text-2xs" style={{ color: 'var(--accent)' }}>
           Schließen

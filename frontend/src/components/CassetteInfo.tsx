@@ -437,11 +437,13 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                 </span>
                 <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
                   {creator ? 'hat das Band angelegt' : `eingeladen von ${m.addedBy}`}
-                  {m.admin && ' · Admin'}
+                  {m.admin && !creator && ' · verwaltet mit'}
                 </span>
               </span>
-              {/* Admins ernennen andere zu Admins (fuer die Wochen-Challenge);
-                  die Gruenderin bleibt es immer. */}
+              {/* Wer die Runde verwaltet, kann andere mitverwalten lassen (fuer die
+                  Wochen-Challenge); wer sie angelegt hat, verwaltet immer mit.
+                  In der App heisst das bewusst nicht "Admin": Texte kommen ohne
+                  Personenbezeichnungen aus (CONTRIBUTING.md). */}
               {cassette.iAmAdmin && !creator && (
                 <button
                   type="button"
@@ -450,7 +452,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                   className="shrink-0 px-1 text-2xs disabled:opacity-50"
                   style={{ color: m.admin ? 'var(--dim)' : 'var(--accent)' }}
                 >
-                  {m.admin ? 'kein Admin' : 'zum Admin'}
+                  {m.admin ? 'nur noch Mitglied' : 'mitverwalten lassen'}
                 </button>
               )}
               {m.name !== me && !creator && (

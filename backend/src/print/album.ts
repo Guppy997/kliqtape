@@ -193,7 +193,7 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
     .font('Helvetica')
     .fontSize(7)
     .text(
-      'Nur Seite A. Clips und O-Töne lassen sich nicht drucken. Wer seine Beiträge nicht in Alben haben möchte, fehlt hier bewusst.',
+      'Nur Seite A. Clips und O-Töne lassen sich nicht drucken. Wer die eigenen Beiträge nicht in Alben haben möchte, fehlt hier bewusst.',
       M + 30,
       H - M - 30,
       { width: inner - 60, align: 'center' },
