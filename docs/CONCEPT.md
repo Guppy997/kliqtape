@@ -230,7 +230,7 @@ automatisch in jedem Album, das irgendwer exportiert.
 
 Das PDF entsteht auf dem Server (pdfkit) und wird nicht gespeichert.
 
-## 5d. Einladung als Brief
+## 5d. Einladung als Brief oder Link
 
 Für Leute, die man lieber mit Papier einlädt als mit einem Link: In der Kassetten-Ansicht
 erzeugt jedes Mitglied ein druckbares A5-Blatt mit QR-Code („Du bist eingeladen.“). Der Code
@@ -245,6 +245,10 @@ enthält einen **neuen Einladungs-Token**, unabhängig vom Zugangscode:
 Die Adresse im QR-Code ist `PUBLIC_URL` oder, falls leer, die Adresse, von der aus der Brief
 angefordert wurde. Das Druck-Modul `backend/src/print/letter.ts` hat wie das Album keinen
 Datenbankzugang.
+
+**Als Link** (seit v0.55): derselbe Token ohne Papier, geteilt über das Teilen-Menü des Geräts
+(ohne Menü in die Zwischenablage). Es gelten dieselben Regeln — einmal, 14 Tage, nur diese
+Kassette, Zustimmen nötig. `invite_letters.kind` unterscheidet Brief und Link.
 
 ## 6. Das Mixtape — der eigentliche USP
 

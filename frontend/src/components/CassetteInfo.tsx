@@ -18,6 +18,7 @@ import { useApp } from '@/store/appStore';
 import { useJump } from '@/store/jumpStore';
 import Avatar, { useProfiles } from './Avatar';
 import CassetteChallengeSettings from './CassetteChallengeSettings';
+import InviteLinkButton from './InviteLinkButton';
 import { CassetteFacePreview } from './CassetteHeader';
 import AlbumExport from './AlbumExport';
 import ReportForm from './ReportForm';
@@ -490,6 +491,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
             </span>
           </span>
         </button>
+        <InviteLinkButton cassette={cassette} />
         <button
           type="button"
           onClick={() => letter.mutate()}

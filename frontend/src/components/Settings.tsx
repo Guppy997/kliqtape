@@ -40,8 +40,8 @@ const SERVER_SEES_EXTRA: [string, string][] = [
   ],
   ['Meldungen', 'im Klartext: wer was gemeldet hat, Grund und Notiz. Die gemeldete Person erfährt es nicht'],
   [
-    'Einladungsbrief',
-    'wer wann einen Brief für welche Kassette gedruckt hat und wer ihn einlöst. Den Code im QR-Code selbst speichert der Server nicht, nur einen Fingerabdruck davon',
+    'Einladung als Brief oder Link',
+    'wer wann einen Brief gedruckt oder einen Link erstellt hat, für welche Kassette, und wer ihn einlöst. Den Code selbst speichert der Server nicht, nur einen Fingerabdruck davon',
   ],
   [
     'Eigenes Regal',

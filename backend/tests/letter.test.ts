@@ -81,3 +81,28 @@ describe('Einladung als Brief', () => {
     expect(invites.body.map((i: { cassetteId: string }) => i.cassetteId)).toEqual([other]);
   });
 });
+
+describe('Einladung als Link', () => {
+  let cassette: string;
+
+  beforeAll(async () => {
+    cassette = await cassetteWith('anna', ['ben'], 'Linkrunde');
+  });
+
+  it('Fremder bekommt keinen Link fuer eine fremde Kassette', async () => {
+    expect((await api('POST', `/api/cassettes/${cassette}/invite-link`, 'cara', { by: CARA })).status).toBe(403);
+    expect((await api('POST', `/api/cassettes/${cassette}/invite-link`, null, { by: ANNA })).status).toBe(401);
+  });
+
+  it('Mitglied bekommt einen Link, der wie ein Brief eingeloest wird — einmal', async () => {
+    const res = await api('POST', `/api/cassettes/${cassette}/invite-link`, 'ben', { by: nameOf('ben') });
+    expect(res.status).toBe(201);
+    const token = new URL(res.body.url).searchParams.get('brief')!;
+    expect(token.length).toBeGreaterThan(20);
+    expect(res.body.expiresAt).toBeGreaterThan(Date.now() + 13 * 86_400_000);
+    const redeem = await api('POST', '/api/letters/redeem', 'dora', { me: nameOf('dora'), token });
+    expect(redeem.status).toBe(201);
+    expect(redeem.body).toMatchObject({ cassetteName: 'Linkrunde', invitedBy: nameOf('ben') });
+    expect((await api('POST', '/api/letters/redeem', 'emil', { me: EMIL, token })).status).toBe(410);
+  });
+});

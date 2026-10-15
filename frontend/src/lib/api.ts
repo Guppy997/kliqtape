@@ -962,6 +962,15 @@ export async function requestLetter(cassetteId: string, by: string): Promise<str
   return res.headers.get('X-Letter-Url');
 }
 
+/** Einladung als Link — wie der Brief, nur ohne Papier (einmal gueltig, 14 Tage). */
+export function createInviteLink(cassetteId: string, by: string): Promise<{ url: string; expiresAt: number }> {
+  return apiFetch(`/api/cassettes/${cassetteId}/invite-link`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ by }),
+  }).then(unwrap<{ url: string; expiresAt: number }>);
+}
+
 export function redeemLetter(
   me: string,
   token: string,

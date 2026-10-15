@@ -639,6 +639,7 @@ addColumn(
   'label TEXT',
   'eigene Beschriftung im persoenlichen Regal (Profil) — sieht nur diese Person',
 );
+addColumn('invite_letters', 'kind', "kind TEXT NOT NULL DEFAULT 'brief'", 'Einladung als Brief oder als Link');
 addColumn(
   'imposter_weeks',
   'challenge_week_id',

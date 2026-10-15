@@ -11,6 +11,11 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.55.0',
+    date: '2026-10-15',
+    changes: ['Neu: Einladung als Link — teilen über das Teilen-Menü, gilt wie der Brief einmal und 14 Tage'],
+  },
+  {
     version: '0.54.1',
     date: '2026-10-15',
     changes: [

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { type Request, Router } from 'express';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { hashToken, requireIdentity, requireMember } from '../access.js';
 import { PUBLIC_URL } from '../config.js';
@@ -8,7 +8,7 @@ import { renderLetterPdf } from '../print/letter.js';
 import { UTC_DATE, berlinCivilDay } from '../time.js';
 
 /* -------------------------------------------------------------------------
- * Einladung als Brief — druckbares PDF mit QR-Code. Der Token ist neu und
+ * Einladung als Brief (druckbares PDF mit QR-Code) oder als Link. Der Token ist neu und
  * unabhaengig vom Zugangscode: einmal gueltig, LETTER_TTL_MS lang, nur fuer
  * genau diese Kassette. Gespeichert wird nur sein Hash; der Klartext steht
  * ausschliesslich im PDF dieser einen Antwort. Einloesen legt eine normale
@@ -19,25 +19,29 @@ export const lettersRouter = Router();
 
 const LETTER_TTL_MS = 14 * 86_400_000;
 
-lettersRouter.post('/api/cassettes/:id/letter.pdf', (req, res) => {
-  const by = String(req.body?.by ?? '').trim();
-  requireMember(req, req.params.id, by);
-  const cassette = db.prepare(`SELECT name FROM cassettes WHERE id = ?`).get(req.params.id) as { name: string };
-
+/** Neuer Einladungs-Token fuer Brief oder Link. Gespeichert wird nur sein
+ *  Hash; der Klartext steckt allein in der Adresse, die diese eine Antwort
+ *  zurueckgibt. Origin schickt der Browser bei POST ohnehin mit und zeigt auf
+ *  die App, nicht auf den Backend-Port hinter einem Proxy. */
+function newInvitation(req: Request, cassetteId: string, by: string, kind: 'brief' | 'link') {
   const token = randomBytes(24).toString('base64url');
   const now = Date.now();
   const expiresAt = now + LETTER_TTL_MS;
   db.prepare(
-    `INSERT INTO invite_letters (id, cassette_id, token_hash, created_by, created_at, expires_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(randomUUID(), req.params.id, hashToken(token), by, now, expiresAt);
-
-  // Origin schickt der Browser bei POST ohnehin mit und zeigt auf die App,
-  // nicht auf den Backend-Port hinter einem Proxy.
+    `INSERT INTO invite_letters (id, cassette_id, token_hash, created_by, created_at, expires_at, kind)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(randomUUID(), cassetteId, hashToken(token), by, now, expiresAt, kind);
   const origin = req.get('origin');
   const base =
     PUBLIC_URL || (origin && /^https?:\/\/[^/\s]+$/.test(origin) ? origin : `${req.protocol}://${req.get('host')}`);
-  const url = `${base}/?brief=${token}`;
+  return { url: `${base}/?brief=${token}`, expiresAt };
+}
+
+lettersRouter.post('/api/cassettes/:id/letter.pdf', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  requireMember(req, req.params.id, by);
+  const cassette = db.prepare(`SELECT name FROM cassettes WHERE id = ?`).get(req.params.id) as { name: string };
+  const { url, expiresAt } = newInvitation(req, req.params.id, by, 'brief');
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename="kliqtape-einladung.pdf"');
   res.setHeader('Cache-Control', 'no-store');
@@ -47,6 +51,16 @@ lettersRouter.post('/api/cassettes/:id/letter.pdf', (req, res) => {
     { cassetteName: cassette.name, from: by, url, validUntil: UTC_DATE.format(new Date(berlinCivilDay(expiresAt))) },
     res,
   );
+});
+
+/** Einladung als Link — wie der Brief, nur ohne Papier: zum Teilen ueber das
+ *  Teilen-Menue. Einmal gueltig, 14 Tage, nur fuer diese Kassette. */
+lettersRouter.post('/api/cassettes/:id/invite-link', (req, res) => {
+  const by = String(req.body?.by ?? '').trim();
+  requireMember(req, req.params.id, by);
+  const { url, expiresAt } = newInvitation(req, req.params.id, by, 'link');
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(201).json({ url, expiresAt });
 });
 
 lettersRouter.post('/api/letters/redeem', (req, res) => {
@@ -71,9 +85,9 @@ lettersRouter.post('/api/letters/redeem', (req, res) => {
         cassette_name: string;
       }
     | undefined;
-  if (!letter) throw new HttpError(404, 'Diesen Brief kennt der Server nicht');
-  if (letter.used_at) throw new HttpError(410, 'Dieser Brief wurde schon eingelöst');
-  if (Date.now() > letter.expires_at) throw new HttpError(410, 'Dieser Brief ist abgelaufen');
+  if (!letter) throw new HttpError(404, 'Diese Einladung kennt der Server nicht');
+  if (letter.used_at) throw new HttpError(410, 'Diese Einladung wurde schon eingelöst');
+  if (Date.now() > letter.expires_at) throw new HttpError(410, 'Diese Einladung ist abgelaufen');
   if (db.prepare(`SELECT 1 FROM cassette_members WHERE cassette_id = ? AND member = ?`).get(letter.cassette_id, me)) {
     // Token bleibt gueltig — vielleicht ist er fuer jemand anderen gedacht.
     throw new HttpError(409, `Du bist schon auf »${letter.cassette_name}«`);
