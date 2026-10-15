@@ -177,15 +177,26 @@ statt der Tüte ein Hinweis direkt zu den Tapes im Band.
 beliebigen Typs starten und den Sonntagabend vorziehen, um jeden Typ zu zeigen. Im Betrieb
 bleibt das aus. Ältere Film-Beiträge (vor v0.50) bleiben unverändert im Band.
 
-## 5b. Imposter-Woche (Special)
+## 5b. Imposter-Woche (Typ der Wochen-Challenge)
 
-Ein Spiel für die Runde, **nicht jede Woche**: frühestens vier Wochen nach der letzten, nur auf
-Kassetten mit **mindestens vier Leuten**, gestartet von einem Mitglied in der Kassetten-Ansicht.
-Alle bekommen dieselbe Wochenaufgabe (ein Foto oder ein paar Worte), eine zufällige Person ist
-Imposter, weiß das und bekommt nur einen vagen Hinweis. Die Beiträge sind wie die Challenge bis
-**Sonntag 19 Uhr** verborgen, auch die Bilder. Dann sieht die Runde alle Beiträge und tippt, wer
-die Aufgabe nicht kannte; umentscheiden geht bis zur Auflösung. Aufgelöst wird, sobald alle
-getippt haben, durch die Person, die gestartet hat, oder 24 Stunden später von selbst.
+Ein Spiel für die Runde — und seit v0.54 einer der Typen der Wochen-Challenge (5a): Plant der
+Kliqtape-Kanal eine Imposter-Woche, spielt **jede Runde für sich**. Wer mitspielt, sind alle
+Mitglieder, die die Challenge dort nicht für sich stummgeschaltet haben; es braucht **mindestens
+vier**, sonst setzt die Runde diese Woche aus (ebenso, wenn die Admins die Challenge dort
+abgeschaltet haben). Von Hand starten und die frühere Vier-Wochen-Pause gibt es nicht mehr.
+
+Alle bekommen dieselbe Aufgabe (ein Foto oder ein paar Worte), eine zufällige Person ist
+Imposter, weiß das und bekommt nur einen vagen Hinweis. Die Beiträge sind wie bei der Challenge
+bis **Sonntag 19 Uhr** verborgen, auch die Bilder. Dann sieht die Runde alle Beiträge und tippt,
+wer die Aufgabe nicht kannte; umentscheiden geht bis zur Auflösung. Aufgelöst wird, sobald alle
+getippt haben, früher durch die Admins der Runde, oder 24 Stunden später von selbst. Wer schon
+getippt hat, zeigt die App nicht — nur, ob alle durch sind.
+
+**Kein Durchsickern über andere Runden:** Die Aufgabe zieht jede Runde selbst, und pro Woche ist
+man in **höchstens einer Runde Imposter**. Aufgabe und Imposter werden zusammen gezogen: Hat
+eine andere Runde dieselbe Aufgabe, darf deren Imposter hier nicht mitspielen und der neue
+Imposter dort nicht — sonst erführe er die Aufgabe einfach als normales Mitglied der anderen
+Runde. Findet sich keine passende Kombination, setzt die Runde aus.
 
 Die Auflösung ist bewusst kein Glücksrad: Die Abzüge der Leute, die die Aufgabe kannten,
 bekommen nacheinander einen leisen Stempel, übrig bleibt der Imposter mit einem roten Stempel.
@@ -193,10 +204,12 @@ Danach stehen Aufgabe, Hinweis und ob die Runde richtig lag. **Kein Punktestand,
 Belohnung, keine Stimmenzahlen** — der Server gibt nur „richtig“ oder „daneben“ heraus. Die
 Beiträge bleiben im Tape des Sonntags auf Seite A, der Imposter-Beitrag mit Stempel.
 
-**Technisch:** `imposter_weeks`, `imposter_entries`, `imposter_votes`; Aufgaben als feste Liste
-in `backend/src/routes/imposter.ts`. Beiträge sind Seite-A-Posts mit `source = 'imposter'` und `develop_at`, also
-dieselbe Sperre wie bei der Challenge. Mit `DEMO_TOOLS=1` kann die Gründerin den Sonntagabend
-vorziehen; die Vier-Wochen-Pause entfällt dann.
+**Technisch:** `imposter_weeks` (mit `challenge_week_id`, ein Spiel pro Runde und Woche, beim
+ersten Blick darauf angelegt — die App hat keinen Hintergrund-Job), `imposter_entries`,
+`imposter_votes`; Aufgaben als feste Liste in `backend/src/routes/imposter.ts`. Beiträge sind
+Seite-A-Posts mit `source = 'imposter'` und `develop_at`, also dieselbe Sperre wie bei der
+Challenge. Mit `DEMO_TOOLS=1` lässt sich eine Imposter-Woche wie jeder andere Typ sofort starten
+und der Sonntagabend vorziehen.
 
 ## 5c. Album-Export
 
@@ -342,7 +355,8 @@ cassettes(id, name, created_by, created_at, color_index, challenge_off)
 cassette_members(cassette_id, member, added_by, joined_at, is_admin, challenge_muted)
 cassette_invites(id, cassette_id, invitee, invited_by, created_at)
 reports(id, cassette_id | post_id, reported_by, reason, note, created_at)
-imposter_weeks(id, cassette_id, task_key, imposter, started_by, started_at, reveal_at, revealed_at)
+imposter_weeks(id, cassette_id, challenge_week_id, task_key, imposter, started_by, started_at,
+               reveal_at, revealed_at)
 imposter_entries(week_id, author, post_id)   imposter_votes(week_id, voter, suspect, created_at)
 challenge_weeks(id, release_at, type, theme, set_by, created_at, demo)
 challenge_entries(id, week_id, author, kind, body, media_id, tape_id, taken_at, created_at)

@@ -90,7 +90,8 @@ Konzept in wenigen Minuten erklären (Details in `docs/CONCEPT.md`, Abschnitte 5
 
 - **Wochen-Challenge** — eine pro Woche für alle Kassetten, einmal gemacht und in mehrere Kassetten
   gelegt, sichtbar erst Sonntag 19 Uhr (ersetzt den früheren Film)
-- **Imposter-Woche** — ein Special ab vier Leuten, mit Auflösung, ohne Punkte
+- **Imposter-Woche** — ein Typ der Wochen-Challenge: jede Runde ab vier Leuten spielt für sich, mit
+  Auflösung, ohne Punkte
 - **Album als PDF**, **Einladung als Brief** mit QR-Code, **Mixtape als Bild**
 - **Die Kassette altert** alle 10 Tage ein wenig
 

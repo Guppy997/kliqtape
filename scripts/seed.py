@@ -326,6 +326,8 @@ def main() -> None:
     ap.add_argument("--base", default=BASE, help="Adresse des Backends")
     ap.add_argument("--reset", action="store_true", help="Daten dieser Leute vorher löschen")
     ap.add_argument("--me-token", help="Zugangscode des Hauptnutzers, falls der Name schon vergeben ist")
+    ap.add_argument("--admin", default="Kliqtape",
+                    help="Name des Kliqtape-Kanal-Accounts (ADMIN_NAME im Backend), plant die Wochen-Challenges")
     args = ap.parse_args()
     BASE = args.base.rstrip("/")
 
@@ -523,6 +525,30 @@ def main() -> None:
         sid = upload(as_jpeg(scene()), "image/jpeg", as_=person)
         call("POST", "/api/stories", {"author": person, "kind": "photo", "mediaId": sid})
     print(" 4 Stück")
+
+    # --- Wochen-Challenge ------------------------------------------------------
+    # Der Kliqtape-Kanal plant die naechsten Wochen, je ein Typ. Laeuft das
+    # Backend mit einem anderen ADMIN_NAME, bleibt die Planung einfach leer.
+    print("Wochen-Challenges …", end="", flush=True)
+    plan = [
+        ("photo", "Etwas, das gerade Sonne abbekommt"),
+        ("super8", "Zehn Sekunden von deinem Lieblingsgeräusch"),
+        ("damals", "Ein Ort, der dir fehlt"),
+        ("mixtape", "Lieder für den Herbst"),
+        ("imposter", ""),
+    ]
+    try:
+        weeks = call("GET", f"/api/challenges?me={urllib.parse.quote(args.admin)}", as_=args.admin)["weeks"]
+        planned = 0
+        for week, (kind, theme) in zip(weeks, plan):
+            if week["started"]:
+                continue
+            call("PUT", f"/api/challenges/{week['releaseAt']}",
+                 {"me": args.admin, "type": kind, "theme": theme}, as_=args.admin)
+            planned += 1
+        print(f" {planned} Wochen geplant")
+    except SystemExit as e:
+        print(f" übersprungen ({e})")
 
     print(f"\nFertig. Melde dich in der App als »{me}« an.")
     print(f"Zugangscode für »{me}«: {TOKENS[me]}")

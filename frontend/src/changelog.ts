@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.54.0',
+    date: '2026-10-15',
+    changes: [
+      'Die Imposter-Woche ist jetzt ein Typ der Wochen-Challenge — jede Runde ab vier Leuten spielt für sich',
+      'Jede Runde zieht ihre eigene Aufgabe, und pro Woche bist du in höchstens einer Runde Imposter',
+      'Kein Start von Hand und keine Vier-Wochen-Pause mehr; früher auflösen dürfen die Admins der Runde',
+      'Wer schon getippt hat, zeigt die App nicht mehr',
+      'In der Demo lässt sich jetzt jeder Challenge-Typ vorführen, eine neue Demo-Woche beendet die vorige',
+    ],
+  },
+  {
     version: '0.53.0',
     date: '2026-10-12',
     changes: [

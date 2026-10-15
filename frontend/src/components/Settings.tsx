@@ -28,7 +28,7 @@ const SERVER_SEES_EXTRA: [string, string][] = [
   ],
   [
     'Imposter-Woche',
-    'im Klartext: Aufgabe, wer Imposter ist, alle Beiträge und wer auf wen getippt hat. Andere sehen vor der Auflösung nur ihre eigene Karte',
+    'im Klartext: die Aufgabe jeder Runde, wer Imposter ist, alle Beiträge und wer auf wen getippt hat. Vor der Auflösung sieht jede Person nur ihre eigene Karte; wer schon getippt hat, zeigt die App nicht',
   ],
   [
     'Challenge „Damals“',

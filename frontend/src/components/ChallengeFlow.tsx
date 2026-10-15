@@ -112,7 +112,11 @@ export default function ChallengeFlow({
               <p className="text-sm" style={{ color: 'var(--ink)' }}>
                 {CHALLENGE_TYPE_HINT[week.type]}
               </p>
-              {week.type === 'mixtape' ? (
+              {week.type === 'imposter' ? (
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
+                  Deine Karte liegt am Ende von Seite A jeder Runde, die mitspielt.
+                </p>
+              ) : week.type === 'mixtape' ? (
                 <MixtapePick
                   onPick={async (tapeId) => {
                     await createChallengeEntry(me, { tapeId });

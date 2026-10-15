@@ -359,13 +359,14 @@ export function fetchFeed(cassetteId: string, side: Side, me: string): Promise<F
  * der Server nichts davon heraus (backend/src/routes/challenge.ts). Jeder
  * Status verraet nur den eigenen Stand — keine Streaks, keine Zaehler. */
 
-export type ChallengeType = 'photo' | 'super8' | 'damals' | 'mixtape';
+export type ChallengeType = 'photo' | 'super8' | 'damals' | 'mixtape' | 'imposter';
 
 export const CHALLENGE_TYPE_LABEL: Record<ChallengeType, string> = {
   photo: 'Foto zum Thema',
   super8: 'Super-8',
   damals: 'Damals',
   mixtape: 'Mixtape',
+  imposter: 'Imposter',
 };
 
 /** Ein Satz, was bei diesem Typ verlangt ist. */
@@ -374,6 +375,7 @@ export const CHALLENGE_TYPE_HINT: Record<ChallengeType, string> = {
   super8: 'Ein Clip, höchstens 10 Sekunden, nur mit der Kamera.',
   damals: 'Ein Foto aus deiner Galerie, das mindestens ein Jahr alt ist.',
   mixtape: 'Ein Mixtape für die Runde — eins deiner versiegelten oder ein neues.',
+  imposter: 'Jede Runde spielt für sich: alle bekommen dieselbe Aufgabe, eine Person nur einen Hinweis.',
 };
 
 export interface ChallengeWeek {
@@ -416,6 +418,8 @@ export interface CassetteChallenge {
   off: boolean;
   muted: boolean;
   iAmAdmin: boolean;
+  /** Imposter-Woche: laeuft hier ein Spiel (sonst setzt die Runde aus)? */
+  imposterHere: boolean;
   mine: { entry: ChallengeEntry | null; sharedHere: boolean };
   /** Die zuletzt aufgeloeste Woche dieser Kassette — die Tuete. */
   developed: (ChallengeWeek & { at: number; shots: ChallengeShot[] }) | null;
@@ -538,19 +542,19 @@ export interface ImposterWeek {
   revealAt: number;
   votingEndsAt: number;
   entryKind: 'photo' | 'text';
-  card: { imposter: boolean; text: string };
+  /** Die eigene Karte — null, wer die Challenge hier stummgeschaltet hat. */
+  card: { imposter: boolean; text: string } | null;
   iSubmitted: boolean;
   entries: ImposterEntry[];
   myVote: string | null;
-  voted: string[];
+  /** Nur ob alle getippt haben — nicht wer, keine Zahl. */
+  allVoted: boolean;
   result: { imposter: string; task: string; hint: string; caught: boolean; revealedAt: number } | null;
 }
 
 export interface ImposterStatus {
   week: ImposterWeek | null;
-  canStart: boolean;
   minMembers: number;
-  nextStartAt: number | null;
   demoTools: boolean;
 }
 
@@ -566,15 +570,12 @@ function imposterPost<T>(cassetteId: string, path: string, body: unknown): Promi
   }).then(unwrap<T>);
 }
 
-export const startImposter = (cassetteId: string, by: string) => imposterPost<{ id: string }>(cassetteId, '', { by });
 export const submitImposterEntry = (cassetteId: string, author: string, entry: { mediaId?: string; body?: string }) =>
   imposterPost<{ postId: string }>(cassetteId, '/entry', { author, ...entry });
 export const voteImposter = (cassetteId: string, by: string, suspect: string) =>
   imposterPost<{ ok: true }>(cassetteId, '/vote', { by, suspect });
 export const revealImposter = (cassetteId: string, by: string) =>
   imposterPost<{ ok: true }>(cassetteId, '/reveal', { by });
-/** Nur mit DEMO_TOOLS=1 auf dem Server, nur fuer die Gruenderin. */
-export const imposterNow = (cassetteId: string, by: string) => imposterPost<{ ok: true }>(cassetteId, '/now', { by });
 
 /** Laedt einen Blob hoch und gibt die Medien-ID zurueck. */
 export async function uploadMedia(blob: Blob, durationMs?: number): Promise<string> {

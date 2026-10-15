@@ -6,6 +6,8 @@ import { db } from '../db.js';
 import { HttpError } from '../http.js';
 import { PHOTO_MIME, mediaInUse } from '../media.js';
 import { filmReleaseAfter } from '../time.js';
+import { CHALLENGE_TYPES, type ChallengeType, currentWeek, isChallengeType, type WeekRow } from '../challengeWeek.js';
+import { dropPendingImposterGame, ensureImposterGame } from './imposter.js';
 
 /* -------------------------------------------------------------------------
  * Wochen-Challenge — loest Film und Imposter-Woche als getrennte Funktionen
@@ -24,16 +26,14 @@ import { filmReleaseAfter } from '../time.js';
 
 export const challengeRouter = Router();
 
-/** Welche Typen es gibt — waechst mit jeder Ausbaustufe. */
-export const CHALLENGE_TYPES = ['photo', 'super8', 'damals', 'mixtape'] as const;
-export type ChallengeType = (typeof CHALLENGE_TYPES)[number];
-
 /** Thema, wenn eine Demo-Woche ohne eigenes angelegt wird. */
 const DEMO_THEMES: Record<ChallengeType, string> = {
   photo: 'Etwas, das gerade Sonne abbekommt',
   super8: 'Zehn Sekunden von deinem Lieblingsgeräusch',
   damals: 'Ein Ort, der dir fehlt',
   mixtape: 'Lieder für den Herbst',
+  // Die Aufgabe zieht jede Runde selbst (routes/imposter.ts), ein Thema gibt es nicht.
+  imposter: '',
 };
 
 /** Super-8: so lang darf der Clip sein — die gemeldete Dauer kommt vom Handy
@@ -42,24 +42,10 @@ const SUPER8_MAX_MS = 10_500;
 /** Damals: mindestens so alt muss das Foto sein. */
 const DAMALS_MIN_AGE_MS = 365 * 86_400_000;
 
-function isType(t: unknown): t is ChallengeType {
-  return (CHALLENGE_TYPES as readonly unknown[]).includes(t);
-}
-
 const MAX_THEME = 120;
 const MAX_CAPTION = 120;
 /** So weit im Voraus plant der Kanal. */
 const PLAN_WEEKS = 8;
-
-export interface WeekRow {
-  id: string;
-  release_at: number;
-  type: ChallengeType;
-  theme: string;
-  set_by: string;
-  created_at: number;
-  demo: number;
-}
 
 interface EntryRow {
   id: string;
@@ -71,14 +57,6 @@ interface EntryRow {
   tape_id: string | null;
   taken_at: number;
   created_at: number;
-}
-
-/** Die laufende Woche: naechste Aufloesung in der Zukunft. Eine Demo-Woche
- *  ueberlagert die geplante, weil sie spaeter angelegt wurde. */
-export function currentWeek(now = Date.now()): WeekRow | undefined {
-  return db
-    .prepare(`SELECT * FROM challenge_weeks WHERE release_at > ? ORDER BY release_at ASC, created_at DESC LIMIT 1`)
-    .get(now) as WeekRow | undefined;
 }
 
 function shapeWeek(w: WeekRow) {
@@ -173,6 +151,15 @@ challengeRouter.get('/api/cassettes/:id/challenge', (req, res) => {
   requireMember(req, req.params.id, me);
   const now = Date.now();
   const week = currentWeek(now);
+  // Imposter-Woche: die Runde bekommt ihr eigenes Spiel, falls sie mitspielt.
+  if (week?.type === 'imposter') ensureImposterGame(req.params.id, now);
+  const imposterHere =
+    week?.type === 'imposter' &&
+    Boolean(
+      db
+        .prepare(`SELECT 1 FROM imposter_weeks WHERE cassette_id = ? AND challenge_week_id = ?`)
+        .get(req.params.id, week.id),
+    );
   const entry = week ? myEntry(week.id, me) : undefined;
   const sharedHere = entry
     ? Boolean(
@@ -216,6 +203,8 @@ challengeRouter.get('/api/cassettes/:id/challenge', (req, res) => {
     current: week ? shapeWeek(week) : null,
     ...blockOf(req.params.id, me),
     iAmAdmin: isCassetteAdmin(req.params.id, me),
+    /** Imposter-Woche: laeuft hier ein Spiel (sonst setzt die Runde aus)? */
+    imposterHere,
     mine: { entry: entry ? shapeEntry(entry) : null, sharedHere },
     developed: last
       ? {
@@ -301,6 +290,8 @@ challengeRouter.post('/api/challenge/entry', (req, res) => {
       if (!tape.sealed_at) throw new HttpError(400, 'Erst versiegeln, dann mitmachen');
       break;
     }
+    case 'imposter':
+      throw new HttpError(400, 'Die Imposter-Woche läuft über deine Karte in der Kassette');
     default:
       throw new HttpError(400, 'Unbekannter Challenge-Typ');
   }
@@ -380,7 +371,9 @@ challengeRouter.put('/api/cassettes/:id/challenge', (req, res) => {
   const off = req.body?.off === true;
   const withdrawn = db.transaction(() => {
     db.prepare(`UPDATE cassettes SET challenge_off = ? WHERE id = ?`).run(off ? 1 : 0, req.params.id);
-    return off ? withdrawPending(req.params.id) : 0;
+    if (!off) return 0;
+    dropPendingImposterGame(req.params.id);
+    return withdrawPending(req.params.id);
   })();
   res.json({ off, withdrawn });
 });
@@ -447,7 +440,7 @@ challengeRouter.put('/api/challenges/:releaseAt', (req, res) => {
   const theme = String(req.body?.theme ?? '')
     .trim()
     .slice(0, MAX_THEME);
-  if (type !== null && !isType(type)) throw new HttpError(400, 'Unbekannter Challenge-Typ');
+  if (type !== null && !isChallengeType(type)) throw new HttpError(400, 'Unbekannter Challenge-Typ');
 
   const prev = db.prepare(`SELECT * FROM challenge_weeks WHERE demo = 0 AND release_at = ?`).get(at) as
     WeekRow | undefined;
@@ -477,17 +470,49 @@ challengeRouter.post('/api/challenge/demo', (req, res) => {
   const me = meOf(req);
   requireIdentity(req, me);
   const type = req.body?.type;
-  if (!isType(type)) throw new HttpError(400, 'Unbekannter Challenge-Typ');
+  if (!isChallengeType(type)) throw new HttpError(400, 'Unbekannter Challenge-Typ');
   const theme =
     String(req.body?.theme ?? '')
       .trim()
       .slice(0, MAX_THEME) || DEMO_THEMES[type];
+  // Eine noch laufende Demo-Woche endet mit der neuen — sonst taeuchte sie
+  // nach deren Aufloesung wieder als "laufende Woche" auf.
+  const stale = db
+    .prepare(`SELECT * FROM challenge_weeks WHERE demo = 1 AND release_at > ?`)
+    .all(Date.now()) as WeekRow[];
+  for (const w of stale) releaseNow(w);
   const id = randomUUID();
   db.prepare(
     `INSERT INTO challenge_weeks (id, release_at, type, theme, set_by, created_at, demo) VALUES (?, ?, ?, ?, ?, ?, 1)`,
   ).run(id, filmReleaseAfter(Date.now()), type, theme, me, Date.now());
   res.status(201).json(shapeWeek(currentWeek()!));
 });
+
+/** Eine Woche sofort aufloesen — Challenge-Beitraege und Imposter-Spiele
+ *  dieser Woche werden sichtbar. Nur fuer Demos. */
+function releaseNow(week: WeekRow): number {
+  const now = Date.now();
+  return db.transaction(() => {
+    db.prepare(`UPDATE challenge_weeks SET release_at = ? WHERE id = ?`).run(now, week.id);
+    const n = db
+      .prepare(
+        `UPDATE posts SET develop_at = ?, created_at = ?
+          WHERE id IN (SELECT s.post_id FROM challenge_shares s
+                         JOIN challenge_entries e ON e.id = s.entry_id
+                        WHERE e.week_id = ?)`,
+      )
+      .run(now, now, week.id).changes;
+    // Imposter-Woche: alle Spiele dieser Woche gehen in die Tipp-Phase.
+    db.prepare(
+      `UPDATE posts SET develop_at = ?, created_at = ?
+        WHERE id IN (SELECT e.post_id FROM imposter_entries e
+                       JOIN imposter_weeks iw ON iw.id = e.week_id
+                      WHERE iw.challenge_week_id = ?)`,
+    ).run(now, now, week.id);
+    db.prepare(`UPDATE imposter_weeks SET reveal_at = ? WHERE challenge_week_id = ?`).run(now, week.id);
+    return n;
+  })();
+}
 
 /** Sonntagabend vorziehen: die laufende Woche loest jetzt auf. */
 challengeRouter.post('/api/challenge/demo/release', (req, res) => {
@@ -496,17 +521,5 @@ challengeRouter.post('/api/challenge/demo/release', (req, res) => {
   requireIdentity(req, me);
   const week = currentWeek();
   if (!week) throw new HttpError(409, 'Diese Woche gibt es keine Challenge');
-  const now = Date.now();
-  const released = db.transaction(() => {
-    db.prepare(`UPDATE challenge_weeks SET release_at = ? WHERE id = ?`).run(now, week.id);
-    return db
-      .prepare(
-        `UPDATE posts SET develop_at = ?, created_at = ?
-          WHERE id IN (SELECT s.post_id FROM challenge_shares s
-                         JOIN challenge_entries e ON e.id = s.entry_id
-                        WHERE e.week_id = ?)`,
-      )
-      .run(now, now, week.id).changes;
-  })();
-  res.json({ released });
+  res.json({ released: releaseNow(week) });
 });

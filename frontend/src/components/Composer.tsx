@@ -169,7 +169,7 @@ export default function Composer({ onPosted }: Props) {
       >
         <div className="flex flex-col gap-2">
           {/* Challenge nur auf Seite A: sie landet nach der Aufloesung im Archiv. */}
-          {side === 'a' && cassetteId && week && (
+          {side === 'a' && cassetteId && week && week.type !== 'imposter' && (
             <button
               type="button"
               onClick={() => setChallengeOpen(true)}

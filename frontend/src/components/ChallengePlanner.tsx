@@ -85,9 +85,9 @@ function PlanRow({
         <input
           value={theme}
           onChange={(e) => setTheme(e.target.value)}
-          disabled={week.started || !type}
+          disabled={week.started || !type || type === 'imposter'}
           maxLength={120}
-          placeholder="Thema"
+          placeholder={type === 'imposter' ? 'Aufgabe zieht jede Runde selbst' : 'Thema'}
           aria-label="Thema"
           className="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-sm outline-none disabled:opacity-60"
           style={{ background: 'var(--screen)', border: '1px solid var(--line)', color: 'var(--ink)' }}

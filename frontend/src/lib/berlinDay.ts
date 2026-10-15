@@ -64,10 +64,20 @@ const BERLIN_SHORT_DATE = new Intl.DateTimeFormat('de-DE', {
   month: '2-digit',
 });
 
-/** "Sonntag, 11.10. um 19 Uhr" — fuer Freigabe-Hinweise. */
+const BERLIN_HOUR_MIN = new Intl.DateTimeFormat('de-DE', {
+  timeZone: 'Europe/Berlin',
+  hour: 'numeric',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** "Sonntag, 11.10. um 19 Uhr" — fuer Freigabe-Hinweise. Glatte Stunden ohne
+ *  Minuten; eine vorgezogene Demo-Aufloesung zeigt die echte Uhrzeit
+ *  ("um 17:23 Uhr") statt immer 19 Uhr zu behaupten. */
 export function filmReleaseLabel(ms: number): string {
   const d = new Date(ms);
-  return `${BERLIN_WEEKDAY.format(d)}, ${BERLIN_SHORT_DATE.format(d)} um ${FILM_RELEASE_HOUR} Uhr`;
+  const [h, m] = BERLIN_HOUR_MIN.format(d).split(':');
+  return `${BERLIN_WEEKDAY.format(d)}, ${BERLIN_SHORT_DATE.format(d)} um ${m === '00' ? h : `${h}:${m}`} Uhr`;
 }
 
 /** "Mi, 14:32" — wann ein Filmbild belichtet wurde. */

@@ -1,18 +1,24 @@
 import { Router } from 'express';
 import { randomInt, randomUUID } from 'node:crypto';
-import { creatorOf, requireMember } from '../access.js';
+import { isCassetteAdmin, requireMember } from '../access.js';
+import { currentWeek } from '../challengeWeek.js';
 import { DEMO_TOOLS } from '../config.js';
 import { type Kind, db } from '../db.js';
 import { HttpError } from '../http.js';
 import { PHOTO_MIME, mediaInUse } from '../media.js';
-import { filmReleaseAfter } from '../time.js';
 
 /* -------------------------------------------------------------------------
- * Imposter-Woche — ein Special, nicht jede Woche, nur ab vier Personen.
- * Alle bekommen dieselbe Aufgabe, eine zufaellige Person nur einen vagen
- * Hinweis. Beitraege sind bis Sonntag 19:00 verborgen (wie der Film), dann
- * wird getippt, wer der Imposter war, und aufgeloest. Kein Punktestand,
- * keine Belohnung, keine Stimmenzahlen — nur "richtig" oder "daneben".
+ * Imposter-Woche — einer der Typen der Wochen-Challenge (routes/challenge.ts).
+ * Plant der Kliqtape-Kanal eine Imposter-Woche, bekommt jede Runde mit
+ * mindestens vier Mitspielenden ihr eigenes Spiel, beim ersten Blick darauf
+ * angelegt: Alle bekommen dieselbe Aufgabe, eine zufaellige Person nur einen
+ * vagen Hinweis. Beitraege sind bis Sonntag 19:00 verborgen, dann wird
+ * getippt, wer der Imposter war, und aufgeloest. Kein Punktestand, keine
+ * Belohnung, keine Stimmenzahlen — nur "richtig" oder "daneben".
+ *
+ * Die Aufgabe zieht jede Runde selbst, und pro Woche ist man in hoechstens
+ * einer Runde Imposter. Sonst erfuehre der Imposter der einen Runde die
+ * Aufgabe einfach ueber eine andere, in der er ganz normal mitspielt.
  * ---------------------------------------------------------------------- */
 
 export const imposterRouter = Router();
@@ -66,14 +72,13 @@ const IMPOSTER_TASKS: Record<string, ImposterTask> = {
 };
 
 const IMPOSTER_MIN_MEMBERS = 4;
-/** "Nicht jede Woche": zwischen zwei Imposter-Wochen einer Kassette. */
-const IMPOSTER_COOLDOWN_MS = 28 * 86_400_000;
 /** Wie lange nach Sonntagabend getippt werden kann, bevor von selbst aufgeloest wird. */
 const IMPOSTER_VOTING_MS = 24 * 3_600_000;
 
 interface ImposterWeekRow {
   id: string;
   cassette_id: string;
+  challenge_week_id: string | null;
   task_key: string;
   imposter: string;
   started_by: string;
@@ -96,6 +101,100 @@ function latestImposterWeek(cassetteId: string, now: number): ImposterWeekRow | 
     db.prepare(`UPDATE imposter_weeks SET revealed_at = ? WHERE id = ?`).run(w.revealed_at, w.id);
   }
   return w;
+}
+
+/** Wer in einer Runde mitspielt: alle Mitglieder, ausser wer die Challenge
+ *  dort fuer sich stummgeschaltet hat. */
+function playersOf(cassetteId: string): string[] {
+  return (
+    db
+      .prepare(`SELECT member FROM cassette_members WHERE cassette_id = ? AND challenge_muted = 0 ORDER BY joined_at`)
+      .all(cassetteId) as { member: string }[]
+  ).map((r) => r.member);
+}
+
+function shuffled<T>(list: T[]): T[] {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
+/**
+ * Laeuft diese Woche die Imposter-Challenge, bekommt die Runde ihr Spiel —
+ * angelegt beim ersten Blick darauf, die App hat keinen Hintergrund-Job.
+ * Keins, wenn die Challenge hier aus ist oder weniger als vier mitspielen.
+ *
+ * Aufgabe und Imposter werden zusammen gezogen, damit nichts durchsickert:
+ * - wer diese Woche schon anderswo Imposter ist, wird es hier nicht;
+ * - hat eine andere Runde dieselbe Aufgabe, darf deren Imposter hier nicht
+ *   mitspielen, und der neue Imposter dort nicht — er saehe sonst die Aufgabe.
+ * Findet sich keine Kombination, setzt die Runde diese Woche aus.
+ */
+export function ensureImposterGame(cassetteId: string, now = Date.now()): void {
+  const cw = currentWeek(now);
+  if (!cw || cw.type !== 'imposter') return;
+  const has = db
+    .prepare(`SELECT 1 FROM imposter_weeks WHERE cassette_id = ? AND challenge_week_id = ?`)
+    .get(cassetteId, cw.id);
+  if (has) return;
+  const cassette = db.prepare(`SELECT challenge_off FROM cassettes WHERE id = ?`).get(cassetteId) as
+    { challenge_off: number } | undefined;
+  if (!cassette || cassette.challenge_off === 1) return;
+  const players = playersOf(cassetteId);
+  if (players.length < IMPOSTER_MIN_MEMBERS) return;
+
+  const others = db
+    .prepare(
+      `SELECT cassette_id, task_key, imposter FROM imposter_weeks WHERE challenge_week_id = ? AND cassette_id != ?`,
+    )
+    .all(cw.id, cassetteId) as { cassette_id: string; task_key: string; imposter: string }[];
+  const busy = new Set(others.map((o) => o.imposter));
+
+  for (const task of shuffled(Object.keys(IMPOSTER_TASKS))) {
+    const sameTask = others.filter((o) => o.task_key === task);
+    if (sameTask.some((o) => players.includes(o.imposter))) continue;
+    const seesTask = new Set(sameTask.flatMap((o) => playersOf(o.cassette_id)));
+    const imposter = shuffled(players).find((p) => !busy.has(p) && !seesTask.has(p));
+    if (!imposter) continue;
+    db.prepare(
+      `INSERT INTO imposter_weeks (id, cassette_id, task_key, imposter, started_by, started_at, reveal_at, challenge_week_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(randomUUID(), cassetteId, task, imposter, cw.set_by, now, cw.release_at, cw.id);
+    return;
+  }
+}
+
+/** Beim Abschalten der Runde: ein noch laufendes Challenge-Spiel faellt weg,
+ *  samt seiner noch verborgenen Beitraege. */
+export function dropPendingImposterGame(cassetteId: string, now = Date.now()): void {
+  const games = db
+    .prepare(
+      `SELECT id FROM imposter_weeks
+        WHERE cassette_id = ? AND challenge_week_id IS NOT NULL AND revealed_at IS NULL AND reveal_at > ?`,
+    )
+    .all(cassetteId, now) as { id: string }[];
+  for (const g of games) {
+    db.prepare(`DELETE FROM posts WHERE id IN (SELECT post_id FROM imposter_entries WHERE week_id = ?)`).run(g.id);
+    db.prepare(`DELETE FROM imposter_weeks WHERE id = ?`).run(g.id);
+  }
+}
+
+/** Haben alle Mitglieder der Runde getippt? */
+function everyoneVoted(cassetteId: string, weekId: string): boolean {
+  const members = db.prepare(`SELECT COUNT(*) AS n FROM cassette_members WHERE cassette_id = ?`).get(cassetteId) as {
+    n: number;
+  };
+  const votes = db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM imposter_votes v
+         JOIN cassette_members m ON m.cassette_id = ? AND m.member = v.voter
+        WHERE v.week_id = ?`,
+    )
+    .get(cassetteId, weekId) as { n: number };
+  return votes.n >= members.n;
 }
 
 function phaseOf(w: ImposterWeekRow, now: number): ImposterPhase {
@@ -126,25 +225,10 @@ imposterRouter.get('/api/cassettes/:id/imposter', (req, res) => {
   const me = String(req.query.me ?? '').trim();
   requireMember(req, req.params.id, me);
   const now = Date.now();
-  const members = (
-    db.prepare(`SELECT member FROM cassette_members WHERE cassette_id = ? ORDER BY joined_at`).all(req.params.id) as {
-      member: string;
-    }[]
-  ).map((r) => r.member);
+  ensureImposterGame(req.params.id, now);
   const w = latestImposterWeek(req.params.id, now);
 
-  const canStartAt = w ? w.started_at + IMPOSTER_COOLDOWN_MS : 0;
-  const busy = w && phaseOf(w, now) !== 'revealed';
-  const canStart = members.length >= IMPOSTER_MIN_MEMBERS && !busy && (DEMO_TOOLS || now >= canStartAt);
-
-  if (!w)
-    return void res.json({
-      week: null,
-      canStart,
-      minMembers: IMPOSTER_MIN_MEMBERS,
-      nextStartAt: null,
-      demoTools: DEMO_TOOLS,
-    });
+  if (!w) return void res.json({ week: null, minMembers: IMPOSTER_MIN_MEMBERS, demoTools: DEMO_TOOLS });
 
   const phase = phaseOf(w, now);
   const t = IMPOSTER_TASKS[w.task_key]!;
@@ -163,10 +247,8 @@ imposterRouter.get('/api/cassettes/:id/imposter', (req, res) => {
           .all(w.id) as { author: string; id: string; kind: Kind; body: string; media_id: string | null }[]);
   const myVote = db.prepare(`SELECT suspect FROM imposter_votes WHERE week_id = ? AND voter = ?`).get(w.id, me) as
     { suspect: string } | undefined;
-  // Wer schon getippt hat (Namen, keine Zahl) — damit man weiss, auf wen man wartet.
-  const voted = (db.prepare(`SELECT voter FROM imposter_votes WHERE week_id = ?`).all(w.id) as { voter: string }[]).map(
-    (r) => r.voter,
-  );
+  // Wer stumm ist, spielt hier nicht mit und bekommt keine Karte.
+  const playing = isImposter || playersOf(req.params.id).includes(me);
 
   res.json({
     week: {
@@ -179,7 +261,7 @@ imposterRouter.get('/api/cassettes/:id/imposter', (req, res) => {
       entryKind: t.entry,
       // Die eigene Karte: entweder die Aufgabe oder nur der Hinweis. Wer
       // Imposter ist, erfaehrt vor der Aufloesung nur die Person selbst.
-      card: isImposter ? { imposter: true, text: t.hint } : { imposter: false, text: t.task },
+      card: !playing ? null : isImposter ? { imposter: true, text: t.hint } : { imposter: false, text: t.task },
       iSubmitted: Boolean(mine),
       entries: entries.map((e) => ({
         postId: e.id,
@@ -189,50 +271,16 @@ imposterRouter.get('/api/cassettes/:id/imposter', (req, res) => {
         mediaId: e.media_id,
       })),
       myVote: myVote?.suspect ?? null,
-      voted: phase === 'playing' ? [] : voted,
+      // Nur ob alle getippt haben — nicht wer, keine Zahl.
+      allVoted: phase !== 'playing' && everyoneVoted(req.params.id, w.id),
       result:
         phase === 'revealed'
           ? { imposter: w.imposter, task: t.task, hint: t.hint, caught: imposterCaught(w), revealedAt: w.revealed_at }
           : null,
     },
-    canStart,
     minMembers: IMPOSTER_MIN_MEMBERS,
-    nextStartAt: DEMO_TOOLS ? null : canStartAt,
     demoTools: DEMO_TOOLS,
   });
-});
-
-imposterRouter.post('/api/cassettes/:id/imposter', (req, res) => {
-  const by = String(req.body?.by ?? '').trim();
-  requireMember(req, req.params.id, by);
-  const now = Date.now();
-  const members = (
-    db.prepare(`SELECT member FROM cassette_members WHERE cassette_id = ?`).all(req.params.id) as { member: string }[]
-  ).map((r) => r.member);
-  if (members.length < IMPOSTER_MIN_MEMBERS) {
-    throw new HttpError(400, `Eine Imposter-Woche braucht mindestens ${IMPOSTER_MIN_MEMBERS} Leute auf dem Band`);
-  }
-  const last = latestImposterWeek(req.params.id, now);
-  if (last && phaseOf(last, now) !== 'revealed') throw new HttpError(409, 'Es läuft schon eine Imposter-Woche');
-  if (last && !DEMO_TOOLS && now < last.started_at + IMPOSTER_COOLDOWN_MS) {
-    throw new HttpError(
-      409,
-      'Die Imposter-Woche ist ein Special — die nächste geht frühestens vier Wochen nach der letzten',
-    );
-  }
-
-  const keys = Object.keys(IMPOSTER_TASKS);
-  // Nicht zweimal hintereinander dieselbe Aufgabe.
-  const pool = keys.filter((k) => k !== last?.task_key);
-  const taskKey = pool[randomInt(pool.length)]!;
-  const imposter = members[randomInt(members.length)]!;
-  const id = randomUUID();
-  db.prepare(
-    `INSERT INTO imposter_weeks (id, cassette_id, task_key, imposter, started_by, started_at, reveal_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).run(id, req.params.id, taskKey, imposter, by, now, filmReleaseAfter(now));
-
-  res.status(201).json({ id });
 });
 
 imposterRouter.post('/api/cassettes/:id/imposter/entry', (req, res) => {
@@ -246,6 +294,9 @@ imposterRouter.post('/api/cassettes/:id/imposter/entry', (req, res) => {
   const w = loadActiveWeek(req.params.id, now, 'playing');
   const t = IMPOSTER_TASKS[w.task_key]!;
 
+  if (w.imposter !== author && !playersOf(req.params.id).includes(author)) {
+    throw new HttpError(409, 'Du hast die Challenge hier für dich stummgeschaltet');
+  }
   if (db.prepare(`SELECT 1 FROM imposter_entries WHERE week_id = ? AND author = ?`).get(w.id, author)) {
     throw new HttpError(409, 'Du hast diese Woche schon etwas abgegeben');
   }
@@ -303,40 +354,12 @@ imposterRouter.post('/api/cassettes/:id/imposter/reveal', (req, res) => {
   const by = String(req.body?.by ?? '').trim();
   requireMember(req, req.params.id, by);
   const w = loadActiveWeek(req.params.id, Date.now(), 'voting');
-  // Aufloesen darf, wer die Woche gestartet hat — oder jede:r, sobald alle
-  // Mitglieder getippt haben. Sonst nimmt jemand den anderen das Raten weg.
-  const members = db.prepare(`SELECT COUNT(*) AS n FROM cassette_members WHERE cassette_id = ?`).get(req.params.id) as {
-    n: number;
-  };
-  const votes = db
-    .prepare(
-      `SELECT COUNT(*) AS n FROM imposter_votes v
-         JOIN cassette_members m ON m.cassette_id = ? AND m.member = v.voter
-        WHERE v.week_id = ?`,
-    )
-    .get(req.params.id, w.id) as { n: number };
-  if (by !== w.started_by && votes.n < members.n) {
-    throw new HttpError(403, `Auflösen kann ${w.started_by}, oder alle, sobald jede:r getippt hat`);
+  // Frueher aufloesen duerfen die Admins der Runde — oder alle, sobald jede:r
+  // getippt hat. Sonst nimmt jemand den anderen das Raten weg; spaetestens
+  // 24 Stunden nach Sonntagabend loest es sich von selbst auf.
+  if (!isCassetteAdmin(req.params.id, by) && !everyoneVoted(req.params.id, w.id)) {
+    throw new HttpError(403, 'Auflösen können die Admins der Runde, oder alle, sobald jede:r getippt hat');
   }
   db.prepare(`UPDATE imposter_weeks SET revealed_at = ? WHERE id = ?`).run(Date.now(), w.id);
-  res.json({ ok: true });
-});
-
-// Nur mit DEMO_TOOLS=1: Sonntagabend vorziehen, damit die Abstimmung in
-// einer Vorfuehrung sofort beginnt. Nur wer die Kassette angelegt hat.
-imposterRouter.post('/api/cassettes/:id/imposter/now', (req, res) => {
-  if (!DEMO_TOOLS) throw new HttpError(404, 'Nicht verfügbar');
-  const by = String(req.body?.by ?? '').trim();
-  requireMember(req, req.params.id, by);
-  if (creatorOf(req.params.id) !== by) throw new HttpError(403, 'Nur wer die Kassette angelegt hat');
-  const now = Date.now();
-  const w = loadActiveWeek(req.params.id, now, 'playing');
-  db.transaction(() => {
-    db.prepare(`UPDATE imposter_weeks SET reveal_at = ? WHERE id = ?`).run(now, w.id);
-    db.prepare(
-      `UPDATE posts SET develop_at = ?, created_at = ?
-        WHERE id IN (SELECT post_id FROM imposter_entries WHERE week_id = ?)`,
-    ).run(now, now, w.id);
-  })();
   res.json({ ok: true });
 });

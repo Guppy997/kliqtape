@@ -1,8 +1,10 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { api, cassetteWith, fetchMedia, nameOf, upload, type Person } from './fixtures';
 
-// Imposter-Woche: nur ab vier Leuten, genau eine Person bekommt nur einen
+// Imposter-Woche als Typ der Wochen-Challenge: jede Runde ab vier
+// Mitspielenden bekommt ihr eigenes Spiel, genau eine Person nur einen
 // Hinweis, Beitraege bis Sonntagabend verborgen, dann tippen und aufloesen.
+// Pro Woche ist man in hoechstens einer Runde Imposter.
 
 const ANNA = nameOf('anna');
 const CARA = nameOf('cara');
@@ -21,21 +23,20 @@ describe('Imposter-Woche', () => {
 
   beforeAll(async () => {
     cassette = await cassetteWith('anna', ['ben', 'dora', 'emil']);
+    // Der Kanal plant die Woche — in der Demo laesst sie sich sofort starten.
+    expect((await api('POST', '/api/challenge/demo', 'anna', { me: ANNA, type: 'imposter' })).status).toBe(201);
   });
 
-  it('Unter vier Leuten gibt es keine Imposter-Woche', async () => {
+  it('Unter vier Leuten setzt die Runde aus', async () => {
     const small = await cassetteWith('anna', ['ben']);
-    expect((await api('POST', `/api/cassettes/${small}/imposter`, 'anna', { by: ANNA })).status).toBe(400);
+    const res = await api('GET', `/api/cassettes/${small}/imposter?me=${ANNA}`, 'anna');
+    expect(res.status).toBe(200);
+    expect(res.body.week).toBeNull();
   });
 
-  it('Fremder darf nicht starten und sieht nichts', async () => {
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter`, 'cara', { by: CARA })).status).toBe(403);
+  it('Fremder sieht nichts; von Hand starten gibt es nicht mehr', async () => {
     expect((await api('GET', `/api/cassettes/${cassette}/imposter?me=${CARA}`, 'cara')).status).toBe(403);
-  });
-
-  it('Start klappt einmal, ein zweiter Start waehrend der Woche nicht', async () => {
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter`, 'anna', { by: ANNA })).status).toBe(201);
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter`, 'ben', { by: nameOf('ben') })).status).toBe(409);
+    expect((await api('POST', `/api/cassettes/${cassette}/imposter`, 'anna', { by: ANNA })).status).toBe(404);
   });
 
   it('Genau eine Person ist Imposter und bekommt nur den Hinweis', async () => {
@@ -54,7 +55,7 @@ describe('Imposter-Woche', () => {
     expect(tasks.has(imposters[0]![1].text)).toBe(false);
   });
 
-  it('Fremder darf nichts abgeben, nicht tippen, nicht aufloesen, nicht vorziehen', async () => {
+  it('Fremder darf nichts abgeben, nicht tippen, nicht aufloesen', async () => {
     const m = await upload('cara');
     const base = `/api/cassettes/${cassette}/imposter`;
     expect((await api('POST', `${base}/entry`, 'cara', { author: CARA, mediaId: m.body.id, body: 'x' })).status).toBe(
@@ -62,7 +63,6 @@ describe('Imposter-Woche', () => {
     );
     expect((await api('POST', `${base}/vote`, 'cara', { by: CARA, suspect: ANNA })).status).toBe(403);
     expect((await api('POST', `${base}/reveal`, 'cara', { by: CARA })).status).toBe(403);
-    expect((await api('POST', `${base}/now`, 'cara', { by: CARA })).status).toBe(403);
   });
 
   it('Beitraege bleiben bis Sonntagabend verborgen, auch die Bilder', async () => {
@@ -89,15 +89,13 @@ describe('Imposter-Woche', () => {
     expect(status.body.week.entries).toHaveLength(0);
   });
 
-  it('Vor Sonntagabend wird nicht getippt; vorziehen darf nur die Gruenderin', async () => {
+  it('Vor Sonntagabend wird nicht getippt', async () => {
     expect(
       (await api('POST', `/api/cassettes/${cassette}/imposter/vote`, 'ben', { by: nameOf('ben'), suspect: ANNA }))
         .status,
     ).toBe(409);
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter/now`, 'ben', { by: nameOf('ben') })).status).toBe(
-      403,
-    );
-    expect((await api('POST', `/api/cassettes/${cassette}/imposter/now`, 'anna', { by: ANNA })).status).toBe(200);
+    // Demo: Sonntagabend vorziehen — fuer die ganze Challenge-Woche
+    expect((await api('POST', '/api/challenge/demo/release', 'anna', { me: ANNA })).status).toBe(200);
   });
 
   it('Nach der Freigabe: alle Beitraege sichtbar, im Archiv noch ohne Aufloesung', async () => {
@@ -130,7 +128,7 @@ describe('Imposter-Woche', () => {
           .status,
       ).toBe(201);
       if (p === 'ben') {
-        // ben hat nicht gestartet, und noch haben nicht alle getippt
+        // ben ist kein Admin der Runde, und noch haben nicht alle getippt
         expect(
           (await api('POST', `/api/cassettes/${cassette}/imposter/reveal`, 'ben', { by: nameOf('ben') })).status,
         ).toBe(403);
@@ -152,5 +150,69 @@ describe('Imposter-Woche', () => {
       (p: { author: string; source: string }) => p.source === 'imposter' && p.author === nameOf(imposter),
     );
     expect(mine.imposterMark).toBe('imposter');
+  });
+});
+
+describe('Imposter ueber mehrere Runden', () => {
+  const FOUR: Person[] = ['anna', 'ben', 'dora', 'emil'];
+  let one: string;
+  let two: string;
+
+  beforeAll(async () => {
+    one = await cassetteWith('anna', ['ben', 'dora', 'emil'], 'Runde eins');
+    two = await cassetteWith('ben', ['anna', 'dora', 'emil'], 'Runde zwei');
+  });
+
+  async function cards(cassette: string): Promise<Map<Person, Card>> {
+    const out = new Map<Person, Card>();
+    for (const p of FOUR) {
+      const res = await api('GET', `/api/cassettes/${cassette}/imposter?me=${nameOf(p)}`, p);
+      out.set(p, res.body.week.card);
+    }
+    return out;
+  }
+
+  it('Niemand ist zweimal Imposter, und kein Imposter sieht seine Aufgabe anderswo', async () => {
+    // Mehrere Wochen hintereinander, weil Aufgabe und Imposter zufaellig gezogen werden.
+    for (let round = 0; round < 6; round++) {
+      expect((await api('POST', '/api/challenge/demo', 'anna', { me: ANNA, type: 'imposter' })).status).toBe(201);
+      const a = await cards(one);
+      const b = await cards(two);
+      for (const p of FOUR) expect(a.get(p)!.imposter && b.get(p)!.imposter).toBe(false);
+      for (const [mine, other] of [
+        [a, b],
+        [b, a],
+      ] as const) {
+        const imposter = [...mine.entries()].find(([, c]) => c.imposter)![0];
+        const task = [...mine.values()].find((c) => !c.imposter)!.text;
+        // Was der Imposter in der anderen Runde sieht, ist nie die Aufgabe von hier.
+        expect(other.get(imposter)!.text).not.toBe(task);
+      }
+    }
+  });
+
+  it('Wer stumm ist, spielt nicht mit — und bekommt keine Karte', async () => {
+    const five = await cassetteWith('emil', ['anna', 'ben', 'dora', 'cara'], 'Fuenferrunde');
+    expect((await api('PUT', `/api/cassettes/${five}/challenge/mute`, 'cara', { me: CARA, muted: true })).status).toBe(
+      200,
+    );
+    expect((await api('POST', '/api/challenge/demo', 'emil', { me: nameOf('emil'), type: 'imposter' })).status).toBe(
+      201,
+    );
+    const muted = await api('GET', `/api/cassettes/${five}/imposter?me=${CARA}`, 'cara');
+    expect(muted.body.week.card).toBeNull();
+    const entry = await api('POST', `/api/cassettes/${five}/imposter/entry`, 'cara', { author: CARA, body: 'x' });
+    expect(entry.status).toBe(409);
+
+    // Mit einer stummen Person sind es nur noch drei — die Runde setzt aus.
+    const four = await cassetteWith('dora', ['anna', 'ben', 'cara'], 'Viererrunde');
+    await api('PUT', `/api/cassettes/${four}/challenge/mute`, 'cara', { me: CARA, muted: true });
+    expect((await api('GET', `/api/cassettes/${four}/imposter?me=${ANNA}`, 'anna')).body.week).toBeNull();
+  });
+
+  it('Eine abgeschaltete Runde spielt nicht mit', async () => {
+    const off = await cassetteWith('anna', ['ben', 'dora', 'emil'], 'Ruhige Runde');
+    expect((await api('PUT', `/api/cassettes/${off}/challenge`, 'anna', { me: ANNA, off: true })).status).toBe(200);
+    expect((await api('GET', `/api/cassettes/${off}/imposter?me=${ANNA}`, 'anna')).body.week).toBeNull();
   });
 });

@@ -640,6 +640,17 @@ addColumn(
   'eigene Beschriftung im persoenlichen Regal (Profil) — sieht nur diese Person',
 );
 addColumn(
+  'imposter_weeks',
+  'challenge_week_id',
+  'challenge_week_id TEXT REFERENCES challenge_weeks(id) ON DELETE SET NULL',
+  'Imposter-Spiel als Teil einer Wochen-Challenge',
+);
+// Pro Runde und Challenge-Woche hoechstens ein Spiel — gegen doppeltes Anlegen.
+db.exec(
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_imposter_challenge ON imposter_weeks(cassette_id, challenge_week_id)
+    WHERE challenge_week_id IS NOT NULL`,
+);
+addColumn(
   'cassettes',
   'challenge_off',
   'challenge_off INTEGER NOT NULL DEFAULT 0',

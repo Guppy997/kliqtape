@@ -18,6 +18,7 @@ import { filmReleaseLabel, filmStampLabel, takenLabel } from '@/lib/berlinDay';
 import { useApp } from '@/store/appStore';
 import { jumpTo } from '@/store/jumpStore';
 import ChallengeFlow from './ChallengeFlow';
+import { MaskIcon } from './ImposterCard';
 import KindIcon from './KindIcon';
 import PlusMark from './PlusMark';
 
@@ -47,7 +48,7 @@ const KRAFT_DEEP = '#A9895B';
 const KRAFT_INK = '#3B2E1E';
 
 /** Typen, die sich in der Demo sofort starten lassen. */
-const DEMO_TYPES: ChallengeType[] = ['photo', 'super8', 'damals', 'mixtape'];
+const DEMO_TYPES: ChallengeType[] = ['photo', 'super8', 'damals', 'mixtape', 'imposter'];
 
 /**
  * Die Wochen-Challenge auf Seite A dieser Kassette. Laeuft eine, steht sie
@@ -70,8 +71,10 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
     refetchInterval: 60_000,
   });
 
+  // Eine neue oder aufgeloeste Woche betrifft auch das Imposter-Spiel der Runde.
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['challenge'] });
+    void qc.invalidateQueries({ queryKey: ['imposter'] });
     onChanged();
   };
   const share = useMutation({ mutationFn: () => shareChallenge(cassette.id, me), onSuccess: refresh });
@@ -81,7 +84,10 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
   const unmute = useMutation({ mutationFn: () => setChallengeMuted(cassette.id, me, false), onSuccess: refresh });
 
   if (!data) return null;
-  const { current, mine, developed, demoTools, off, muted } = data;
+  const { current, mine, developed, demoTools, off, muted, imposterHere } = data;
+  // Imposter-Woche: gespielt wird mit der eigenen Karte (ImposterCard), hier
+  // nichts aufzunehmen und nichts zu teilen.
+  const imposter = current?.type === 'imposter';
   const photos = developed?.shots.filter((s) => s.mediaId) ?? [];
   const unopened = Boolean(developed) && openedWeek(cassette.id) !== developed?.id;
   const bagWaiting = developed && unopened && photos.length > 0;
@@ -208,11 +214,15 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
             </span>
             <span className="mt-0.5 block text-meta leading-snug" style={{ color: 'var(--dim)' }}>
               Aufgelöst {filmReleaseLabel(current.releaseAt)}.{' '}
-              {mine.sharedHere
-                ? 'Dein Beitrag liegt hier.'
-                : mine.entry
-                  ? 'Du hast schon mitgemacht.'
-                  : 'Bis dahin sieht niemand etwas.'}
+              {imposter
+                ? imposterHere
+                  ? 'Jede Runde spielt für sich — deine Karte liegt hier drüber.'
+                  : 'Diese Runde setzt aus: Es braucht mindestens vier, die mitspielen.'
+                : mine.sharedHere
+                  ? 'Dein Beitrag liegt hier.'
+                  : mine.entry
+                    ? 'Du hast schon mitgemacht.'
+                    : 'Bis dahin sieht niemand etwas.'}
             </span>
             {mine.sharedHere && (
               <button
@@ -227,7 +237,7 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
             )}
             {demoRow}
           </span>
-          {!mine.sharedHere && (
+          {!imposter && !mine.sharedHere && (
             <button
               type="button"
               onClick={() => (mine.entry ? share.mutate() : setFlow(true))}
@@ -266,6 +276,8 @@ export function TypeIcon({ type }: { type: ChallengeType }) {
       return <KindIcon kind="video" />;
     case 'mixtape':
       return <KindIcon kind="tape" />;
+    case 'imposter':
+      return <MaskIcon />;
     case 'damals':
       // Ein eingeklebter Abzug mit Fotoecken — wie im alten Album.
       return (

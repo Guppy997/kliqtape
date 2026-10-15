@@ -19,7 +19,6 @@ import { useJump } from '@/store/jumpStore';
 import Avatar, { useProfiles } from './Avatar';
 import CassetteChallengeSettings from './CassetteChallengeSettings';
 import { CassetteFacePreview } from './CassetteHeader';
-import { ImposterSpecial } from './ImposterCard';
 import AlbumExport from './AlbumExport';
 import ReportForm from './ReportForm';
 
@@ -529,9 +528,6 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
 
       {/* ---- Wochen-Challenge: Admins fuer alle, jede Person fuer sich ---- */}
       <CassetteChallengeSettings cassette={cassette} />
-
-      {/* ---- Special: Imposter-Woche ------------------------------------- */}
-      <ImposterSpecial cassette={cassette} onStarted={onJump} onError={fail} />
 
       {error && (
         <p className="text-sm" style={{ color: 'var(--danger)' }}>
