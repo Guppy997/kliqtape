@@ -103,6 +103,9 @@ describe('Imposter-Woche', () => {
     expect(status.body.week.phase).toBe('voting');
     expect(status.body.week.entries).toHaveLength(4);
     expect(status.body.week.result).toBeNull();
+    // Wer schon getippt hat, verraet der Server nicht — das Feld bleibt nur
+    // fuer aeltere App-Versionen da, und zwar leer.
+    expect(status.body.week.voted).toEqual([]);
     if (entryKind === 'photo') expect(await fetchMedia(mediaOf.anna!)).toBe(200);
     const feed = await api('GET', `/api/posts?side=a&cassette=${cassette}&me=${ANNA}`, 'anna');
     const marks = feed.body

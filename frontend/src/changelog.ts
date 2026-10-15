@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.54.1',
+    date: '2026-10-15',
+    changes: [
+      'Behoben: Eine installierte App mit älterer Version blieb während des Imposter-Tippens leer und kam nicht mehr ans Update',
+      'Stürzt die Anzeige doch einmal ab, erscheint jetzt ein Hinweis mit „Neu laden“ — und der Update-Hinweis bleibt sichtbar',
+    ],
+  },
+  {
     version: '0.54.0',
     date: '2026-10-15',
     changes: [

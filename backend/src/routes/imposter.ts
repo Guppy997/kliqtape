@@ -273,6 +273,9 @@ imposterRouter.get('/api/cassettes/:id/imposter', (req, res) => {
       myVote: myVote?.suspect ?? null,
       // Nur ob alle getippt haben — nicht wer, keine Zahl.
       allVoted: phase !== 'playing' && everyoneVoted(req.params.id, w.id),
+      // Nur fuer aeltere App-Versionen, die das Feld noch lesen — immer leer.
+      // Ohne es stuerzten installierte Apps vor dem Update in der Tipp-Phase ab.
+      voted: [],
       result:
         phase === 'revealed'
           ? { imposter: w.imposter, task: t.task, hint: t.hint, caught: imposterCaught(w), revealedAt: w.revealed_at }

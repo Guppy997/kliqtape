@@ -20,6 +20,7 @@ import NewsView from '@/components/NewsView';
 import StoryView from '@/components/StoryView';
 import TapeHeader, { defaultTapeName, tapeDisplayName } from '@/components/TapeHeader';
 import UpdateNotification from '@/components/UpdateNotification';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import NameGate from '@/components/NameGate';
 import { EmptyBand, NoCassette } from '@/components/EmptyState';
 import ChallengeCard from '@/components/ChallengeCard';
@@ -99,7 +100,9 @@ export default function App() {
       }}
     >
       <UpdateNotification />
-      {me && token ? <Deck /> : <NameGate prefill={me} />}
+      {/* Unter dem Update-Banner: stuerzt das Zeichnen ab, bleibt der Hinweis
+          auf eine neue Version trotzdem sichtbar (ErrorBoundary.tsx). */}
+      <ErrorBoundary>{me && token ? <Deck /> : <NameGate prefill={me} />}</ErrorBoundary>
     </div>
   );
 }
