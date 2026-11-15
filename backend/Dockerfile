@@ -1,6 +1,6 @@
 # better-sqlite3 ist eine native Abhaengigkeit und muss kompiliert werden.
 # Darum ein Builder-Stage mit Toolchain, damit das Runtime-Image schlank bleibt.
-FROM node:22-bookworm-slim@sha256:5ec23b7c622b00547753bc6ffd78085dd868a68aeb41c8e0a1418f033e13d96d AS build
+FROM node:22-bookworm-slim@sha256:e9f565d32859f0cbfb52125eafe8be39390f24dac302dc3cdf566e8ba3ab21ee AS build
 WORKDIR /app
 
 RUN apt-get update \
@@ -19,7 +19,7 @@ RUN npm prune --omit=dev
 
 # ---------------------------------------------------------------------------
 
-FROM node:22-bookworm-slim@sha256:5ec23b7c622b00547753bc6ffd78085dd868a68aeb41c8e0a1418f033e13d96d AS runtime
+FROM node:22-bookworm-slim@sha256:e9f565d32859f0cbfb52125eafe8be39390f24dac302dc3cdf566e8ba3ab21ee AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
