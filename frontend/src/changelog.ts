@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.62.0',
+    date: '2026-11-16',
+    changes: [
+      'Das X oben links dreht jetzt immer weiter nach rechts, wie die Spulen einer Kassette, statt beim Schließen zurück',
+      'Neu: Für eine neue Kassette stehen die sechs Kernfarben zur Wahl: Amber, Ice, Atomic Purple, Tabak, Kiwi und Berry',
+      'Nochmal auf die gewählte Farbe tippen dreht die Kassette auf Seite B und wieder zurück',
+    ],
+  },
+  {
     version: '0.61.1',
     date: '2026-10-15',
     changes: [

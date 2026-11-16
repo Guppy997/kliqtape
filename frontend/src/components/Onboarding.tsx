@@ -15,11 +15,11 @@ import {
   uploadMedia,
   type Cassette,
 } from '@/lib/api';
-import { lookFor, PAIR_COUNT } from '@/lib/cassetteLook';
 import { clearLetterToken, pendingLetterToken } from '@/lib/letter';
 import { useApp } from '@/store/appStore';
 import { useCoverX } from '@/store/coverStore';
 import Avatar from './Avatar';
+import BandPicker from './BandPicker';
 import CameraCapture from './CameraCapture';
 import { CassetteFacePreview } from './CassetteHeader';
 import { MiniCassette, useCassettes } from './CassetteDeck';
@@ -56,7 +56,7 @@ export default function Onboarding({ preview = false, onDone }: { preview?: bool
   const me = useApp((s) => s.me);
   const qc = useQueryClient();
   const [step, setStep] = useState<Step>('welcome');
-  // Vorschau mit X oben links: das Plus der Leiste dreht beim Schliessen zurueck.
+  // Vorschau mit X oben links: das Plus der Leiste dreht beim Schliessen weiter zum Plus.
   useCoverX(preview);
 
   async function finish() {
@@ -763,24 +763,7 @@ function CreateFirst({
           className="w-full rounded-lg px-3 py-3 text-base outline-none"
           style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
         />
-        <div className="grid grid-cols-4 gap-2">
-          {Array.from({ length: PAIR_COUNT }, (_, idx) => {
-            const chosen = look === idx;
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setLook(chosen ? null : idx)}
-                aria-pressed={chosen}
-                aria-label={lookFor('neu', idx).case.name}
-                className="grid place-items-center rounded-xl p-2"
-                style={{ background: 'var(--card)', border: `1px solid ${chosen ? 'var(--accent)' : 'var(--line)'}` }}
-              >
-                <MiniCassette id="neu" pairIndex={idx} active side="b" label={name.trim() || undefined} />
-              </button>
-            );
-          })}
-        </div>
+        <BandPicker value={look} onChange={setLook} label={name.trim() || undefined} />
         {error && <span style={{ color: 'var(--danger)' }}>{error}</span>}
       </div>
     </Frame>

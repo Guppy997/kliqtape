@@ -40,7 +40,7 @@ export default function Sheet({
   children,
 }: Props) {
   // Vollbild mit X oben links: das Plus der Leiste steht darunter mit auf X
-  // und dreht beim Schliessen zurueck (coverStore.ts).
+  // und dreht beim Schliessen weiter zum Plus (coverStore.ts).
   useCoverX(open && variant === 'full' && (leading != null || !hideClose));
 
   useEffect(() => {

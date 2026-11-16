@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createPrivateTape, fetchPrivateTapes, mediaUrl, type PrivateTape } from '@/lib/api';
 import { berlinDateLabel } from '@/lib/berlinDay';
-import { lookFor, PAIR_COUNT } from '@/lib/cassetteLook';
+import BandPicker from './BandPicker';
 import { MiniCassette } from './CassetteDeck';
 import PrivateTapeView from './PrivateTapeView';
 import Sheet from './Sheet';
@@ -95,30 +95,7 @@ export default function PrivateTapes({ me, active }: { me: string; active: boole
             <p className="text-2xs" style={{ color: 'var(--dim)' }}>
               Bandsorte {look == null && '· ohne Auswahl automatisch'}
             </p>
-            <div className="grid grid-cols-4 gap-2">
-              {Array.from({ length: PAIR_COUNT }, (_, idx) => {
-                const chosen = look === idx;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setLook(chosen ? null : idx)}
-                    aria-pressed={chosen}
-                    aria-label={lookFor('neu', idx).type.name}
-                    className="flex flex-col items-center gap-1.5 rounded-xl p-2"
-                    style={{
-                      background: 'var(--card)',
-                      border: `1px solid ${chosen ? 'var(--accent)' : 'var(--line)'}`,
-                    }}
-                  >
-                    <MiniCassette id="neu" pairIndex={idx} active={false} side="a" label={title.trim() || undefined} />
-                    <span className="text-center text-2xs" style={{ color: 'var(--dim)' }}>
-                      {lookFor('neu', idx).type.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <BandPicker value={look} onChange={setLook} label={title.trim() || undefined} flip={false} />
           </div>
 
           {error && (

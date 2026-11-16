@@ -12,8 +12,9 @@ interface CoverState {
  * pixelgenau dort, wo in der Leiste das Plus steht, und ist dasselbe Zeichen:
  * beim Oeffnen dreht es vom Plus aus herein. Solange so eine Ebene offen ist,
  * steht auch das Plus der Leiste (Composer.tsx) darunter schon auf X — beim
- * Schliessen dreht es dann sichtbar zurueck, ganz gleich, ob die Ebene ueber
- * "Aufnehmen", die Glocke oder sonstwo aufging.
+ * Schliessen dreht es im Uhrzeigersinn weiter zum Plus (nie zurueck, siehe
+ * PlusMark.tsx), ganz gleich, ob die Ebene ueber "Aufnehmen", die Glocke oder
+ * sonstwo aufging.
  *
  * Nicht-persistenter Store wie navStore.ts: reiner Oberflaechen-Zustand.
  */

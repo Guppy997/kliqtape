@@ -126,7 +126,7 @@ export default function Composer({ onPosted }: Props) {
   const choices = CHOICES.filter((c) => (side === 'b' ? c.kind !== 'text' : c.kind !== 'voice'));
   const pageOpen = step === 'choose';
   // Liegt irgendeine Vollbild-Ebene mit X darueber (Glocke, Einstellungen …),
-  // steht das Plus darunter mit auf X und dreht beim Schliessen zurueck.
+  // steht das Plus darunter mit auf X und dreht beim Schliessen weiter zum Plus.
   const covered = useCoverStore((s) => s.count > 0);
 
   return (
@@ -145,8 +145,8 @@ export default function Composer({ onPosted }: Props) {
         style={{ color: 'var(--ink)' }}
       >
         {/* Liegt beim Oeffnen unter der Uebersicht (oder einer anderen Ebene mit
-            X) und steht dort schon auf X — beim Schliessen dreht es sichtbar
-            zurueck zum Plus. */}
+            X) und steht dort schon auf X — beim Schliessen dreht es sichtbar weiter
+            zum Plus, im Uhrzeigersinn wie eine Spule. */}
         <PlusMark turned={pageOpen || covered} />
       </button>
 

@@ -334,8 +334,23 @@ body {
   }
 }
 
+/* Farbauswahl (BandPicker.tsx): nochmal tippen dreht die kleine Kassette auf
+   die andere Seite. Nur die zweite Haelfte der Drehung aus CassetteHeader.tsx
+   (von hochkant herein, abbremsend) — fuer ein 46px-Band reicht das. Die
+   Startseite der Drehung kommt per --flip-from, A→B von links, B→A von rechts. */
+.band-flip {
+  animation: band-flip 320ms cubic-bezier(0.1, 0.45, 0.55, 1) backwards;
+}
+
+@keyframes band-flip {
+  from {
+    transform: rotateY(var(--flip-from, -90deg)) scale(0.94);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .imposter-stamp,
+  .band-flip,
   .plus-turn {
     animation: none;
   }
