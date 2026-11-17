@@ -34,7 +34,8 @@ alle, nicht nur Leute, die selbst hosten würden.
 **Selbstbetrieb ist trotzdem erlaubt.** Der Code steht unter AGPL-3.0, Vereine,
 Hochschulgruppen oder andere Communities dürfen also eine eigene Instanz betreiben. Ein
 dokumentiertes Paket dafür ist geplant. Kliqtape ist bewusst **nicht föderiert**: Eine eigene
-Instanz steht für sich und ist nicht mit der zentralen verbunden.
+Instanz steht für sich und ist nicht mit der zentralen verbunden. Sie braucht einen **eigenen
+Namen und ein eigenes Logo** (siehe [TRADEMARKS.md](TRADEMARKS.md)).
 
 Das `docker-compose.yml` in diesem Repo ist derzeit die **Entwicklungs- und Beta-Umgebung**
 (inklusive optionalem Tailscale-Sidecar für den Zugriff im eigenen Tailnet), nicht das
@@ -185,6 +186,13 @@ Wie man das Projekt lokal startet, welche Prüfungen vor einem Commit laufen und
 Code gelten, steht in [CONTRIBUTING.md](CONTRIBUTING.md). Sicherheitslücken bitte nicht als
 öffentliches Issue melden, sondern wie in [SECURITY.md](SECURITY.md) beschrieben.
 
-## Lizenz
+## Lizenz, Name und Logo
 
-AGPL-3.0 — wer Kliqtape betreibt, muss seinen Quellcode offenlegen.
+Der Code steht unter der [AGPL-3.0](LICENSE). Du darfst ihn nutzen, verändern und selbst
+betreiben. Wer veränderten Code als Dienst anbietet, muss seinen Quellcode ebenfalls offenlegen.
+
+**Name und Logo sind davon ausgenommen.** „Kliqtape“, die Wortmarke und das Kassetten-Icon
+dürfen nicht für eigene Instanzen oder Forks verwendet werden. Bitte gib deiner Instanz einen
+eigenen Namen. Ein Hinweis wie „basiert auf Kliqtape“ ist willkommen. Details stehen in
+[`TRADEMARKS.md`](TRADEMARKS.md), die Brand-Dateien liegen in [`brand/`](brand/) und stehen
+nicht unter der AGPL.
