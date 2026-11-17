@@ -42,7 +42,7 @@ export default function Avatar({ name, side, size = 1.5, avatarId }: Props) {
   return (
     <span
       title={name}
-      className="grid shrink-0 place-items-center rounded-full font-bold text-[#17130E]"
+      className="grid shrink-0 place-items-center rounded-full font-medium text-[#17130E]"
       style={{ ...style, background: colorFor(name, side), fontSize: `${size * 0.42}rem` }}
     >
       {initialOf(name)}

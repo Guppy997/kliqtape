@@ -39,7 +39,7 @@ export default function NavButton({ icon, label, hideLabel, badge, active, onCli
         {icon}
         {!!badge && (
           <span
-            className="absolute -right-2 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-2xs font-semibold tabular-nums"
+            className="absolute -right-2 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-2xs font-medium tabular-nums"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {badge}

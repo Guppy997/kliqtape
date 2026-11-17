@@ -87,7 +87,7 @@ export default function Sheet({
             </button>
           ))}
       </span>
-      <h2 className="truncate text-center text-base font-semibold" style={{ color: 'var(--ink)' }}>
+      <h2 className="truncate text-center text-base heading" style={{ color: 'var(--ink)' }}>
         {title ?? ''}
       </h2>
       <span />

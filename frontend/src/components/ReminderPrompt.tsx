@@ -47,7 +47,7 @@ export default function ReminderPrompt() {
       aria-label="Wochen-Erinnerung"
       className="glass fixed inset-x-3 bottom-[calc(var(--bottombar-h,4rem)+0.75rem)] z-[46] mx-auto flex max-w-xl flex-col gap-3 rounded-2xl p-4"
     >
-      <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+      <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
         Erinnerung, wenn die Challenge aufgelöst ist?
       </p>
       <p className="text-meta leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -66,7 +66,7 @@ export default function ReminderPrompt() {
               .catch(() => false)
               .finally(close);
           }}
-          className="rounded-full px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+          className="rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
           style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           Erlauben

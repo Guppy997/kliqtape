@@ -243,7 +243,7 @@ export default function CameraCapture({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
+            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Bild aus der Galerie
@@ -273,7 +273,7 @@ export default function CameraCapture({
             <button
               type="button"
               onClick={mode === 'photo' ? takePhoto : recording ? stopVideo : startVideo}
-              className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
+              className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium"
               style={{
                 background: recording ? '#B8462C' : 'var(--accent)',
                 color: recording ? '#FFF3EC' : 'var(--on-accent)',
@@ -309,7 +309,7 @@ export default function CameraCapture({
                   setSending(false);
                 }
               }}
-              className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
+              className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-60"
               style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               {sending ? 'Wird überspielt …' : sendLabel}

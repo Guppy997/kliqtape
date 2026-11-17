@@ -71,7 +71,7 @@ export default function PrivateTapes({ me, active }: { me: string; active: boole
       <Sheet open={creating} onClose={() => setCreating(false)} variant="full" title="Neues Tape">
         <div className="flex flex-col gap-5">
           <div>
-            <p className="text-lg font-semibold" style={{ color: 'var(--ink)' }}>
+            <p className="text-lg heading" style={{ color: 'var(--ink)' }}>
               Wie soll das Tape heißen?
             </p>
             <p className="mt-1 text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -107,7 +107,7 @@ export default function PrivateTapes({ me, active }: { me: string; active: boole
             type="button"
             disabled={!title.trim() || create.isPending}
             onClick={() => create.mutate()}
-            className="w-full rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+            className="w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-40"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Ins Regal stellen

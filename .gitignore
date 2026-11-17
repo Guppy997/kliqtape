@@ -17,3 +17,4 @@ coverage/
 scripts/.seed-tokens.json
 __pycache__/
 *.pyc
+scripts/.fonts-cache/

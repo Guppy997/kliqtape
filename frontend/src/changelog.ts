@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.63.0',
+    date: '2026-11-18',
+    changes: [
+      'Die Kassetten-Ansicht und die Farbauswahl zeigen die Kassette als echten Gegenstand, nochmal tippen dreht sie in 3D um',
+      'Neue Schriften: Archivo für alles, Caveat für die Handschrift. Auch im Mixtape-Bild, im Einladungsbrief und im Album',
+    ],
+  },
+  {
     version: '0.62.0',
     date: '2026-11-16',
     changes: [

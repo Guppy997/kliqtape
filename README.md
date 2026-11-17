@@ -179,6 +179,17 @@ einen Test „Fremder darf das nicht“. GitHub Actions führt dasselbe bei jede
 saubere Typografie, großzügige Abstände, flüssige Bewegung. Kein Sepia über allem, keine
 Holzoptik, keine künstlichen Kratzer.
 
+**Schriften** laut Markenskill, beide SIL OFL und selbst gehostet: Archivo für alles (Wortmarke
+700 bei Breite 75, Überschriften 700 bei 87,5, Bedienung 400 bis 500, Zahlen mit `tabular-nums`)
+und Caveat für Handschrift auf Material. Die App nutzt Variable Fonts (`frontend/public/fonts`),
+die PDFs feste Schnitte (`backend/assets/fonts`). Beides erzeugt `scripts/fonts.sh` aus
+`google/fonts`, Lizenzen liegen daneben.
+
+**Kassetten zum Anschauen** (Kassetten-Ansicht, Farbauswahl) sind echte 3D-Körper in WebGL
+(`frontend/src/components/tape3d/`, dieselbe Technik wie die Website): ein Renderer für alle
+Kassetten, three.js wird erst nachgeladen, ohne WebGL gibt es die flache Kassette. Im Feed, im Fach
+und in den Leisten bleibt bewusst die kleine, ruhige Zeichnung.
+
 ## Mitmachen
 
 Wie man das Projekt lokal startet, welche Prüfungen vor einem Commit laufen und welche Regeln im

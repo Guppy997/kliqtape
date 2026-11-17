@@ -613,7 +613,7 @@ function Deck() {
                 aria-hidden="true"
                 tabIndex={-1}
               >
-                <span className="block truncate text-sm font-semibold leading-tight" style={{ color: 'var(--ink)' }}>
+                <span className="block truncate text-sm font-medium leading-tight" style={{ color: 'var(--ink)' }}>
                   {current?.name ?? 'Kassette'}
                 </span>
                 <span className="block truncate text-2xs leading-tight" style={{ color: 'var(--dim)' }}>

@@ -63,7 +63,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
     >
       <div className="flex items-center gap-2">
         <Avatar name={item.author} side={side} />
-        <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+        <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
           {item.author}
         </span>
         <span className="text-2xs" style={{ color: 'var(--dim)' }}>
@@ -78,7 +78,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
         {/* Track-Nummer — Position innerhalb des Tapes. Auf Seite A zusaetzlich
             Datum+Uhrzeit, weil ein Tape mehrere Tracks an verschiedenen
             Uhrzeiten desselben Tages haben kann. */}
-        <span className="font-mono ml-auto shrink-0 text-right text-xs tabular-nums" style={{ color: 'var(--dim)' }}>
+        <span className="num ml-auto shrink-0 text-right text-xs" style={{ color: 'var(--dim)' }}>
           {item.tapeIndex != null ? (
             <>
               {item.track}
@@ -143,7 +143,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
               <img src={mediaUrl(item.mediaId)} alt={item.body || 'Filmbild'} loading="lazy" />
               {item.takenAt && (
                 <span
-                  className="font-mono absolute bottom-1.5 right-2 text-[0.7rem] font-bold tracking-[0.12em]"
+                  className="num absolute bottom-1.5 right-2 text-[0.7rem] font-bold tracking-[0.12em]"
                   style={{ color: '#FF9A3C', textShadow: '0 0 4px rgba(255,120,30,.7)' }}
                 >
                   {filmStampLabel(item.takenAt)}
@@ -264,7 +264,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
         {mine && item.tonfetzenCount > 0 && (
           <IconButton label={`${item.tonfetzenCount} Tonfetzen anhören`} onClick={() => setListening(true)} accent>
             <HeadphonesIcon />
-            <span className="font-mono text-2xs tabular-nums">{item.tonfetzenCount}</span>
+            <span className="num text-2xs">{item.tonfetzenCount}</span>
           </IconButton>
         )}
 
@@ -634,7 +634,7 @@ function TonfetzenPlayer({ postId, me, side }: { postId: string; me: string; sid
       <button
         type="button"
         onClick={() => (playing == null ? playFrom(0) : stop())}
-        className="rounded-lg px-4 py-2.5 text-sm font-semibold"
+        className="rounded-lg px-4 py-2.5 text-sm font-medium"
         style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
       >
         {playing == null ? `${reactions.length} Tonfetzen abspielen` : '■ Stopp'}

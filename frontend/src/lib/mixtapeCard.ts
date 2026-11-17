@@ -4,8 +4,9 @@ import { berlinDateLabel } from '@/lib/berlinDay';
 /**
  * Mixtape als Bild: eine J-Card (die Einlegekarte einer Kassette) mit Cover,
  * Titel, Titelliste und Widmung — zum Speichern in der Galerie. Gezeichnet
- * mit Canvas 2D, ohne Bibliothek; Schriften sind dieselben Systemschriften
- * wie in der App (index.css, --font-hand/--font-disp/--font-mono).
+ * mit Canvas 2D, ohne Bibliothek; Schriften wie in der App laut Markenskill:
+ * Archivo (feste Schnitte fuer Wortmarke und Titel, siehe index.css) und
+ * Caveat fuer die Handschrift.
  */
 
 const W = 1080;
@@ -17,10 +18,25 @@ const DIM = '#7E7363';
 const STRIPE = '#B8462C';
 const GROUND = '#1C1916';
 
-const HAND = '"Bradley Hand", "Marker Felt", "Segoe Script", cursive';
-const DISP = '"Arial Narrow", "Helvetica Neue", Helvetica, Arial, sans-serif';
-const MONO = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
-const SANS = '-apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif';
+const HAND = 'Caveat, cursive';
+const DISP = '"Archivo Titel", Archivo, sans-serif';
+const MARK = '"Archivo Wortmarke", Archivo, sans-serif';
+const SANS = 'Archivo, system-ui, sans-serif';
+
+/** Canvas zeichnet mit Ersatzschrift, solange die Datei nicht geladen ist. */
+async function fontsReady() {
+  const faces = [
+    '700 30px "Archivo Wortmarke"',
+    '700 22px "Archivo Titel"',
+    '500 22px Archivo',
+    '400 22px Archivo',
+    '400 46px Caveat',
+  ];
+  await Promise.race([
+    Promise.all(faces.map((f) => document.fonts.load(f))).catch(() => undefined),
+    new Promise((r) => setTimeout(r, 3000)),
+  ]);
+}
 
 function ellipsize(ctx: CanvasRenderingContext2D, text: string, max: number): string {
   if (ctx.measureText(text).width <= max) return text;
@@ -85,7 +101,7 @@ export async function renderMixtapeCard(tape: Mixtape): Promise<Blob> {
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
-  const cover = tape.coverId ? await loadImage(mediaUrl(tape.coverId)) : null;
+  const [cover] = await Promise.all([tape.coverId ? loadImage(mediaUrl(tape.coverId)) : null, fontsReady()]);
 
   // Grund: dunkel, mit weichem Licht von oben — wie die Karte auf einem Tisch.
   ctx.fillStyle = GROUND;
@@ -116,10 +132,19 @@ export async function renderMixtapeCard(tape: Mixtape): Promise<Blob> {
   ctx.fillStyle = STRIPE;
   ctx.fillRect(cx, cy, cw, 74);
   ctx.fillStyle = '#FFF4EC';
-  ctx.font = `700 30px ${DISP}`;
+  // Wortmarke wie ueberall: KLIQ gefuellt, TAPE als Kontur 0.032em, +0.01em
+  ctx.font = `700 34px ${MARK}`;
   ctx.textBaseline = 'middle';
-  spaced(ctx, 'KLIQTAPE', cx + 40, cy + 38, 5);
-  ctx.font = `500 22px ${MONO}`;
+  spaced(ctx, 'KLIQ', cx + 40, cy + 38, 0.34);
+  const kliqW = [...'KLIQ'].reduce((a, ch) => a + ctx.measureText(ch).width + 0.34, 0);
+  ctx.strokeStyle = '#FFF4EC';
+  ctx.lineWidth = 34 * 0.032;
+  let mx = cx + 40 + kliqW;
+  for (const ch of 'TAPE') {
+    ctx.strokeText(ch, mx, cy + 38);
+    mx += ctx.measureText(ch).width + 0.34;
+  }
+  ctx.font = `500 22px ${SANS}`;
   spaced(ctx, 'MIXTAPE · C60', cx + cw - 40, cy + 38, 3, 'right');
 
   // Cover links, Titel rechts
@@ -169,12 +194,13 @@ export async function renderMixtapeCard(tape: Mixtape): Promise<Blob> {
   const tw = cx + cw - 40 - tx;
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = INK;
-  ctx.font = `64px ${HAND}`;
+  // Caveat ist kleiner als die fruehere Bradley Hand, daher etwas groesser gesetzt.
+  ctx.font = `76px ${HAND}`;
   const titleLines = wrap(ctx, tape.title || 'Ohne Titel', tw, 3);
   titleLines.forEach((l, i) => ctx.fillText(l, tx, coverY + 64 + i * 70));
   let ty = coverY + 64 + titleLines.length * 70 + 6;
   ctx.fillStyle = DIM;
-  ctx.font = `500 22px ${MONO}`;
+  ctx.font = `500 22px ${SANS}`;
   spaced(ctx, `VON ${tape.from.toUpperCase()}`, tx, ty, 2);
   ty += 34;
   spaced(ctx, `FÜR ${recipientOf(tape).toUpperCase()}`, tx, ty, 2);
@@ -193,7 +219,7 @@ export async function renderMixtapeCard(tape: Mixtape): Promise<Blob> {
   y += 52;
   // Platz fuer die Widmung unten vorab ausmessen, dann die Titelliste in den
   // Rest einpassen — zwoelf Titel plus drei Zeilen Widmung muessen auf die Karte.
-  ctx.font = `38px ${HAND}`;
+  ctx.font = `46px ${HAND}`;
   const noteLines = tape.note ? wrap(ctx, tape.note, cw - 160, 3) : [];
   const noteH = noteLines.length ? 40 + noteLines.length * 46 : 0;
   const tracks = tape.tracks.slice(0, 12);
@@ -203,7 +229,7 @@ export async function renderMixtapeCard(tape: Mixtape): Promise<Blob> {
   const listW = cw - 80;
   for (const t of tracks) {
     ctx.fillStyle = STRIPE;
-    ctx.font = `600 ${titlePx - 4}px ${MONO}`;
+    ctx.font = `500 ${titlePx - 4}px ${SANS}`;
     ctx.fillText(String(t.position).padStart(2, '0'), cx + 40, y);
     ctx.fillStyle = INK;
     ctx.font = `500 ${titlePx}px ${SANS}`;
@@ -238,7 +264,7 @@ export async function renderMixtapeCard(tape: Mixtape): Promise<Blob> {
     ctx.fillStyle = 'rgba(255,250,235,.55)';
     ctx.fillRect(-60, -nh / 2 - 14, 120, 28);
     ctx.fillStyle = INK;
-    ctx.font = `38px ${HAND}`;
+    ctx.font = `46px ${HAND}`;
     lines.forEach((l, i) => ctx.fillText(l, -(cw - 160) / 2, -nh / 2 + 54 + i * 46));
     ctx.restore();
   }
@@ -246,7 +272,7 @@ export async function renderMixtapeCard(tape: Mixtape): Promise<Blob> {
 
   // Absender unten auf dem Grund
   ctx.fillStyle = 'rgba(236,229,214,.55)';
-  ctx.font = `500 22px ${MONO}`;
+  ctx.font = `500 22px ${SANS}`;
   ctx.textBaseline = 'middle';
   const footer = 'gemacht mit kliqtape';
   const fw = [...footer].reduce((a, c2) => a + ctx.measureText(c2).width + 3, 0);

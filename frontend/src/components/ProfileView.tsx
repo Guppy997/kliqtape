@@ -57,7 +57,7 @@ export default function ProfileView() {
           <div className="flex items-center gap-3">
             <Avatar name={me} side={side} size={3.5} />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-xl font-semibold" style={{ color: 'var(--ink)' }}>
+              <span className="block truncate text-xl heading" style={{ color: 'var(--ink)' }}>
                 {me}
               </span>
               <span className="block text-xs" style={{ color: 'var(--dim)' }}>
@@ -120,19 +120,19 @@ export default function ProfileView() {
           {tab === 'regal' ? (
             <>
               <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                <h3 className="text-sm heading" style={{ color: 'var(--ink)' }}>
                   Meine Tapes
                 </h3>
                 <PrivateTapes me={me} active={open && tab === 'regal'} />
               </section>
               <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                <h3 className="text-sm heading" style={{ color: 'var(--ink)' }}>
                   Gesammelt
                 </h3>
                 <CollectedTapes me={me} active={open && tab === 'regal'} onJump={() => setActiveNav(null)} />
               </section>
               <section className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                <h3 className="text-sm heading" style={{ color: 'var(--ink)' }}>
                   Aus deinen Kassetten
                 </h3>
                 <ShelfList me={me} active={open && tab === 'regal'} onJump={() => setActiveNav(null)} />

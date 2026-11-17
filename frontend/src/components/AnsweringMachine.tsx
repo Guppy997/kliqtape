@@ -82,7 +82,7 @@ export default function AnsweringMachine() {
         </svg>
         {notifCount > 0 && (
           <span
-            className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-2xs font-semibold tabular-nums"
+            className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-2xs font-medium tabular-nums"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {notifCount}
@@ -100,7 +100,7 @@ export default function AnsweringMachine() {
 
           {invites.length > 0 && (
             <section className="flex flex-col gap-2.5">
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+              <h3 className="text-sm heading" style={{ color: 'var(--ink)' }}>
                 Einladungen · {invites.length}
               </h3>
               {invites.map((inv) => (
@@ -123,8 +123,8 @@ export default function AnsweringMachine() {
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm leading-snug" style={{ color: 'var(--ink)' }}>
-                        <span className="font-semibold">{inv.invitedBy}</span> lädt dich zu{' '}
-                        <span className="font-semibold">{inv.cassetteName}</span> ein
+                        <span className="font-medium">{inv.invitedBy}</span> lädt dich zu{' '}
+                        <span className="font-medium">{inv.cassetteName}</span> ein
                       </p>
                       <p className="mt-0.5 text-2xs" style={{ color: 'var(--dim)' }}>
                         {timeAgo(inv.createdAt)}
@@ -145,7 +145,7 @@ export default function AnsweringMachine() {
                       type="button"
                       disabled={respond.isPending}
                       onClick={() => respond.mutate({ id: inv.id, accept: true })}
-                      className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                      className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                       style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
                     >
                       Zustimmen
@@ -158,7 +158,7 @@ export default function AnsweringMachine() {
 
           {cassetteNews.length > 0 && (
             <section className="flex flex-col gap-2.5">
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+              <h3 className="text-sm heading" style={{ color: 'var(--ink)' }}>
                 Kassetten · {cassetteNews.length}
               </h3>
               {cassetteNews.map((c) => (

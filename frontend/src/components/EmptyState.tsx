@@ -30,7 +30,7 @@ export function NoCassette() {
       <EmptyShell />
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-xl leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
+        <h2 className="text-xl leading-tight heading" style={{ color: 'var(--ink)' }}>
           Noch kein Band im Fach.
         </h2>
         <p className="mx-auto max-w-[19rem] text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -47,7 +47,7 @@ export function NoCassette() {
           style={{ background: 'var(--card)', border: '1px solid var(--accent)' }}
         >
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+            <span className="block text-sm font-medium" style={{ color: 'var(--ink)' }}>
               {invites.length === 1
                 ? `${invites[0]!.invitedBy} lädt dich auf „${invites[0]!.cassetteName}“ ein`
                 : `${invites.length} Einladungen warten auf dich`}
@@ -80,7 +80,7 @@ export function NoCassette() {
               {i + 1}
             </span>
             <span>
-              <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+              <span className="block text-sm font-medium" style={{ color: 'var(--ink)' }}>
                 {title}
               </span>
               <span className="block text-meta leading-snug" style={{ color: 'var(--dim)' }}>
@@ -94,7 +94,7 @@ export function NoCassette() {
       <button
         type="button"
         onClick={() => openDeck({ kind: 'create' })}
-        className="w-full max-w-sm rounded-xl px-4 py-3.5 text-sm font-semibold"
+        className="w-full max-w-sm rounded-xl px-4 py-3.5 text-sm font-medium"
         style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
       >
         Erstes Band beschriften
@@ -111,7 +111,7 @@ export function EmptyBand({ cassette }: { cassette: Cassette }) {
   return (
     <div className="rise flex flex-col items-center gap-4 px-2 py-10 text-center" style={BELOW_DECK}>
       <BlankLabel />
-      <h2 className="text-lg leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
+      <h2 className="text-lg leading-tight heading" style={{ color: 'var(--ink)' }}>
         Das Band ist noch leer.
       </h2>
       <p className="max-w-[19rem] text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -122,7 +122,7 @@ export function EmptyBand({ cassette }: { cassette: Cassette }) {
         <button
           type="button"
           onClick={() => openDeck({ kind: 'invite', cassetteId: cassette.id })}
-          className="mt-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold"
+          className="mt-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium"
           style={{ background: 'var(--card)', border: '1px solid var(--accent)', color: 'var(--accent)' }}
         >
           <svg

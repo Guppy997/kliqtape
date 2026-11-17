@@ -11,7 +11,7 @@ export default function VersionLog() {
       {CHANGELOG.map((entry) => (
         <li key={entry.version} className="flex flex-col gap-1.5">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--ink)' }}>
+            <span className="text-sm font-medium tabular-nums" style={{ color: 'var(--ink)' }}>
               v{entry.version}
             </span>
             <span className="text-2xs" style={{ color: 'var(--dim)' }}>

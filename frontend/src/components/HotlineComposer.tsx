@@ -155,7 +155,7 @@ export default function HotlineComposer() {
                   style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
                 >
                   <Avatar name={n} side={side} size={1.8} />
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium" style={{ color: 'var(--ink)' }}>
                     {n}
                   </span>
                 </button>
@@ -223,7 +223,7 @@ export default function HotlineComposer() {
                   <Avatar name={t.other} side={side} size={1.8} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                      <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
                         {t.other}
                       </span>
                       {t.unread > 0 && (

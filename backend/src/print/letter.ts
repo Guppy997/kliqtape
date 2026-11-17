@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import type { Writable } from 'node:stream';
+import { F, registerFonts, wordmark } from './fonts.js';
 
 /*
  * Einladung als Brief: ein druckbares A5-Blatt mit QR-Code. Bekommt alles
@@ -29,6 +30,7 @@ export function renderLetterPdf(letter: Letter, out: Writable): void {
     info: { Title: `Einladung zu ${letter.cassetteName}`, Creator: 'Kliqtape' },
   });
   doc.pipe(out);
+  registerFonts(doc);
   const W = doc.page.width;
   const H = doc.page.height;
   const M = 44;
@@ -38,21 +40,21 @@ export function renderLetterPdf(letter: Letter, out: Writable): void {
   doc.rect(0, 0, W, 6).fill(STRIPE);
 
   // Kopf: Wortmarke wie auf dem Etikett
-  doc.fillColor(INK).font('Helvetica-Bold').fontSize(9).text('KLIQTAPE', M, M, { characterSpacing: 3 });
+  wordmark(doc, M, M, 11, INK);
   doc
     .fillColor(DIM)
-    .font('Helvetica')
+    .font(F.text)
     .fontSize(8)
     .text('Eine Kassette ist eine Runde von Leuten.', M, M + 14);
 
   doc
     .fillColor(INK)
-    .font('Times-Italic')
-    .fontSize(30)
+    .font(F.hand)
+    .fontSize(36)
     .text('Du bist eingeladen.', M, M + 52, { width: inner });
   doc
-    .font('Times-Roman')
-    .fontSize(13)
+    .font(F.text)
+    .fontSize(11)
     .fillColor(INK)
     .text(
       `${letter.from} möchte dich auf die Kassette »${letter.cassetteName}« holen. Seite A ist euer Archiv, ` +
@@ -87,8 +89,8 @@ export function renderLetterPdf(letter: Letter, out: Writable): void {
   doc.fill(INK);
   doc
     .fillColor(INK)
-    .font('Times-Italic')
-    .fontSize(12)
+    .font(F.hand)
+    .fontSize(13)
     .text('Scannen, Namen wählen, zustimmen.', frameX, frameY + box + 22, {
       width: box + 24,
       align: 'center',
@@ -104,7 +106,7 @@ export function renderLetterPdf(letter: Letter, out: Writable): void {
     .stroke();
   doc
     .fillColor(DIM)
-    .font('Helvetica')
+    .font(F.text)
     .fontSize(7.5)
     .text(
       `Gilt einmal und bis ${letter.validUntil}. Führt nur auf »${letter.cassetteName}«. ` +
@@ -115,7 +117,7 @@ export function renderLetterPdf(letter: Letter, out: Writable): void {
     );
   doc
     .fillColor(DIM)
-    .font('Courier')
+    .font(F.text)
     .fontSize(6.5)
     .text(letter.url, M, doc.y + 6, { width: inner });
 

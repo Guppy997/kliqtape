@@ -139,7 +139,7 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
         >
           <MiniBag />
           <span className="min-w-0 flex-1">
-            <span className="block text-base leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
+            <span className="block text-base leading-tight font-medium" style={{ color: 'var(--ink)' }}>
               Die Challenge ist entwickelt.
             </span>
             <span className="mt-0.5 block text-meta" style={{ color: 'var(--dim)' }}>
@@ -175,7 +175,7 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
             <KindIcon kind="tape" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-base leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
+            <span className="block text-base leading-tight font-medium" style={{ color: 'var(--ink)' }}>
               Die Mixtapes der Woche sind da.
             </span>
             <span className="mt-0.5 block text-meta" style={{ color: 'var(--dim)' }}>
@@ -210,7 +210,7 @@ export default function ChallengeCard({ cassette, onChanged }: { cassette: Casse
             <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
               Challenge der Woche · {CHALLENGE_TYPE_LABEL[current.type]}
             </span>
-            <span className="block text-base leading-snug font-semibold" style={{ color: 'var(--ink)' }}>
+            <span className="block text-base leading-snug font-medium" style={{ color: 'var(--ink)' }}>
               {current.theme ? `„${current.theme}“` : CHALLENGE_TYPE_LABEL[current.type]}
             </span>
             <span className="mt-0.5 block text-meta leading-snug" style={{ color: 'var(--dim)' }}>
@@ -419,7 +419,7 @@ function BagReveal({ shots, at, onClose }: { shots: ChallengeShot[]; at: number;
             <span className="font-disp text-[0.7rem] font-bold uppercase tracking-[0.3em]">Kliqtape · Foto</span>
             <span className="mt-1 h-px w-24" style={{ background: KRAFT_INK, opacity: 0.4 }} />
             <span className="font-hand mt-2 text-[1.15rem] leading-tight">Entwickelt {date}</span>
-            <span className="font-mono mt-1 text-[0.5rem] uppercase tracking-[0.2em] opacity-70">
+            <span className="mt-1 text-[0.5rem] font-medium uppercase tracking-[0.2em] opacity-70">
               Bitte nicht knicken
             </span>
           </div>
@@ -476,7 +476,7 @@ function BagReveal({ shots, at, onClose }: { shots: ChallengeShot[]; at: number;
                 />
               )}
               <span
-                className="font-mono absolute bottom-2 right-2.5 text-[0.8rem] font-bold tracking-[0.12em]"
+                className="num absolute bottom-2 right-2.5 text-[0.8rem] font-bold tracking-[0.12em]"
                 style={{ color: '#FF9A3C', textShadow: '0 0 4px rgba(255,120,30,.7)' }}
               >
                 {filmStampLabel(shot.takenAt)}

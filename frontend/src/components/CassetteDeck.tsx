@@ -212,7 +212,7 @@ export default function CassetteDeck() {
             </button>
 
             <div>
-              <p className="text-lg font-semibold" style={{ color: 'var(--ink)' }}>
+              <p className="text-lg heading" style={{ color: 'var(--ink)' }}>
                 Wie soll das Band heißen?
               </p>
               <p className="mt-1 text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -250,7 +250,7 @@ export default function CassetteDeck() {
               type="button"
               disabled={!newName.trim() || create.isPending}
               onClick={() => create.mutate()}
-              className="w-full rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+              className="w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-40"
               style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               Einlegen
@@ -335,7 +335,7 @@ export default function CassetteDeck() {
                 </span>
               </button>
 
-              <h3 className="mt-1 text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+              <h3 className="mt-1 text-xs heading" style={{ color: 'var(--dim)' }}>
                 Gruppen
               </h3>
 
@@ -567,7 +567,8 @@ function MiniLabelText({
           fontWeight="700"
           letterSpacing="0.02"
           fill={bandColor}
-          style={{ fontFamily: 'var(--font-disp)' }}
+          // Display-Schnitt laut Marke: Archivo 700, Breite 87.5
+          style={{ fontFamily: 'var(--font-sans)', fontStretch: '87.5%' }}
         >
           {band}
         </text>
