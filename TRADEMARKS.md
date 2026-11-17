@@ -36,8 +36,8 @@ entferne die Dateien aus `brand/`. Ein Hinweis wie „basiert auf Kliqtape“ is
 
 ## Fragen
 
-Wenn du unsicher bist, ob deine Nutzung in Ordnung ist, frag einfach nach. Kontakt steht im
-[Impressum](https://kliqtape.de/impressum).
+Wenn du unsicher bist, ob deine Nutzung in Ordnung ist, frag einfach nach, am besten über ein
+[Issue in diesem Repo](https://github.com/Guppy997/kliqtape/issues).
 
 ---
 
