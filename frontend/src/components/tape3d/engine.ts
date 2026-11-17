@@ -8,7 +8,7 @@ import { drawLabel, drawShell, fontsReady, type Side } from './textures';
 /*
  * Uebernommen von der Website (kliqtape-website, components/tape3d), dazu:
  * Aussehen aus lookFor() und Texturen werden freigegeben, sobald eine
- * Kassette stillsteht (das Fach kann viele Kassetten zeigen).
+ * Kassette stillsteht (die Farbauswahl zeigt sechs auf einmal).
  *
  * EIN WebGL-Renderer fuer alle Kassetten der Seite. Jede Kassette hat ein
  * normales 2D-Canvas im DOM; der Renderer zeichnet sie in einen Ausschnitt

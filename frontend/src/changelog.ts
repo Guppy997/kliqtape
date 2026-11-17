@@ -14,8 +14,6 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: '0.63.0',
     date: '2026-11-18',
     changes: [
-      'Neu: Das Fach zeigt deine Gruppen als Stapel echter Kassetten. Die eingelegte steht oben, Tippen legt eine andere ein',
-      'Auf jeder Kassette steht jetzt, wer dabei ist und wie viel auf Seite A und B liegt',
       'Die Kassetten-Ansicht und die Farbauswahl zeigen die Kassette als echten Gegenstand, nochmal tippen dreht sie in 3D um',
       'Neue Schriften: Archivo für alles, Caveat für die Handschrift. Auch im Mixtape-Bild, im Einladungsbrief und im Album',
     ],

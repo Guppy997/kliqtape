@@ -185,10 +185,10 @@ und Caveat für Handschrift auf Material. Die App nutzt Variable Fonts (`fronten
 die PDFs feste Schnitte (`backend/assets/fonts`). Beides erzeugt `scripts/fonts.sh` aus
 `google/fonts`, Lizenzen liegen daneben.
 
-**Kassetten zum Anschauen** (Fach, Kassetten-Ansicht, Farbauswahl) sind echte 3D-Körper in WebGL
+**Kassetten zum Anschauen** (Kassetten-Ansicht, Farbauswahl) sind echte 3D-Körper in WebGL
 (`frontend/src/components/tape3d/`, dieselbe Technik wie die Website): ein Renderer für alle
-Kassetten, three.js wird erst nachgeladen, ohne WebGL gibt es die flache Kassette. Im Feed und in
-den Leisten bleibt bewusst die kleine, ruhige Zeichnung.
+Kassetten, three.js wird erst nachgeladen, ohne WebGL gibt es die flache Kassette. Im Feed, im Fach
+und in den Leisten bleibt bewusst die kleine, ruhige Zeichnung.
 
 ## Mitmachen
 

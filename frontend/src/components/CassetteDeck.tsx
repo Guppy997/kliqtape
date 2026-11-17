@@ -7,7 +7,7 @@ import { useViewMode } from '@/store/viewStore';
 import { assignPairs, lookFor } from '@/lib/cassetteLook';
 import BandPicker from './BandPicker';
 import CassetteInfo from './CassetteInfo';
-import CassetteStack from './CassetteStack';
+import { CassetteFacePreview } from './CassetteHeader';
 import NavButton from './NavButton';
 import Sheet from './Sheet';
 
@@ -392,23 +392,102 @@ export default function CassetteDeck() {
                 </p>
               )}
 
-              {/* Die Gruppen als Kassettenstapel (CassetteStack.tsx), mit dem
-                  Look der Website. Die eingelegte steht oben. */}
-              <CassetteStack
-                cassettes={shownCassettes}
-                insertedId={cassetteId}
-                side={side}
-                looks={looks}
-                onInsert={(id) => {
-                  setCassette(id);
-                  setActiveNav(null);
-                  window.scrollTo({ top: 0 });
-                }}
-                onEdit={(id) => {
-                  setInviteFirst(false);
-                  setManage(id);
-                }}
-              />
+              {shownCassettes.map((c) => {
+                // Nicht eingelegte Baender zeigen immer Seite A — dieselbe
+                // Regel wie vorher bei MiniCassette (onB dort war
+                // "active && side === 'b'"): nur das gerade eingelegte Band
+                // folgt der tatsaechlichen Seite, alle anderen bleiben auf
+                // ihrer Typ-Optik stehen.
+                const rowSide = c.id === cassetteId ? side : 'a';
+                const { type, case: plastic } = lookFor(c.id, looks.get(c.id));
+                const glow = rowSide === 'b' ? plastic.glow : type.stripe;
+                return (
+                  <div
+                    key={c.id}
+                    className="flex items-center gap-2 rounded-xl p-2.5"
+                    style={{
+                      background: 'var(--card)',
+                      border: `1px solid ${c.id === cassetteId ? 'var(--accent)' : 'var(--line)'}`,
+                      // Nur die eingelegte Kassette leuchtet — das ist jetzt das
+                      // einzige "ausgewaehlt"-Signal im Fach.
+                      boxShadow:
+                        c.id === cassetteId
+                          ? '0 0 0.9rem color-mix(in srgb, var(--accent) 28%, transparent)'
+                          : undefined,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCassette(c.id);
+                        setActiveNav(null);
+                        window.scrollTo({ top: 0 });
+                      }}
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    >
+                      {/* Dieselbe Zeichnung wie der grosse Kopf und das Symbol
+                        oben links (CassetteHeader.tsx) — keine dritte,
+                        vereinfachte Nachbildung mehr. Ohne echtes Tape-Datum
+                        (das haette pro Zeile eine eigene Abfrage gebraucht)
+                        faellt die Vorschau auf "Position NNN" und
+                        "Seite X — ..." zurueck, genau wie beim Kopf, bevor
+                        ein Tape geladen ist. */}
+                      <span
+                        className="shrink-0"
+                        style={{
+                          opacity: c.id === cassetteId ? 1 : 0.72,
+                          filter: `drop-shadow(0 0.2rem 0.4rem rgba(0,0,0,.5)) drop-shadow(0 0 0.35rem ${glow}70)`,
+                        }}
+                      >
+                        <CassetteFacePreview
+                          side={rowSide}
+                          cassetteId={c.id}
+                          pairIndex={looks.get(c.id)}
+                          label={c.name}
+                          count={c.sideA + c.sideB}
+                          currentTape={null}
+                          createdAt={c.createdAt}
+                          width={60}
+                        />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-base font-medium" style={{ color: 'var(--ink)' }}>
+                          {c.name}
+                        </span>
+                        <span className="block truncate text-2xs" style={{ color: 'var(--dim)' }}>
+                          {c.memberCount} {c.memberCount === 1 ? 'Person' : 'Leute'} · A {c.sideA} · B {c.sideB}
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInviteFirst(false);
+                        setManage(c.id);
+                      }}
+                      aria-label={`${c.name} bearbeiten`}
+                      title="Bearbeiten"
+                      className="hit grid size-7 shrink-0 place-items-center rounded-full"
+                      style={{ border: '1px solid var(--line)', color: 'var(--dim)' }}
+                    >
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M11 2l3 3-8 8-3.5.5.5-3.5z" />
+                        <path d="M9.5 3.5l3 3" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             {error && (

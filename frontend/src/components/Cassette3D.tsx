@@ -81,8 +81,9 @@ interface Props {
  * aufgeklebtes Papieretikett, vertiefte Scheibe, Bandwickel mit Glanz.
  * Ohne WebGL die flache Kassette.
  *
- * Bewusst nur dort, wo man Kassetten anschaut (Fach, Kassetten-Ansicht,
- * Farbauswahl). Im Feed und in den Leisten bleibt die kleine, ruhige Zeichnung.
+ * Bewusst nur dort, wo man eine Kassette in Ruhe anschaut (Kassetten-Ansicht,
+ * Farbauswahl). Im Feed, im Fach und in den Leisten bleibt die kleine, ruhige
+ * Zeichnung (CassetteHeader.tsx).
  */
 export default function Cassette3D({
   cassetteId,
