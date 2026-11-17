@@ -98,7 +98,7 @@ export default function ChallengeFlow({
             <p className="text-2xs" style={{ color: 'var(--dim)' }}>
               {CHALLENGE_TYPE_LABEL[week.type]}
             </p>
-            <p className="text-lg leading-snug font-semibold" style={{ color: 'var(--ink)' }}>
+            <p className="text-lg leading-snug heading" style={{ color: 'var(--ink)' }}>
               {week.theme ? `„${week.theme}“` : CHALLENGE_TYPE_LABEL[week.type]}
             </p>
             <p className="mt-1 text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -188,7 +188,7 @@ export default function ChallengeFlow({
                 type="button"
                 onClick={() => void shareAll()}
                 disabled={busy || fresh.length === 0}
-                className="rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+                className="rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-40"
                 style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
               >
                 {fresh.length === 0

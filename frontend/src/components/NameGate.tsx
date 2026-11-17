@@ -100,7 +100,7 @@ export default function NameGate({ prefill }: { prefill?: string }) {
         <button
           type="submit"
           disabled={!value.trim() || busy || (needsToken && !tokenValue.trim())}
-          className="rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-50"
+          className="rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-50"
           style={{ background: 'var(--accent)', color: '#FFF3EC' }}
         >
           {busy ? 'Einen Moment …' : 'Band einlegen'}

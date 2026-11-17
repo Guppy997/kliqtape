@@ -42,7 +42,7 @@ export default function PermissionHost() {
         aria-label={t.title}
         className="glass flex w-full max-w-sm flex-col gap-3 rounded-2xl p-5"
       >
-        <p className="text-base font-semibold" style={{ color: 'var(--ink)' }}>
+        <p className="text-base font-medium" style={{ color: 'var(--ink)' }}>
           {t.title}
         </p>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -60,7 +60,7 @@ export default function PermissionHost() {
           <button
             type="button"
             onClick={() => answer(true)}
-            className="rounded-full px-5 py-2.5 text-sm font-semibold"
+            className="rounded-full px-5 py-2.5 text-sm font-medium"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Erlauben

@@ -1,6 +1,6 @@
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { CORE_PAIR_COUNT, lookFor } from '@/lib/cassetteLook';
-import { MiniCassette } from './CassetteDeck';
+import Cassette3D, { useTween } from './Cassette3D';
 
 /**
  * Farbauswahl fuer ein neues Band: die sechs Kernfarben (cassetteLook.ts),
@@ -11,6 +11,9 @@ import { MiniCassette } from './CassetteDeck';
  * dreht die kleine Kassette auf Seite B, wo dieselbe Sorte als
  * durchscheinendes Gehaeuse anders aussieht, und wieder zurueck. Gespeichert
  * wird nur die Sorte, die Seite ist reine Vorschau: jede Kassette hat beide.
+ *
+ * Die Kassetten sind echte Gegenstaende wie im Fach (Cassette3D); das
+ * Umdrehen dreht sie in 3D, immer vorwaerts wie eine Spule.
  *
  * `flip={false}` fuer die eigenen Tapes, die nur eine Seite haben: dort hebt
  * nochmal tippen die Auswahl wieder auf (ohne Auswahl = automatisch).
@@ -68,17 +71,7 @@ export default function BandPicker({
                 border: `1px solid ${chosen ? 'var(--accent)' : 'var(--line)'}`,
               }}
             >
-              <div style={{ perspective: '400px' }}>
-                <div
-                  key={chosen ? `${idx}-${turns}` : idx}
-                  className={chosen && turns > 0 ? 'band-flip' : undefined}
-                  // A→B dreht von links herein, B→A von rechts, wie beim
-                  // grossen Kassettenkopf (CassetteHeader.tsx).
-                  style={{ zoom: 1.4, '--flip-from': shown === 'b' ? '-90deg' : '90deg' } as CSSProperties}
-                >
-                  <MiniCassette id="neu" pairIndex={idx} active side={shown} label={label} />
-                </div>
-              </div>
+              <PickerCassette idx={idx} turns={chosen ? turns : 0} withBack={flip} label={label} />
               <span className="text-center text-2xs leading-tight">
                 <span style={{ color: chosen ? 'var(--ink)' : 'var(--dim)' }}>{name}</span>
                 {/* Zeile immer da (nur unsichtbar), damit die Kachel beim
@@ -99,5 +92,32 @@ export default function BandPicker({
         </p>
       )}
     </div>
+  );
+}
+
+/** Eine Kassette im Raster. Dreht sich bei jedem Umdrehen um 180 Grad weiter. */
+function PickerCassette({
+  idx,
+  turns,
+  withBack,
+  label,
+}: {
+  idx: number;
+  turns: number;
+  withBack: boolean;
+  label?: string;
+}) {
+  const rotateY = useTween(turns * 180);
+  return (
+    <Cassette3D
+      cassetteId="neu"
+      pairIndex={idx}
+      withBack={withBack}
+      label={label ?? ''}
+      width={92}
+      rotateX={-8}
+      rotateY={rotateY}
+      className="my-1"
+    />
   );
 }

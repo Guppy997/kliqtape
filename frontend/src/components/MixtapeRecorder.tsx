@@ -100,7 +100,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
       <div className="flex items-center justify-center gap-8 py-2">
         <RecReel fill={1 - fill} live={state === 'recording'} />
         <div className="text-center">
-          <div className="text-3xl font-semibold tabular-nums" style={{ color: 'var(--ink)' }}>
+          <div className="text-3xl font-medium tabular-nums" style={{ color: 'var(--ink)' }}>
             {String(Math.floor(left / 60000)).padStart(2, '0')}:
             {String(Math.floor((left % 60000) / 1000)).padStart(2, '0')}
           </div>
@@ -148,7 +148,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
           <button
             type="button"
             onClick={start}
-            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
+            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Aufnahme starten
@@ -159,7 +159,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
           <button
             type="button"
             onClick={stop}
-            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
+            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium"
             style={{ background: '#B8462C', color: '#FFF3EC' }}
           >
             Stopp
@@ -179,7 +179,7 @@ export default function MixtapeRecorder({ onCancel, onSend }: Props) {
                 setSending(false);
               }
             }}
-            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
+            className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-60"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {sending ? 'Wird überspielt …' : 'Aufs Band'}

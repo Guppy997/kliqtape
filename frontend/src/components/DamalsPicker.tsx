@@ -84,7 +84,7 @@ export default function DamalsPicker({
             <img src={shot.url} alt="Dein Foto von damals" />
             {takenAt != null && (
               <span
-                className="font-mono absolute bottom-1.5 right-2 text-[0.7rem] font-bold tracking-[0.12em]"
+                className="num absolute bottom-1.5 right-2 text-[0.7rem] font-bold tracking-[0.12em]"
                 style={{ color: '#FF9A3C', textShadow: '0 0 4px rgba(255,120,30,.7)' }}
               >
                 {filmStampLabel(takenAt)}
@@ -144,7 +144,7 @@ export default function DamalsPicker({
           type="button"
           onClick={() => void send()}
           disabled={busy || !oldEnough}
-          className="rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+          className="rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-40"
           style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           Weiter

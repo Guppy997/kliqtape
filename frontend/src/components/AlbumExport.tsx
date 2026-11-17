@@ -128,7 +128,7 @@ export default function AlbumExport({
             type="button"
             disabled={chosen.size === 0 || save.isPending}
             onClick={() => save.mutate()}
-            className="w-full rounded-xl px-4 py-3 text-sm font-semibold disabled:opacity-40"
+            className="w-full rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-40"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             {save.isPending ? 'Album wird gebunden …' : 'PDF speichern'}

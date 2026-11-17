@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import type { Writable } from 'node:stream';
+import { F, registerFonts, wordmark } from './fonts.js';
 
 /*
  * Album-Export: ein oder mehrere Tapes von Seite A als PDF.
@@ -127,6 +128,7 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
     info: { Title: `${album.cassetteName} — Kliqtape-Album`, Creator: 'Kliqtape' },
   });
   doc.pipe(out);
+  registerFonts(doc);
   const W = doc.page.width;
   const H = doc.page.height;
   const inner = W - 2 * M;
@@ -144,15 +146,11 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
   doc.roundedRect(cx, cy, cw, ch, 10).stroke();
   doc.rect(cx + 16, cy + 14, cw - 32, 54).fillAndStroke(PRINT, INK);
   doc.rect(cx + 16, cy + 14, cw - 32, 13).fill(STRIPE);
-  doc
-    .fillColor(PAPER)
-    .font('Helvetica-Bold')
-    .fontSize(7)
-    .text('KLIQTAPE', cx + 24, cy + 17.5, { characterSpacing: 1.5 });
+  wordmark(doc, cx + 24, cy + 16.5, 8.5, PAPER);
   doc
     .fillColor(INK)
-    .font('Times-Italic')
-    .fontSize(15)
+    .font(F.hand)
+    .fontSize(18)
     .text(album.cassetteName, cx + 24, cy + 35, { width: cw - 48, lineBreak: false, ellipsis: true });
   doc.roundedRect(cx + 40, cy + 80, cw - 80, 34, 4).stroke();
   doc.circle(cx + 70, cy + 97, 10).stroke();
@@ -169,19 +167,19 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
   const last = album.tapes.at(-1);
   doc
     .fillColor(DIM)
-    .font('Helvetica-Bold')
+    .font(F.title)
     .fontSize(8)
     .text('ALBUM', M, cy + ch + 46, { width: inner, align: 'center', characterSpacing: 3 });
   doc
     .fillColor(INK)
-    .font('Times-Bold')
+    .font(F.title)
     .fontSize(26)
     .text(album.cassetteName, M, cy + ch + 62, { width: inner, align: 'center' });
   if (first && last) {
     const range = first === last ? first.date : `${first.date} – ${last.date}`;
     doc
       .fillColor(DIM)
-      .font('Helvetica')
+      .font(F.text)
       .fontSize(9)
       .text(`${range} · ${album.tapes.length} ${album.tapes.length === 1 ? 'Tape' : 'Tapes'}`, M, doc.y + 6, {
         width: inner,
@@ -190,7 +188,7 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
   }
   doc
     .fillColor(DIM)
-    .font('Helvetica')
+    .font(F.text)
     .fontSize(7)
     .text(
       'Nur Seite A. Clips und O-Töne lassen sich nicht drucken. Wer die eigenen Beiträge nicht in Alben haben möchte, fehlt hier bewusst.',
@@ -209,18 +207,18 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
     doc.fillColor(STRIPE).rect(M, M, 28, 3).fill();
     doc
       .fillColor(DIM)
-      .font('Helvetica-Bold')
+      .font(F.title)
       .fontSize(8)
       .text(tapeLabel(tape).toUpperCase(), M, M + 10, { characterSpacing: 2 });
     doc
       .fillColor(INK)
-      .font('Times-Italic')
-      .fontSize(20)
+      .font(F.hand)
+      .fontSize(24)
       .text(tape.name ?? tape.date, M, doc.y + 2, { width: inner });
     if (tape.name)
       doc
         .fillColor(DIM)
-        .font('Helvetica')
+        .font(F.text)
         .fontSize(9)
         .text(tape.date, M, doc.y + 1);
     doc.moveDown(1.2);
@@ -237,9 +235,7 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
         const scale = Math.min(maxW / img.width, 170 / img.height);
         const iw = img.width * scale;
         const ih = img.height * scale;
-        const captionH = post.body
-          ? doc.font('Times-Italic').fontSize(11).heightOfString(post.body, { width: iw }) + 6
-          : 0;
+        const captionH = post.body ? doc.font(F.hand).fontSize(13.2).heightOfString(post.body, { width: iw }) + 6 : 0;
         const frameH = ih + 16 + captionH + 18;
         ensure(frameH + 14);
         const x = (W - iw) / 2 - 8;
@@ -259,7 +255,7 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
         if (post.stamp) {
           doc
             .fillColor(FILM_STAMP)
-            .font('Courier-Bold')
+            .font(F.medium)
             .fontSize(9)
             .text(post.stamp, x + 8, y + 8 + ih - 14, { width: iw - 6, align: 'right' });
         }
@@ -267,22 +263,22 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
         if (post.body) {
           doc
             .fillColor(INK)
-            .font('Times-Italic')
-            .fontSize(11)
+            .font(F.hand)
+            .fontSize(13.2)
             .text(post.body, x + 8, ty, { width: iw, align: 'center' });
           ty = doc.y + 2;
         }
         doc
           .fillColor(DIM)
-          .font('Helvetica')
+          .font(F.text)
           .fontSize(7)
           .text(meta, x + 8, ty, { width: iw, align: 'center' });
         doc.y = y + frameH + 16;
         doc.x = M;
       } else if (post.kind === 'text') {
         const textH = doc
-          .font('Times-Roman')
-          .fontSize(12)
+          .font(F.hand)
+          .fontSize(14.4)
           .heightOfString(post.body, { width: inner - 30 });
         ensure(textH + 34);
         const y = doc.y;
@@ -296,12 +292,12 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
           .fill();
         doc
           .fillColor(INK)
-          .font('Times-Roman')
-          .fontSize(12)
+          .font(F.hand)
+          .fontSize(14.4)
           .text(post.body, M + 18, y + 8, { width: inner - 30 });
         doc
           .fillColor(DIM)
-          .font('Helvetica')
+          .font(F.text)
           .fontSize(7)
           .text(meta, M + 18, doc.y + 3);
         doc.y = y + textH + 26 + 14;
@@ -322,17 +318,17 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
             .fill();
         doc
           .fillColor(DIM)
-          .font('Helvetica-Bold')
+          .font(F.title)
           .fontSize(7)
           .text('MIXTAPE', M + 74, y + 12, { characterSpacing: 1.5 });
         doc
           .fillColor(INK)
-          .font('Times-Italic')
-          .fontSize(14)
+          .font(F.hand)
+          .fontSize(16.8)
           .text(post.mixtape.title || 'Ohne Titel', M + 74, y + 23, { width: inner - 92 });
         doc
           .fillColor(DIM)
-          .font('Helvetica')
+          .font(F.text)
           .fontSize(7)
           .text(meta, M + 74, y + 44);
         doc.y = y + 64 + 14;
@@ -349,7 +345,7 @@ export function renderAlbumPdf(album: Album, source: Pick<AlbumSource, 'mediaFil
     doc.page.margins.bottom = 0;
     doc
       .fillColor(DIM)
-      .font('Helvetica')
+      .font(F.text)
       .fontSize(7)
       .text(`${album.cassetteName} · ${i + 1}`, M, H - M + 14, { width: inner, align: 'center', lineBreak: false });
   }

@@ -153,7 +153,7 @@ export default function NewsView({ open, onClose }: Props) {
           }}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="block text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+            <span className="block text-sm font-medium" style={{ color: 'var(--accent)' }}>
               Unterstütze unser Projekt
             </span>
             {canPost && (
@@ -171,7 +171,7 @@ export default function NewsView({ open, onClose }: Props) {
           {funding.balance || funding.note ? (
             <>
               {funding.balance && (
-                <span className="mt-1.5 block text-xl font-semibold tabular-nums" style={{ color: 'var(--ink)' }}>
+                <span className="mt-1.5 block text-xl font-medium tabular-nums" style={{ color: 'var(--ink)' }}>
                   {funding.balance}
                 </span>
               )}
@@ -213,7 +213,7 @@ export default function NewsView({ open, onClose }: Props) {
           >
             <div className="flex items-center gap-2">
               <Lockup size="0.85rem" />
-              <span className="font-mono ml-auto shrink-0 text-2xs tabular-nums" style={{ color: 'var(--dim)' }}>
+              <span className="num ml-auto shrink-0 text-2xs" style={{ color: 'var(--dim)' }}>
                 {berlinDateLabel(p.createdAt)} · {berlinTimeLabel(p.createdAt)}
               </span>
               {canPost && (
@@ -264,7 +264,7 @@ export default function NewsView({ open, onClose }: Props) {
               className="rounded-xl p-3 text-left"
               style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
             >
-              <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+              <span className="block text-sm font-medium" style={{ color: 'var(--ink)' }}>
                 {c.label}
               </span>
             </button>
@@ -293,7 +293,7 @@ export default function NewsView({ open, onClose }: Props) {
             type="button"
             onClick={sendText}
             disabled={busy || !text.trim()}
-            className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Posten
@@ -358,7 +358,7 @@ export default function NewsView({ open, onClose }: Props) {
             type="button"
             onClick={saveFunding}
             disabled={fundingBusy}
-            className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Speichern

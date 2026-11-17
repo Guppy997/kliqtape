@@ -147,7 +147,7 @@ export default function PrivateTapeView({
                     onBlur={() => (title.trim() && title.trim() !== tape.title ? rename.mutate() : setRenaming(false))}
                     maxLength={40}
                     aria-label="Titel"
-                    className="w-full rounded-lg px-2 py-1 text-lg font-semibold outline-none"
+                    className="w-full rounded-lg px-2 py-1 text-lg heading outline-none"
                     style={{ background: 'var(--card)', border: '1px solid var(--accent)', color: 'var(--ink)' }}
                   />
                 </form>
@@ -155,7 +155,7 @@ export default function PrivateTapeView({
                 <button
                   type="button"
                   onClick={() => setRenaming(true)}
-                  className="block w-full truncate text-left text-lg font-semibold"
+                  className="block w-full truncate text-left text-lg heading"
                   style={{ color: 'var(--ink)' }}
                   aria-label={`Titel „${tape.title}“ ändern`}
                 >
@@ -315,7 +315,7 @@ export default function PrivateTapeView({
             type="button"
             onClick={() => add({ kind: 'text', body: text.trim(), noteStyle })}
             disabled={!text.trim()}
-            className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Einkleben

@@ -31,7 +31,7 @@ export default function CassetteChallengeSettings({ cassette }: { cassette: Cass
 
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="mb-1 text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+      <h3 className="mb-1 text-xs heading" style={{ color: 'var(--dim)' }}>
         Wochen-Challenge
       </h3>
       <SwitchRow

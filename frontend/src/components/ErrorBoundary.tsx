@@ -25,7 +25,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, { 
     if (!this.state.failed) return this.props.children;
     return (
       <div className="mx-auto flex min-h-[100dvh] max-w-sm flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-base font-semibold" style={{ color: 'var(--ink)' }}>
+        <p className="text-base font-medium" style={{ color: 'var(--ink)' }}>
           Da hat sich das Band verheddert.
         </p>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -34,7 +34,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, { 
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="rounded-lg px-4 py-2.5 text-sm font-semibold"
+          className="rounded-lg px-4 py-2.5 text-sm font-medium"
           style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           Neu laden

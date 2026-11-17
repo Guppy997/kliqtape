@@ -325,7 +325,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
                     <ChatBubbleContent msg={m} />
                   </div>
                   <span
-                    className="font-mono px-1 text-2xs tabular-nums"
+                    className="num px-1 text-2xs"
                     style={{ color: 'var(--dim)', alignSelf: mine ? 'flex-end' : 'flex-start' }}
                   >
                     {m.pending ? 'wird gesendet …' : berlinTime(m.createdAt)}
@@ -565,10 +565,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
       </div>
       {/* Restzeichen erst kurz vor der Grenze — dauerhaft "500" war nur Rauschen. */}
       {recState !== 'recording' && maxLen - text.length < 50 && (
-        <p
-          className="font-mono text-right text-2xs tabular-nums"
-          style={{ color: maxLen - text.length < 30 ? accent : 'var(--dim)' }}
-        >
+        <p className="num text-right text-2xs" style={{ color: maxLen - text.length < 30 ? accent : 'var(--dim)' }}>
           {maxLen - text.length}
         </p>
       )}
@@ -625,7 +622,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
               className="flex items-center justify-between rounded-xl px-3.5 py-3 text-left"
               style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
             >
-              <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+              <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
                 {c.label}
               </span>
               <span className="text-2xs" style={{ color: 'var(--dim)' }}>
@@ -699,7 +696,7 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
       <div className="flex h-full flex-col">
         <div className="flex items-center gap-3 pb-3" style={{ borderBottom: '1px solid var(--line)' }}>
           <Avatar name={chat.other} side={side} size={2.2} />
-          <p className="text-base font-semibold" style={{ color: 'var(--ink)' }}>
+          <p className="text-base font-medium" style={{ color: 'var(--ink)' }}>
             {chat.other || 'Neue Leitung'}
           </p>
         </div>

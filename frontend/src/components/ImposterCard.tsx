@@ -87,7 +87,7 @@ export default function ImposterCard({ cassette, onChanged }: { cassette: Casset
       <header className="flex items-center gap-2.5">
         <MaskIcon />
         <span className="min-w-0 flex-1">
-          <span className="block text-xs font-semibold" style={{ color: 'var(--ink)' }}>
+          <span className="block text-xs font-medium" style={{ color: 'var(--ink)' }}>
             Imposter-Woche
           </span>
           <span className="block text-2xs" style={{ color: 'var(--dim)' }}>
@@ -225,7 +225,7 @@ function Playing({
             type="button"
             disabled={!text.trim() || submitText.isPending}
             onClick={() => submitText.mutate()}
-            className="rounded-lg px-3.5 text-sm font-semibold disabled:opacity-40"
+            className="rounded-lg px-3.5 text-sm font-medium disabled:opacity-40"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Abgeben
@@ -414,7 +414,7 @@ function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string;
               </span>
               {cleared && (
                 <span
-                  className="font-mono absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 whitespace-nowrap rounded border px-1 text-[0.5rem] uppercase tracking-[0.1em]"
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 whitespace-nowrap rounded border px-1 text-[0.5rem] uppercase tracking-[0.1em]"
                   style={{ borderColor: '#4E7A5E', color: '#4E7A5E', background: 'rgba(236,229,214,.85)' }}
                 >
                   kannte die Aufgabe
@@ -456,7 +456,7 @@ function ImposterReveal({ week, me, onClose }: { week: ImposterWeek; me: string;
         className="flex max-w-sm flex-col gap-2 text-center"
         style={{ opacity: stamped ? 1 : 0, transition: 'opacity 500ms ease 400ms' }}
       >
-        <p className="text-xl leading-tight font-semibold text-white">
+        <p className="text-xl leading-tight heading text-white">
           {result.caught
             ? `${imposterName === 'Du' ? 'Du warst' : `${imposterName} war`} es — die Runde lag richtig.`
             : `${imposterName === 'Du' ? 'Du warst' : `${imposterName} war`} es — und ${imposterName === 'Du' ? 'bist' : 'ist'} durchgekommen.`}

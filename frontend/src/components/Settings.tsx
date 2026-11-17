@@ -191,14 +191,14 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
               <div className="flex items-center gap-4">
                 <Avatar name={me} side={side} size={5} />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
-                  <span className="truncate text-xl font-semibold" style={{ color: 'var(--ink)' }}>
+                  <span className="truncate text-xl heading" style={{ color: 'var(--ink)' }}>
                     {me}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => setShooting(true)}
-                      className="rounded-lg px-3 py-2 text-sm font-semibold"
+                      className="rounded-lg px-3 py-2 text-sm font-medium"
                       style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
                     >
                       {myAvatar ? 'Neues Bild' : 'Bild aufnehmen'}
@@ -234,7 +234,7 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
                   type="button"
                   onClick={renameMe}
                   disabled={!name.trim() || name.trim() === me || renaming}
-                  className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+                  className="rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-40"
                   style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
                 >
                   {renaming ? '…' : 'Ändern'}
@@ -259,7 +259,7 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
                   type="button"
                   onClick={() => setTokenVisible((v) => !v)}
                   disabled={!token}
-                  className="shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+                  className="shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-40"
                   style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
                 >
                   {tokenVisible ? 'Verbergen' : 'Anzeigen'}
@@ -268,7 +268,7 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
                   type="button"
                   onClick={copyToken}
                   disabled={!token}
-                  className="shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+                  className="shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-40"
                   style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
                 >
                   Kopieren
@@ -295,7 +295,7 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
                       color: startSide === s ? 'var(--on-accent)' : 'var(--ink)',
                     }}
                   >
-                    <span className="block text-sm font-semibold">Seite {s.toUpperCase()}</span>
+                    <span className="block text-sm font-medium">Seite {s.toUpperCase()}</span>
                     <span className="block text-2xs opacity-70">{SIDE_LABEL[s]}</span>
                   </button>
                 ))}
@@ -406,7 +406,7 @@ export default function SettingsSheet({ open, onClose }: { open: boolean; onClos
                   className="flex items-baseline gap-2 rounded-lg px-3 py-2.5"
                   style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
                 >
-                  <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                  <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
                     {s.toUpperCase()} · {SIDE_LABEL[s]}
                   </span>
                   <span className="text-2xs" style={{ color: 'var(--dim)' }}>
@@ -516,7 +516,7 @@ function PronounsField() {
         <button
           type="submit"
           disabled={!dirty || save.isPending}
-          className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+          className="rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-40"
           style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
         >
           {save.isPending ? '…' : 'Speichern'}
@@ -606,7 +606,7 @@ function ReminderSwitch() {
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+      <h3 className="text-sm heading" style={{ color: 'var(--ink)' }}>
         {title}
       </h3>
       {children}

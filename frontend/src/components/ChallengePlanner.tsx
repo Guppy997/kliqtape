@@ -19,7 +19,7 @@ export default function ChallengePlanner() {
       className="flex flex-col gap-2 rounded-xl p-3"
       style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
     >
-      <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+      <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
         Challenges planen
       </span>
       <span className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>

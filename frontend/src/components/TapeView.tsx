@@ -69,7 +69,7 @@ export default function TapeView({ id }: Props) {
           const plat = platformOf(t.url);
           const row = (
             <>
-              <span className="font-mono w-5 shrink-0 text-2xs tabular-nums" style={{ color: 'var(--accent)' }}>
+              <span className="num w-5 shrink-0 text-2xs" style={{ color: 'var(--accent)' }}>
                 {String(t.position).padStart(2, '0')}
               </span>
               <span className="min-w-0 flex-1">

@@ -28,7 +28,7 @@ export default function ReportForm({ target, what, onDone }: Props) {
   if (send.isSuccess) {
     return (
       <div className="flex flex-col gap-2 p-3">
-        <p className="text-base font-semibold" style={{ color: 'var(--ink)' }}>
+        <p className="text-base font-medium" style={{ color: 'var(--ink)' }}>
           Gemeldet. Danke.
         </p>
         <p className="text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
