@@ -128,7 +128,7 @@ export default function StoryView({ open, onClose }: Props) {
 
           <div className="mt-2 flex items-center gap-2 px-3">
             <Avatar name={activeGroup.author} side={side} size={2} />
-            <span className="text-base font-semibold text-white">{activeGroup.author}</span>
+            <span className="text-base font-medium text-white">{activeGroup.author}</span>
             {activeGroup.author === me && (
               <button type="button" onClick={removeActive} className="ml-auto shrink-0 text-2xs text-white/70">
                 Löschen
@@ -240,7 +240,7 @@ export default function StoryView({ open, onClose }: Props) {
                   >
                     <Avatar name={g.author} side={side} size={1.15} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs font-semibold leading-tight text-white">
+                      <span className="block truncate text-xs font-medium leading-tight text-white">
                         {g.author === me ? 'Du' : g.author}
                       </span>
                       <span className="block text-2xs text-white/70">{agoLabel(latest.createdAt)}</span>

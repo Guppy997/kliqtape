@@ -110,7 +110,7 @@ export default function TapePlayer({ src, hintMs }: Props) {
 
   if (error) {
     return (
-      <p className="font-mono text-[0.7rem]" style={{ color: 'var(--dim)' }}>
+      <p className="text-[0.7rem]" style={{ color: 'var(--dim)' }}>
         {error}
       </p>
     );
@@ -172,10 +172,7 @@ export default function TapePlayer({ src, hintMs }: Props) {
             style={{ left: `calc(${ratio * 100}% - 1px)`, background: 'var(--ink)' }}
           />
         </div>
-        <div
-          className="mt-1 flex justify-between font-mono text-[0.62rem] tabular-nums"
-          style={{ color: 'var(--dim)' }}
-        >
+        <div className="num mt-1 flex justify-between text-[0.62rem]" style={{ color: 'var(--dim)' }}>
           <span>{fmt(pos)}</span>
           <span>{ready ? fmt(dur) : '—:—'}</span>
         </div>

@@ -372,7 +372,7 @@ function CassetteFace({
               {isA ? type.name : plastic.name}
             </span>
           </span>
-          <span className="font-mono shrink-0 text-[0.5rem] uppercase tracking-[0.16em] opacity-80">
+          <span className="num shrink-0 text-[0.5rem] font-medium uppercase tracking-[0.16em] opacity-80">
             {/* Ecke zeigt immer nur die kurze Nummernform, nie einen
                 umbenannten Namen — hier ist kein Platz fuers Umbrechen. */}
             {currentTape ? currentTape.shortName : `Position ${count.toString().padStart(3, '0')}`}

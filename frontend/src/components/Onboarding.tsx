@@ -15,11 +15,11 @@ import {
   uploadMedia,
   type Cassette,
 } from '@/lib/api';
-import { lookFor, PAIR_COUNT } from '@/lib/cassetteLook';
 import { clearLetterToken, pendingLetterToken } from '@/lib/letter';
 import { useApp } from '@/store/appStore';
 import { useCoverX } from '@/store/coverStore';
 import Avatar from './Avatar';
+import BandPicker from './BandPicker';
 import CameraCapture from './CameraCapture';
 import { CassetteFacePreview } from './CassetteHeader';
 import { MiniCassette, useCassettes } from './CassetteDeck';
@@ -56,7 +56,7 @@ export default function Onboarding({ preview = false, onDone }: { preview?: bool
   const me = useApp((s) => s.me);
   const qc = useQueryClient();
   const [step, setStep] = useState<Step>('welcome');
-  // Vorschau mit X oben links: das Plus der Leiste dreht beim Schliessen zurueck.
+  // Vorschau mit X oben links: das Plus der Leiste dreht beim Schliessen weiter zum Plus.
   useCoverX(preview);
 
   async function finish() {
@@ -209,7 +209,7 @@ export default function Onboarding({ preview = false, onDone }: { preview?: bool
               className="mt-6 rounded-xl px-4 py-3 text-sm leading-relaxed"
               style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-line)', color: 'var(--danger)' }}
             >
-              <strong className="block tracking-[0.12em]">DEMO-VERSION</strong>
+              <strong className="block">DEMO-VERSION</strong>
               So soll es sein, umgesetzt ist es noch nicht. Heute ist nichts verschlüsselt, und ein öffentliches
               Zugriffsprotokoll gibt es noch nicht. Was wirklich gilt, steht jederzeit in den Einstellungen unter „Was
               der Server sieht“.
@@ -242,7 +242,7 @@ function PreviewBar({ onClose }: { onClose: () => void }) {
         >
           <PlusMark turned enter />
         </button>
-        <span className="text-center text-2xs font-semibold tracking-[0.18em]" style={{ color: 'var(--dim)' }}>
+        <span className="text-center text-2xs font-medium" style={{ color: 'var(--dim)' }}>
           VORSCHAU
         </span>
         <span />
@@ -290,7 +290,7 @@ function Frame({
         className={`mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 overflow-y-auto py-4 ${center ? 'text-center' : ''}`}
       >
         {art}
-        <h1 className="text-2xl leading-tight font-semibold text-balance" style={{ color: 'var(--ink)' }}>
+        <h1 className="text-2xl leading-tight heading text-balance" style={{ color: 'var(--ink)' }}>
           {title}
         </h1>
         {children && (
@@ -311,7 +311,7 @@ function Frame({
           type="button"
           onClick={onPrimary}
           disabled={primaryDisabled}
-          className="rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-40"
+          className="rounded-full px-6 py-3 text-sm font-medium disabled:opacity-40"
           style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           {primary}
@@ -345,12 +345,12 @@ function SidesArt() {
       style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
     >
       <span
-        className="grid size-10 place-items-center rounded-full text-base font-semibold"
+        className="grid size-10 place-items-center rounded-full text-base font-medium"
         style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
       >
         {side}
       </span>
-      <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+      <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
         {label}
       </span>
       <span className="text-2xs" style={{ color: 'var(--dim)' }}>
@@ -516,7 +516,7 @@ function ConsentStep({ onNext }: { onNext: () => void }) {
             className="rounded-xl px-4 py-3"
             style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-line)', color: 'var(--danger)' }}
           >
-            <strong className="block tracking-[0.12em]">ENTWURF</strong>
+            <strong className="block">ENTWURF</strong>
             Kliqtape ist ein Prototyp. Dieser Text entsteht vor dem öffentlichen Start und wird dann von jemandem vom
             Fach geprüft.
           </p>
@@ -651,7 +651,7 @@ function StartStep({ onFinish }: { onFinish: () => void }) {
                 type="button"
                 disabled={busy}
                 onClick={() => void join(inv.id)}
-                className="shrink-0 rounded-full px-3 py-1.5 text-2xs font-semibold disabled:opacity-50"
+                className="shrink-0 rounded-full px-3 py-1.5 text-2xs font-medium disabled:opacity-50"
                 style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
               >
                 Beitreten
@@ -763,24 +763,7 @@ function CreateFirst({
           className="w-full rounded-lg px-3 py-3 text-base outline-none"
           style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
         />
-        <div className="grid grid-cols-4 gap-2">
-          {Array.from({ length: PAIR_COUNT }, (_, idx) => {
-            const chosen = look === idx;
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setLook(chosen ? null : idx)}
-                aria-pressed={chosen}
-                aria-label={lookFor('neu', idx).case.name}
-                className="grid place-items-center rounded-xl p-2"
-                style={{ background: 'var(--card)', border: `1px solid ${chosen ? 'var(--accent)' : 'var(--line)'}` }}
-              >
-                <MiniCassette id="neu" pairIndex={idx} active side="b" label={name.trim() || undefined} />
-              </button>
-            );
-          })}
-        </div>
+        <BandPicker value={look} onChange={setLook} label={name.trim() || undefined} />
         {error && <span style={{ color: 'var(--danger)' }}>{error}</span>}
       </div>
     </Frame>

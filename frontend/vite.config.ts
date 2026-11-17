@@ -36,6 +36,12 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    // three.js (3D-Kassetten in Kassetten-Ansicht und Farbauswahl) ist ein eigenes, nachgeladenes Paket
+    // von ~580 KB (~150 KB komprimiert). Die Grenze gilt nur dafuer, die
+    // Warnung fuer das Hauptpaket bleibt wie vorher.
+    chunkSizeWarningLimit: 600,
+  },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

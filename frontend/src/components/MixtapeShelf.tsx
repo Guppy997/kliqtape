@@ -60,7 +60,7 @@ export default function MixtapeList() {
             setError(null);
             setView('new');
           }}
-          className="rounded-xl px-4 py-3.5 text-sm font-semibold"
+          className="rounded-xl px-4 py-3.5 text-sm font-medium"
           style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           Neues Mixtape bauen
@@ -156,7 +156,7 @@ export default function MixtapeList() {
             type="button"
             disabled={!to.trim() || !title.trim() || create.isPending}
             onClick={() => create.mutate()}
-            className="rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+            className="rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-40"
             style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Band einlegen
@@ -206,7 +206,7 @@ function Group({
 }) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+      <h3 className="text-sm heading" style={{ color: 'var(--ink)' }}>
         {title}
       </h3>
 

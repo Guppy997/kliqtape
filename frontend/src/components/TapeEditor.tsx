@@ -163,7 +163,7 @@ export default function TapeEditor({ id, onClose }: Props) {
             className="flex items-center gap-2.5 rounded-lg px-3 py-2"
             style={{ background: 'var(--card)', border: '1px solid var(--line)' }}
           >
-            <span className="font-mono w-5 shrink-0 text-2xs tabular-nums" style={{ color: 'var(--accent)' }}>
+            <span className="num w-5 shrink-0 text-2xs" style={{ color: 'var(--accent)' }}>
               {String(t.position).padStart(2, '0')}
             </span>
             <div className="min-w-0 flex-1">
@@ -245,7 +245,7 @@ export default function TapeEditor({ id, onClose }: Props) {
                 },
               );
             }}
-            className="rounded-lg px-3 py-2.5 text-sm font-semibold disabled:opacity-40"
+            className="rounded-lg px-3 py-2.5 text-sm font-medium disabled:opacity-40"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           >
             Aufs Band
@@ -275,7 +275,7 @@ export default function TapeEditor({ id, onClose }: Props) {
             confirm(`Tape versiegeln und ${recipientOf(tape)} überreichen? Danach lässt es sich nicht mehr ändern.`) &&
             seal.mutate()
           }
-          className="flex-1 rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+          className="flex-1 rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-40"
           style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           Versiegeln & überreichen

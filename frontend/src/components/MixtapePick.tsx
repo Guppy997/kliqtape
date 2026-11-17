@@ -104,7 +104,7 @@ export default function MixtapePick({ onPick }: { onPick: (tapeId: string) => Pr
               setEditing(tape.id);
             })
           }
-          className="shrink-0 rounded-lg px-4 text-sm font-semibold disabled:opacity-40"
+          className="shrink-0 rounded-lg px-4 text-sm font-medium disabled:opacity-40"
           style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
         >
           Bauen

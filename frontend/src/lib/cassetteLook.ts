@@ -522,6 +522,12 @@ const PAIRS: Pair[] = [
  *  darueber, statt eine Zahl an mehreren Stellen zu duplizieren. */
 export const PAIR_COUNT = PAIRS.length;
 
+/** Die sechs Kernfarben (Amber, Ice, Atomic Purple, Tabak, Kiwi, Berry) —
+ *  die ersten sechs Paare oben. Nur die stehen vorerst in der Farbauswahl
+ *  (BandPicker.tsx). Die uebrigen Sorten bleiben erhalten: fuer Baender, die
+ *  schon so eine Farbe haben, und fuer die automatische Zuordnung. */
+export const CORE_PAIR_COUNT = 6;
+
 export interface CassetteLook {
   type: TypeLook;
   case: CaseLook;

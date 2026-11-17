@@ -40,7 +40,7 @@ export default function UpdateNotification() {
       <button
         type="button"
         onClick={() => void updateServiceWorker(true)}
-        className="shrink-0 rounded-lg px-3 py-1.5 text-meta font-semibold"
+        className="shrink-0 rounded-lg px-3 py-1.5 text-meta font-medium"
         style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
       >
         Band wechseln

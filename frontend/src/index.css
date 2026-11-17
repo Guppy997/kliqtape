@@ -1,5 +1,50 @@
 @import 'tailwindcss';
 
+/* Schriften laut Markenskill (brand-kliqtape): nur zwei Familien, beide SIL
+   OFL, selbst gehostet (keine Google-Server). Archivo fuer alles, die Rolle
+   steckt in Gewicht und Breite; Caveat nur fuer Handschrift auf Material.
+   Dateien und Lizenzen in public/fonts, neu erzeugen mit scripts/fonts.sh. */
+@font-face {
+  font-family: 'Archivo';
+  src:
+    url('/fonts/Archivo-Variable.woff2') format('woff2-variations'),
+    url('/fonts/Archivo-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Caveat';
+  src:
+    url('/fonts/Caveat-Variable.woff2') format('woff2-variations'),
+    url('/fonts/Caveat-Variable.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+/* Feste Schnitte fuer Canvas (Etikett der 3D-Kassette, Mixtape-Bild): Canvas
+   kann die Breiten-Achse nicht in jedem Browser setzen. Eine Flaeche mit nur
+   EINEM Wert klemmt die Achse auf diesen Wert, egal was angefragt wird. */
+@font-face {
+  font-family: 'Archivo Wortmarke';
+  src:
+    url('/fonts/Archivo-Variable.woff2') format('woff2-variations'),
+    url('/fonts/Archivo-Variable.woff2') format('woff2');
+  font-weight: 700;
+  font-stretch: 75%;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Archivo Titel';
+  src:
+    url('/fonts/Archivo-Variable.woff2') format('woff2-variations'),
+    url('/fonts/Archivo-Variable.woff2') format('woff2');
+  font-weight: 700;
+  font-stretch: 87.5%;
+  font-display: block;
+}
+
 /* ---------------------------------------------------------------------------
    Farbwelt. Gestaltungsregel des Projekts:
    Retro sind die MATERIALIEN, modern ist alles andere.
@@ -29,9 +74,8 @@
   --color-b-screen: #1a1028;
   --color-b-dim: #a48ec4;
 
-  --font-disp: 'Arial Narrow', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --font-hand: 'Bradley Hand', 'Marker Felt', 'Segoe Script', cursive;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans: 'Archivo', system-ui, sans-serif;
+  --font-hand: 'Caveat', cursive;
 
   /* --- Bausteine der Bedienung (Designpunkt 10) ---------------------------
      Gilt fuer die moderne Bedienung, NICHT fuer die Materialien (Kassette,
@@ -63,9 +107,39 @@ body {
      Rand ausserhalb von max-w-xl) soll warm wirken, nicht neutral-schwarz. */
   background: #181615;
   color: var(--color-a-label);
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+}
+
+/* Wortmarke: Archivo 700, Breite 75, Laufweite +0.01em (bei -0.02em
+   beruehren sich A und P), Zeilenhoehe 0.84, Grossbuchstaben. */
+@utility wortmarke {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-stretch: 75%;
+  letter-spacing: 0.01em;
+  line-height: 0.84;
+  text-transform: uppercase;
+}
+
+/* Display-Schrift (Ueberschriften, Bandsorte, A/B): Archivo 700, Breite 87.5.
+   Frueher eine eigene Familie (Arial Narrow), jetzt Gewicht und Breite. */
+@utility font-disp {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-stretch: 87.5%;
+}
+
+/* Ueberschriften im Satz: gleiche Schrift und Breite wie font-disp. */
+@utility heading {
+  font-weight: 700;
+  font-stretch: 87.5%;
+}
+
+/* Zahlen (Track, Uhrzeit, Zaehler): gleich breite Ziffern statt eigener Mono-Schrift. */
+@utility num {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Frueher stand hier `button { font: inherit; }` — ausserhalb jeder
@@ -228,16 +302,6 @@ body {
 .label-b {
   background: linear-gradient(180deg, rgba(43, 26, 66, 0.72), rgba(43, 26, 66, 0.92));
   box-shadow: 0 0 0 1px rgba(201, 175, 239, 0.3) inset;
-}
-
-.font-hand {
-  font-family: var(--font-hand);
-}
-.font-disp {
-  font-family: var(--font-disp);
-}
-.font-mono {
-  font-family: var(--font-mono);
 }
 
 /* --- Fotoabzug ------------------------------------------------------------

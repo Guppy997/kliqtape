@@ -4,7 +4,8 @@ import { createCassette, fetchCassettes, setCassetteColorIndex, type Cassette } 
 import { useApp } from '@/store/appStore';
 import { useBottomNav } from '@/store/navStore';
 import { useViewMode } from '@/store/viewStore';
-import { assignPairs, lookFor, PAIR_COUNT } from '@/lib/cassetteLook';
+import { assignPairs, lookFor } from '@/lib/cassetteLook';
+import BandPicker from './BandPicker';
 import CassetteInfo from './CassetteInfo';
 import { CassetteFacePreview } from './CassetteHeader';
 import NavButton from './NavButton';
@@ -211,7 +212,7 @@ export default function CassetteDeck() {
             </button>
 
             <div>
-              <p className="text-lg font-semibold" style={{ color: 'var(--ink)' }}>
+              <p className="text-lg heading" style={{ color: 'var(--ink)' }}>
                 Wie soll das Band heißen?
               </p>
               <p className="mt-1 text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -236,34 +237,7 @@ export default function CassetteDeck() {
               <p className="text-2xs" style={{ color: 'var(--dim)' }}>
                 Bandsorte {newLook == null && '· ohne Auswahl automatisch'}
               </p>
-              <div className="grid grid-cols-4 gap-2">
-                {Array.from({ length: PAIR_COUNT }, (_, idx) => {
-                  const { case: c } = lookFor('neu', idx);
-                  const chosen = newLook === idx;
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setNewLook(chosen ? null : idx)}
-                      aria-pressed={chosen}
-                      className="flex flex-col items-center gap-1.5 rounded-xl p-2"
-                      style={{
-                        background: 'var(--card)',
-                        border: `1px solid ${chosen ? 'var(--accent)' : 'var(--line)'}`,
-                      }}
-                    >
-                      {/* Immer als Seite B gezeigt — nur dort tragen die Sorten
-                          ihre Muster, und genau darum geht es hier. Die Spuren
-                          stammen von einem festen Vorschau-Band, die Farben
-                          stimmen aber exakt mit dem spaeteren Ergebnis. */}
-                      <MiniCassette id="neu" pairIndex={idx} active side="b" label={newName.trim() || undefined} />
-                      <span className="text-center text-2xs" style={{ color: 'var(--dim)' }}>
-                        {c.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <BandPicker value={newLook} onChange={setNewLook} label={newName.trim() || undefined} />
             </div>
 
             {error && (
@@ -276,7 +250,7 @@ export default function CassetteDeck() {
               type="button"
               disabled={!newName.trim() || create.isPending}
               onClick={() => create.mutate()}
-              className="w-full rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-40"
+              className="w-full rounded-lg px-4 py-3 text-sm font-medium disabled:opacity-40"
               style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               Einlegen
@@ -361,7 +335,7 @@ export default function CassetteDeck() {
                 </span>
               </button>
 
-              <h3 className="mt-1 text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+              <h3 className="mt-1 text-xs heading" style={{ color: 'var(--dim)' }}>
                 Gruppen
               </h3>
 
@@ -593,7 +567,8 @@ function MiniLabelText({
           fontWeight="700"
           letterSpacing="0.02"
           fill={bandColor}
-          style={{ fontFamily: 'var(--font-disp)' }}
+          // Display-Schnitt laut Marke: Archivo 700, Breite 87.5
+          style={{ fontFamily: 'var(--font-sans)', fontStretch: '87.5%' }}
         >
           {band}
         </text>

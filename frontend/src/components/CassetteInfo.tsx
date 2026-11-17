@@ -19,6 +19,7 @@ import { useJump } from '@/store/jumpStore';
 import Avatar, { useProfiles } from './Avatar';
 import CassetteChallengeSettings from './CassetteChallengeSettings';
 import InviteLinkButton from './InviteLinkButton';
+import Cassette3D from './Cassette3D';
 import { CassetteFacePreview } from './CassetteHeader';
 import AlbumExport from './AlbumExport';
 import ReportForm from './ReportForm';
@@ -193,18 +194,20 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
 
       {/* ---- Kopf: Kassette, Name, Eckdaten ------------------------------ */}
       <div className="flex flex-col items-center gap-3 text-center">
-        <span style={{ filter: 'drop-shadow(0 0.6rem 1.2rem rgba(0,0,0,.45))' }}>
-          <CassetteFacePreview
-            side="a"
-            cassetteId={cassette.id}
-            pairIndex={pairIndex}
-            label={cassette.name}
-            count={cassette.sideA + cassette.sideB}
-            currentTape={null}
-            createdAt={cassette.createdAt}
-            width={188}
-          />
-        </span>
+        {/* Die Kassette als Gegenstand, wie im Fach und auf der Website. */}
+        <Cassette3D
+          cassetteId={cassette.id}
+          pairIndex={pairIndex}
+          label={cassette.name}
+          corner={`Position ${(cassette.sideA + cassette.sideB).toString().padStart(3, '0')}`}
+          age={ageStageOf(cassette.createdAt)}
+          width={250}
+          rotateX={-12}
+          rotateY={-16}
+          rotateZ={-3}
+          ground
+          className="my-2"
+        />
 
         {editing ? (
           <form
@@ -227,7 +230,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
             <button
               type="submit"
               disabled={!name.trim() || doRename.isPending}
-              className="rounded-lg px-3 text-sm font-semibold disabled:opacity-40"
+              className="rounded-lg px-3 text-sm font-medium disabled:opacity-40"
               style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               OK
@@ -235,7 +238,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
           </form>
         ) : (
           <div className="flex items-center gap-2">
-            <h2 className="text-xl leading-tight font-semibold" style={{ color: 'var(--ink)' }}>
+            <h2 className="text-xl leading-tight heading" style={{ color: 'var(--ink)' }}>
               {cassette.name}
             </h2>
             <button
@@ -331,7 +334,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
 
       {/* ---- Mitglieder und Einladen ------------------------------------- */}
       <section className="flex flex-col gap-1.5">
-        <h3 className="mb-1 text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+        <h3 className="mb-1 text-xs heading" style={{ color: 'var(--dim)' }}>
           {members.length} {members.length === 1 ? 'Person' : 'Leute'} auf dem Band
         </h3>
 
@@ -362,7 +365,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
               <path d="M7 1v12M1 7h12" />
             </svg>
           </span>
-          <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+          <span className="text-sm font-medium" style={{ color: 'var(--accent)' }}>
             Jemanden einladen
           </span>
         </button>
@@ -401,7 +404,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
                 <span className="min-w-0 flex-1 truncate text-sm" style={{ color: 'var(--ink)' }}>
                   {n}
                 </span>
-                <span aria-hidden="true" className="text-base font-semibold" style={{ color: 'var(--accent)' }}>
+                <span aria-hidden="true" className="text-base font-medium" style={{ color: 'var(--accent)' }}>
                   +
                 </span>
               </button>
@@ -480,7 +483,7 @@ export default function CassetteInfo({ cassette, pairIndex, startInviting = fals
 
       {/* ---- Aus dem Band etwas machen ------------------------------------ */}
       <section className="flex flex-col gap-1.5">
-        <h3 className="mb-1 text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+        <h3 className="mb-1 text-xs heading" style={{ color: 'var(--dim)' }}>
           Zum Mitnehmen
         </h3>
         <button
@@ -728,7 +731,7 @@ function AgingStrip({ cassette, pairIndex }: { cassette: Cassette; pairIndex?: n
   ];
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+      <h3 className="text-xs heading" style={{ color: 'var(--dim)' }}>
         Das Band altert mit
       </h3>
       <div className="grid grid-cols-4 gap-2">

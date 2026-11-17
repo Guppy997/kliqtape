@@ -126,7 +126,7 @@ export default function Composer({ onPosted }: Props) {
   const choices = CHOICES.filter((c) => (side === 'b' ? c.kind !== 'text' : c.kind !== 'voice'));
   const pageOpen = step === 'choose';
   // Liegt irgendeine Vollbild-Ebene mit X darueber (Glocke, Einstellungen …),
-  // steht das Plus darunter mit auf X und dreht beim Schliessen zurueck.
+  // steht das Plus darunter mit auf X und dreht beim Schliessen weiter zum Plus.
   const covered = useCoverStore((s) => s.count > 0);
 
   return (
@@ -145,8 +145,8 @@ export default function Composer({ onPosted }: Props) {
         style={{ color: 'var(--ink)' }}
       >
         {/* Liegt beim Oeffnen unter der Uebersicht (oder einer anderen Ebene mit
-            X) und steht dort schon auf X — beim Schliessen dreht es sichtbar
-            zurueck zum Plus. */}
+            X) und steht dort schon auf X — beim Schliessen dreht es sichtbar weiter
+            zum Plus, im Uhrzeigersinn wie eine Spule. */}
         <PlusMark turned={pageOpen || covered} />
       </button>
 
@@ -189,7 +189,7 @@ export default function Composer({ onPosted }: Props) {
                 <TypeIcon type={week.type} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                <span className="block text-sm font-medium" style={{ color: 'var(--ink)' }}>
                   Challenge der Woche
                 </span>
                 <span className="block text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -217,7 +217,7 @@ export default function Composer({ onPosted }: Props) {
                 <KindIcon kind={c.kind} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                <span className="block text-sm font-medium" style={{ color: 'var(--ink)' }}>
                   {c.label}
                 </span>
                 <span className="block text-2xs leading-relaxed" style={{ color: 'var(--dim)' }}>
@@ -347,7 +347,7 @@ export default function Composer({ onPosted }: Props) {
               type="button"
               onClick={() => post('text', { body: text.trim(), noteStyle })}
               disabled={busy || !text.trim()}
-              className="flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+              className="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50"
               style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               Aufs Band

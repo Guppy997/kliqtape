@@ -26,6 +26,9 @@ ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./
+# Schriften fuer die PDFs (scripts/fonts.sh); fonts.ts sucht sie zwei Ebenen
+# ueber dist/print, also unter /app/assets.
+COPY assets ./assets
 
 RUN mkdir -p /data /media && chown -R node:node /data /media
 USER node

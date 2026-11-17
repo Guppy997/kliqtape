@@ -34,7 +34,7 @@ export default function SideSwitch() {
             }}
             // w-11: volle 44 pt Breite, damit sich die Tippflaechen der beiden
             // Segmente nicht ueberlappen; .hit ergaenzt nur die Hoehe.
-            className="hit grid h-8 w-11 place-items-center rounded-full text-sm font-semibold transition-colors"
+            className="hit grid h-8 w-11 place-items-center rounded-full text-sm font-medium transition-colors"
             style={{
               background: on ? 'var(--accent)' : 'transparent',
               color: on ? 'var(--on-accent)' : 'var(--dim)',

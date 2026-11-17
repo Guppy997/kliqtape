@@ -1,6 +1,6 @@
 {
   "name": "kliqtape-frontend",
-  "version": "0.61.1",
+  "version": "0.63.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,6 +16,7 @@
     "@tanstack/react-query": "^5.60.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "three": "^0.187.0",
     "zustand": "^5.0.1"
   },
   "devDependencies": {
@@ -23,6 +24,7 @@
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
+    "@types/three": "^0.187.0",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^10.12.0",
     "eslint-plugin-react-hooks": "^7.1.1",
