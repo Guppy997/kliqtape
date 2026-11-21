@@ -11,6 +11,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.64.1',
+    date: '2026-11-21',
+    changes: [
+      'Sicherheit: Eine präparierte Anfrage konnte den Server zum Absturz bringen. Der Server nimmt gepackte Daten jetzt gar nicht mehr an, und die betroffenen Bausteine sind aktualisiert',
+    ],
+  },
+  {
     version: '0.64.0',
     date: '2026-11-21',
     changes: [
