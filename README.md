@@ -26,20 +26,25 @@ ohne Zahlen.
 Echte Screens aus dem Prototyp (v0.64.0) mit den Testdaten aus `scripts/seed.py`. Die Leute sind
 erfunden, die Fotos stammen von [Pexels](https://www.pexels.com/license/).
 
+<!-- Nach Kassetten geordnet: erst die rote „Alle Freunde“ (aufgeklappt und Seite A),
+     dann die lila „Die Kliqe“ mit Seite A direkt neben Seite B. -->
 <p align="center">
-  <img src="docs/screenshots/feed-a.webp" width="200" alt="Seite A der Kassette „Alle Freunde“: Miras Zettel zur neuen Wohnung und Tareks Fotoabzug mit Umzugskartons">
   <img src="docs/screenshots/deck.webp" width="200" alt="Die eingelegte Kassette „Alle Freunde“ groß aufgeklappt, mit Etikett und Spulen">
+  <img src="docs/screenshots/feed-a.webp" width="200" alt="Seite A der Kassette „Alle Freunde“: Miras Zettel zur neuen Wohnung und Tareks Fotoabzug mit Umzugskartons">
+  <img src="docs/screenshots/kliqe-a.webp" width="200" alt="Seite A der Kassette „Die Kliqe“: nächtlicher Fotoabzug und ein Zettel als Kassetten-Etikett">
   <img src="docs/screenshots/chat-b.webp" width="200" alt="Seite B der Kassette „Die Kliqe“ im Atomic-Purple-Look: der Gruppenchat mit O-Ton">
-  <img src="docs/screenshots/fach.webp" width="200" alt="Das Fach mit vier Kassetten in eigenen Bandsorten">
 </p>
+
+<p align="center"><sub>„Alle Freunde“: aufgeklappt · Seite A  ·  „Die Kliqe“: Seite A · Seite B</sub></p>
+
 <p align="center">
+  <img src="docs/screenshots/fach.webp" width="200" alt="Das Fach mit vier Kassetten in eigenen Bandsorten">
   <img src="docs/screenshots/hotline-list.webp" width="200" alt="Die Hot Line mit neun Gesprächen, vier davon mit neuen Nachrichten">
-  <img src="docs/screenshots/kliqe-a.webp" width="200" alt="Seite A der Kliqe: nächtlicher Fotoabzug und ein Zettel als Kassetten-Etikett">
   <img src="docs/screenshots/mixtape-open.webp" width="200" alt="Ein versiegeltes Mixtape „Für den Heimweg“ mit Cover, Widmung und Titelliste">
   <img src="docs/screenshots/regal.webp" width="200" alt="Das eigene Profil mit Regal: eigenes Tape und gesammelte Kassette">
 </p>
 
-Seite A · Kassette · Seite B · Fach · Hot Line · Zettel als Etikett · Mixtape · Regal
+<p align="center"><sub>Fach · Hot Line · Mixtape · Regal</sub></p>
 
 ## Plattform und Betrieb
 
