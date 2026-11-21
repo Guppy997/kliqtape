@@ -58,6 +58,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
   const pendingQuote = useQuote((s) => s.pending);
   const setPendingQuote = useQuote((s) => s.setPending);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  // Ob man gerade am Ende des Verlaufs ist (siehe stickToEnd). Startet true:
+  // ein Gespraech oeffnet immer bei der neuesten Nachricht.
+  const pinnedRef = useRef(true);
   const composerRef = useRef<HTMLDivElement | null>(null);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -121,15 +125,41 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
     const jump = useJump.getState().postId;
     if (variant === 'cassette' && jump && chat.messages.some((m) => m.id === jump)) {
       useJump.getState().setJump(null);
+      // Nicht gleich wieder ans Ende ziehen, wenn danach Bilder nachladen.
+      pinnedRef.current = false;
       requestAnimationFrame(() => jumpTo(jump));
       return;
     }
+    pinnedRef.current = true;
     bottomRef.current?.scrollIntoView({ block: 'end' });
     // Bewusst nur an der Anzahl: das Polling auf Seite B liefert alle paar
     // Sekunden ein neues Array — haengt der Effekt daran, springt der Chat jedes Mal
     // ans Ende, auch wenn man gerade weiter oben liest.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.messages.length, variant]);
+
+  // Wer hochscrollt, will lesen: dann nicht mehr ans Ende ziehen. Hot Line
+  // scrollt in der eigenen Liste, Seite B scrollt die ganze Seite. Scroll-
+  // Ereignisse blubbern nicht, deshalb im Capture am Dokument lauschen.
+  useEffect(() => {
+    const onScroll = () => {
+      const end = bottomRef.current;
+      const list = listRef.current;
+      if (!end || !list) return;
+      const visibleBottom = variant === 'hotline' ? list.getBoundingClientRect().bottom : window.innerHeight;
+      pinnedRef.current = end.getBoundingClientRect().top - visibleBottom < 160;
+    };
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener('scroll', onScroll, { capture: true });
+  }, [variant]);
+
+  /** Fotos und Videos laden erst nach dem Sprung ans Ende und schieben es dann
+   *  wieder aus dem Bild. Passte vorher alles auf den Schirm, wurde gar nicht
+   *  gescrollt, und das Gespraech stand nach dem Laden oben beim Aeltesten.
+   *  Solange niemand hochgescrollt hat, deshalb nach jedem Medium nachziehen. */
+  function stickToEnd() {
+    if (pinnedRef.current) bottomRef.current?.scrollIntoView({ block: 'end' });
+  }
 
   function insertEmoji(e: string) {
     setText((t) => (t + e).slice(0, maxLen));
@@ -264,6 +294,10 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
 
   const messageList = (
     <div
+      ref={listRef}
+      // load/loadedmetadata blubbern nicht, im Capture kommen sie aber an.
+      onLoadCapture={stickToEnd}
+      onLoadedMetadataCapture={stickToEnd}
       className={
         variant === 'hotline'
           ? 'flex flex-1 flex-col gap-1 overflow-y-auto py-3'

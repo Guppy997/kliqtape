@@ -68,6 +68,24 @@ describe('Eigene Tapes', () => {
     expect(ok.body).toMatchObject({ kind: 'text', body: 'Erster Abend am See', noteStyle: 'pin' });
   });
 
+  it('Etikett ist eine erlaubte Zettel-Optik, Unbekanntes nicht', async () => {
+    const ok = await api('POST', `/api/me/tapes/${tape}/items`, 'anna', {
+      me: ANNA,
+      kind: 'text',
+      body: 'Wasser 19 Grad',
+      noteStyle: 'label',
+    });
+    expect(ok.status).toBe(201);
+    expect(ok.body).toMatchObject({ noteStyle: 'label' });
+    const bad = await api('POST', `/api/me/tapes/${tape}/items`, 'anna', {
+      me: ANNA,
+      kind: 'text',
+      body: 'Wasser 19 Grad',
+      noteStyle: 'serviette',
+    });
+    expect(bad.status).toBe(400);
+  });
+
   it('Fremder darf keinen Eintrag entfernen', async () => {
     const { itemId, mediaId } = await addPhoto(tape);
     expect((await api('DELETE', `/api/me/tapes/${tape}/items/${itemId}?me=${BEN}`, 'ben')).status).toBe(404);

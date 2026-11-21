@@ -11,9 +11,9 @@ export function apiFetch(url: string, options: RequestInit = {}): Promise<Respon
 }
 
 export type Kind = 'text' | 'photo' | 'video' | 'voice' | 'tape';
-/** Wie ein Zettel "befestigt" ist. */
-export type NoteStyle = 'tape' | 'pin' | 'staple' | 'clip' | 'fold';
-export const NOTE_STYLES: NoteStyle[] = ['tape', 'pin', 'staple', 'clip', 'fold'];
+/** Wie ein Zettel "befestigt" ist ('label' = Kassetten-Etikett). */
+export type NoteStyle = 'tape' | 'pin' | 'staple' | 'clip' | 'fold' | 'label';
+export const NOTE_STYLES: NoteStyle[] = ['tape', 'pin', 'staple', 'clip', 'fold', 'label'];
 
 /** Anzeigenamen der Beitragsarten. Bewusst aus der Analogwelt. */
 export const KIND_LABEL: Record<Kind, string> = {

@@ -75,7 +75,8 @@ export default function BottomBar({ onHome }: Props) {
               <path d="M6.3 6h3.4" />
             </svg>
           }
-          label="Band"
+          // "Kassette" statt "Band": "Band" las sich wie eine Musikgruppe.
+          label="Kassette"
           active={isHome}
           onClick={onHome}
         />

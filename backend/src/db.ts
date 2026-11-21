@@ -541,7 +541,7 @@ addColumn('cassettes', 'color_seed', 'color_seed TEXT', 'manueller Override fuer
 addColumn('reactions', 'media_id', 'media_id TEXT REFERENCES media(id)', 'Tonfetzen — kurze Sprachreaktion');
 // Optik des Zettels: wie er "befestigt" ist. Null (alte Zettel) faellt beim
 // Rendern auf 'tape' zurueck, kein Backfill noetig.
-addColumn('posts', 'note_style', 'note_style TEXT', 'Zettel-Optik (Tesa, Pin, Tacker, Klammer, Eselsohr)');
+addColumn('posts', 'note_style', 'note_style TEXT', 'Zettel-Optik (Tesa, Pin, Tacker, Klammer, Eselsohr, Etikett)');
 // Direkte, feste Wahl einer der 6 Bandsorten (0-5) beim Anlegen — anders als
 // color_seed (ein Hash-Eingabewert fuers automatische Kollisions-Vermeiden)
 // zeigt das IMMER genau diese Sorte, ohne Zufall. Null = weiterhin automatisch
