@@ -21,6 +21,28 @@ Jede Kassette hat zwei Seiten:
 Ein Tipp auf den A|B-Schalter oben dreht die Kassette um. Chronologisch, ohne Algorithmus, ohne Werbung,
 ohne Zahlen.
 
+## So sieht es aus
+
+Echte Screens aus dem Prototyp (v0.64.0) mit den Testdaten aus `scripts/seed.py`. Die Leute sind
+erfunden, die Fotos stammen von [Pexels](https://www.pexels.com/license/).
+
+<p align="center">
+  <img src="docs/screenshots/feed-a.webp" width="200" alt="Seite A der Kassette „Alle Freunde“: Miras Zettel zur neuen Wohnung und Tareks Fotoabzug mit Umzugskartons">
+  <img src="docs/screenshots/deck.webp" width="200" alt="Die eingelegte Kassette „Alle Freunde“ groß aufgeklappt, mit Etikett und Spulen">
+  <img src="docs/screenshots/chat-b.webp" width="200" alt="Seite B der Kassette „Die Kliqe“ im Atomic-Purple-Look: der Gruppenchat mit O-Ton">
+  <img src="docs/screenshots/fach.webp" width="200" alt="Das Fach mit vier Kassetten in eigenen Bandsorten">
+</p>
+<p align="center">
+  <img src="docs/screenshots/hotline-list.webp" width="200" alt="Die Hot Line mit neun Gesprächen, vier davon mit neuen Nachrichten">
+  <img src="docs/screenshots/kliqe-a.webp" width="200" alt="Seite A der Kliqe: nächtlicher Fotoabzug und ein Zettel als Kassetten-Etikett">
+  <img src="docs/screenshots/mixtape-open.webp" width="200" alt="Ein versiegeltes Mixtape „Für den Heimweg“ mit Cover, Widmung und Titelliste">
+  <img src="docs/screenshots/regal.webp" width="200" alt="Das eigene Profil mit Regal: eigenes Tape und gesammelte Kassette">
+</p>
+
+Seite A · Kassette · Seite B · Fach · Hot Line · Zettel als Etikett · Mixtape · Regal
+
+## Plattform und Betrieb
+
 **Plattform:** Dieser Prototyp ist eine **PWA** (React + Vite, im Browser und als installierte
 Web-App). Die **Zielplattform ist React Native** — der Web-Client hier dient dazu, das Konzept
 anfassbar zu machen und mit echten Freundeskreisen zu testen, er ist nicht die Endarchitektur.
@@ -118,19 +140,26 @@ python3 scripts/seed.py --reset          # anlegen (vorher aufräumen)
 python3 scripts/seed.py --reset --me Max # anderer Hauptnutzer
 ```
 
-Legt fünf Leute mit Profilbildern an und erzeugt **drei Kassetten mit
-unterschiedlichen Besetzungen** — Alle Freunde, Freitagsrunde, Die Kliqe —, damit
-sichtbar wird, dass sich die Kreise nicht vermischen. Füllt beide Seiten mit Zetteln,
-Schnappschüssen und O-Tönen, baut drei Mixtapes (eines geschenkt, eines geteilt, eines
-als Entwurf), setzt Reaktionen und legt zwei Hotlines auf den Anrufbeantworter.
+Erzählt eine kleine, zusammenhängende Geschichte statt Zufallsinhalt: Mira zieht um. Zehn
+Leute, **vier Kassetten mit unterschiedlichen Besetzungen** (Alle Freunde, Familie,
+Freitagsrunde, Die Kliqe), damit sichtbar wird, dass sich die Kreise nicht vermischen. Dazu
+Zettel in fünf Arten, Schnappschüsse, O-Töne, vier Mixtapes (geschenkt, geteilt, per Hot Line
+geschickt, als Entwurf), Tonfetzen, neun Hot-Line-Verläufe mit Fotos, O-Tönen und einem
+Mixtape, ein eigenes Tape und eine gesammelte Kassette im Regal. Jede Kassette hat eine feste
+Bandsorte aus den Kernfarben. Genau diese Daten zeigen auch die Screens oben und auf der Website.
+
 Danach in der App als **Aaron** anmelden — das Skript gibt am Ende den Zugangscode aus.
 Die Codes aller Testpersonen merkt es sich in `scripts/.seed-tokens.json` (nicht im Repo),
 damit `--reset` sie wieder löschen kann. Ist der Name auf dem Server schon vergeben:
 `--me-token <Zugangscode>`.
 
-Bilder werden mit Pillow erzeugt, Ton als echtes WAV — beides muss abspielbar
-sein, weil der O-Ton-Spieler das Audio tatsächlich dekodiert.
-Voraussetzung: Pillow, z. B. in einer venv: `python3 -m venv .venv && .venv/bin/pip install Pillow`.
+**Fotos:** echte Stockfotos von Pexels ([Pexels-Lizenz](https://www.pexels.com/license/)),
+nur als ID im Skript. Beim ersten Lauf lädt es sie herunter und legt sie in
+`scripts/.cache/photos` ab (nicht im Repo), danach geht es offline. Die Profilbilder der
+Freunde sind Ausschnitte aus derselben Fotoserie wie das Gruppenfoto, es sind also wirklich
+dieselben Leute. Ton entsteht als echtes WAV, weil der O-Ton-Spieler das Audio tatsächlich
+dekodiert. Voraussetzung: Pillow zum Zuschneiden, z. B. in einer venv:
+`python3 -m venv .venv && .venv/bin/pip install Pillow`.
 
 **Clips fehlen in den Testdaten** — dafür bräuchte es ffmpeg. Videos lassen sich
 in der App direkt mit der Kamera aufnehmen.
