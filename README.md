@@ -31,11 +31,20 @@ dort aus skaliert — wie ein normaler Social-Media-Server. Das ist der Standard
 Nutzer:innen legen keinen eigenen Server an, sie melden sich einfach an. Zielgruppe sind
 alle, nicht nur Leute, die selbst hosten würden.
 
-**Selbstbetrieb ist trotzdem erlaubt.** Der Code steht unter AGPL-3.0, Vereine,
-Hochschulgruppen oder andere Communities dürfen also eine eigene Instanz betreiben. Ein
-dokumentiertes Paket dafür ist geplant. Kliqtape ist bewusst **nicht föderiert**: Eine eigene
-Instanz steht für sich und ist nicht mit der zentralen verbunden. Sie braucht einen **eigenen
-Namen und ein eigenes Logo** (siehe [TRADEMARKS.md](TRADEMARKS.md)).
+**Selbstbetrieb ist ausdrücklich erwünscht.** Der Code steht unter AGPL-3.0. Vereine,
+Hochschulgruppen, Familien oder andere Communities können einen eigenen Kliqtape-Server
+betreiben, auf einem gemieteten Server oder sogar auf einem Raspberry Pi. Die offizielle App
+verbindet sich dann wahlweise mit dem zentralen oder mit dem eigenen Server. So behält eine
+Community ihre Daten komplett selbst und muss trotzdem keine eigene App bauen. Ein
+dokumentiertes Paket dafür und die Server-Auswahl in der App kommen mit der nativen App.
+
+Jeder Server steht für sich: Eine Kassette liegt auf genau einem Server, Server tauschen keine
+Daten untereinander aus. Für kleine, private Runden ist das einfacher und sicherer als eine
+Föderation. Ausgeschlossen ist sie damit nicht, sie kann später dazukommen.
+
+Geschützt ist nur die **Marke**: Ein eigener Server darf sich nicht als das offizielle Kliqtape
+ausgeben, und wer den Code verändert und eine eigene App daraus macht, gibt ihr einen eigenen
+Namen und ein eigenes Logo (siehe [TRADEMARKS.md](TRADEMARKS.md)).
 
 Das `docker-compose.yml` in diesem Repo ist derzeit die **Entwicklungs- und Beta-Umgebung**
 (inklusive optionalem Tailscale-Sidecar für den Zugriff im eigenen Tailnet), nicht das
@@ -202,8 +211,8 @@ Code gelten, steht in [CONTRIBUTING.md](CONTRIBUTING.md). Sicherheitslücken bit
 Der Code steht unter der [AGPL-3.0](LICENSE). Du darfst ihn nutzen, verändern und selbst
 betreiben. Wer veränderten Code als Dienst anbietet, muss seinen Quellcode ebenfalls offenlegen.
 
-**Name und Logo sind davon ausgenommen.** „Kliqtape“, die Wortmarke und das Kassetten-Icon
-dürfen nicht für eigene Instanzen oder Forks verwendet werden. Bitte gib deiner Instanz einen
-eigenen Namen. Ein Hinweis wie „basiert auf Kliqtape“ ist willkommen. Details stehen in
-[`TRADEMARKS.md`](TRADEMARKS.md), die Brand-Dateien liegen in [`brand/`](brand/) und stehen
-nicht unter der AGPL.
+**Name und Logo sind davon ausgenommen.** Wer einen eigenen Server mit der offiziellen App
+betreibt, braucht dafür nichts weiter. Nur Forks mit eigener App bekommen einen eigenen Namen
+und ein eigenes Logo, und kein Angebot darf den Eindruck erwecken, das offizielle Kliqtape zu
+sein. Details stehen in [`TRADEMARKS.md`](TRADEMARKS.md), die Brand-Dateien liegen in
+[`brand/`](brand/) und stehen nicht unter der AGPL.
