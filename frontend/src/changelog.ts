@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.64.0',
+    date: '2026-11-21',
+    changes: [
+      'Zettel sehen aus wie hingeworfen: jeder liegt etwas anders, Tesa, Pin, Klammer und Tacker sitzen jedes Mal woanders, das Papier hat Struktur',
+      'Neu: Etikett als sechste Zettel-Art, mit dem Farbstreifen deiner Kassette. Pin ist jetzt ein Klebezettel, Tacker eine Notizbuchseite',
+      'Unten heißt „Band“ jetzt „Kassette“, und statt deines Profilbilds steht dort ein Profil-Symbol',
+      'Gespräche öffnen immer bei der neuesten Nachricht, auch wenn noch Fotos laden',
+      'Story und Kliqtape-Kanal: das X führt zurück ins Fach',
+    ],
+  },
+  {
     version: '0.63.0',
     date: '2026-11-18',
     changes: [

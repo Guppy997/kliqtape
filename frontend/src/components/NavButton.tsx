@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 interface Props {
   icon: ReactNode;
   label: string;
-  /** Nur Symbol, ohne sichtbare Beschriftung (Profil: das eigene Bild spricht
-   *  fuer sich, wie bei Instagram). Die Beschriftung bleibt als aria-label. */
+  /** Nur Symbol, ohne sichtbare Beschriftung. Die Beschriftung bleibt als
+   *  aria-label. Derzeit ungenutzt: auch Profil hat jetzt Symbol + Text. */
   hideLabel?: boolean;
   /** Kleine Zahl oben rechts am Icon — weggelassen (nicht 0), wenn nichts ansteht. */
   badge?: number;

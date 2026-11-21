@@ -303,8 +303,9 @@ export default function Composer({ onPosted }: Props) {
           />
 
           {/* Wie der Zettel "befestigt" ist — jede Kachel eine verkleinerte
-              echte Vorschau, antippen waehlt den Stil. */}
-          <div className="flex justify-between gap-1.5">
+              echte Vorschau, antippen waehlt den Stil. Sechs Arten passen am
+              Handy nicht in eine Reihe, deshalb zwei Reihen zu je drei. */}
+          <div className="grid grid-cols-3 gap-1.5">
             {NOTE_STYLES.map((s) => (
               <button
                 key={s}

@@ -290,7 +290,8 @@ export default function CassetteDeck() {
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode('story');
+                  // Das X der Story fuehrt zurueck ins Fach, nicht aufs Band.
+                  setViewMode('story', 'eject');
                   setActiveNav(null);
                 }}
                 className="flex items-center gap-3 rounded-xl p-2.5 text-left"
@@ -318,7 +319,7 @@ export default function CassetteDeck() {
               <button
                 type="button"
                 onClick={() => {
-                  setViewMode('news');
+                  setViewMode('news', 'eject');
                   setActiveNav(null);
                 }}
                 className="flex items-center gap-3 rounded-xl p-2.5 text-left"

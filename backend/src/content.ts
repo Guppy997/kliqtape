@@ -10,8 +10,9 @@ export const MEDIA_KINDS: Kind[] = ['photo', 'video', 'voice'];
 export const STORY_KINDS: StoryKind[] = ['photo', 'video'];
 export const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
 export const NEWS_KINDS: NewsKind[] = ['text', 'photo', 'video'];
-/** Wie ein Zettel "befestigt" ist — nur fuer kind === 'text' relevant. */
-export const NOTE_STYLES = ['tape', 'pin', 'staple', 'clip', 'fold'] as const;
+/** Wie ein Zettel "befestigt" ist — nur fuer kind === 'text' relevant.
+ *  'label' ist das Kassetten-Etikett (Streifen in der Farbe der Bandsorte). */
+export const NOTE_STYLES = ['tape', 'pin', 'staple', 'clip', 'fold', 'label'] as const;
 export type NoteStyle = (typeof NOTE_STYLES)[number];
 
 /** Anzahl Bandsorten, dupliziert aus frontend/src/lib/cassetteLook.ts

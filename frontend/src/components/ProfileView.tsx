@@ -36,17 +36,27 @@ export default function ProfileView() {
 
   return (
     <>
+      {/* Strich-Symbol mit Beschriftung wie Eject, Band und Hot Line. Frueher
+          das eigene Profilbild: ein Foto zwischen Strich-Symbolen wirkte wie
+          ein Fremdkoerper. Kein Zahnrad, weil der Reiter die Sammlung
+          oeffnet; die Einstellungen liegen dort hinter dem Zahnrad. */}
       <NavButton
         icon={
-          <span
-            className="block rounded-full"
-            style={{ boxShadow: open ? '0 0 0 1.5px var(--accent)' : '0 0 0 1px var(--line)' }}
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 15 15"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            aria-hidden="true"
           >
-            <Avatar name={me} side={side} size={1.75} />
-          </span>
+            <circle cx="7.5" cy="4.6" r="3" />
+            <path d="M1.75 14c0-3.1 2.6-5.4 5.75-5.4s5.75 2.3 5.75 5.4" />
+          </svg>
         }
         label="Profil"
-        hideLabel
         active={open}
         onClick={() => setActiveNav('profile')}
       />

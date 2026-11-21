@@ -288,7 +288,8 @@ export default function PrivateTapeView({
             className="resize-none rounded-lg p-3 text-[0.95rem] outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
-          <div className="flex justify-between gap-1.5">
+          {/* Sechs Arten: zwei Reihen zu je drei, wie beim Zettel in der Runde. */}
+          <div className="grid grid-cols-3 gap-1.5">
             {NOTE_STYLES.map((s) => (
               <button
                 key={s}

@@ -189,7 +189,7 @@ function Deck() {
   const navActive = useBottomNav((s) => s.active);
   const setActiveNav = useBottomNav((s) => s.setActive);
   const viewMode = useViewMode((s) => s.viewMode);
-  const setViewMode = useViewMode((s) => s.setViewMode);
+  const closeView = useViewMode((s) => s.closeView);
   /** Klappt die grosse Kassette aus. Nur auf Tipp — beim Ankommen und beim
    *  Seitenwechsel bleibt sie zu, die App startet ruhig (Seite wechselt der
    *  A|B-Schalter, siehe SideSwitch.tsx). */
@@ -757,8 +757,10 @@ function Deck() {
 
       <LetterRedeemer />
       <ReminderPrompt />
-      <StoryView open={viewMode === 'story'} onClose={() => setViewMode('cassette')} />
-      <NewsView open={viewMode === 'news'} onClose={() => setViewMode('cassette')} />
+      {/* Das X fuehrt dorthin zurueck, wo die Ansicht geoeffnet wurde
+          (aus dem Fach wieder ins Fach), sonst zur Kassette. */}
+      <StoryView open={viewMode === 'story'} onClose={closeView} />
+      <NewsView open={viewMode === 'news'} onClose={closeView} />
 
       <main
         ref={mainRef}
