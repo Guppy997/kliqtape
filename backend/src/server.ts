@@ -29,7 +29,11 @@ import { pushRouter, sendWeeklyReminders } from './routes/push.js';
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1); // Caddy sitzt davor — sonst zaehlt das Limit unten alle IPs als eine.
-app.use(express.json({ limit: '256kb' }));
+// inflate: false — die App schickt nie gepackte Bodies. Gepackte Bodies mit
+// Restbytes konnten body-parser < 1.20.9 nach der Antwort abstuerzen lassen
+// (GHSA-27r3-jxmh-p828); so werden sie gar nicht erst entpackt, sondern mit
+// 415 abgelehnt (onError unten).
+app.use(express.json({ limit: '256kb', inflate: false }));
 // Grosszuegig, nur als Netz gegen Missbrauch/Bugs, sobald die API nicht mehr
 // nur uebers Tailnet erreichbar ist — nicht als Schutz vor gezielten Angriffen gedacht.
 app.use(
@@ -68,13 +72,21 @@ app.use(pushRouter);
  * Der vierte Parameter ist Pflicht, sonst erkennt Express die Middleware nicht.
  * ---------------------------------------------------------------------- */
 const onError: ErrorRequestHandler = (err, _req, res, _next) => {
-  const status = err instanceof HttpError ? err.status : err?.type === 'entity.too.large' ? 413 : 500;
+  // Fehler von body-parser (zu gross, gepackt, kaputtes JSON) tragen ihren
+  // 4xx-Status selbst und sind Fehler der Anfrage, kein Serverfehler.
+  const clientStatus =
+    typeof err?.status === 'number' && err.status >= 400 && err.status < 500 && err.expose ? err.status : null;
+  const status = err instanceof HttpError ? err.status : (clientStatus ?? 500);
   const message =
-    status === 413
-      ? `Zu groß — maximal ${MAX_UPLOAD_MB} MB`
-      : err instanceof HttpError
-        ? err.message
-        : 'Unerwarteter Serverfehler';
+    err instanceof HttpError
+      ? err.message
+      : status === 413
+        ? `Zu groß — maximal ${MAX_UPLOAD_MB} MB`
+        : err?.type === 'encoding.unsupported'
+          ? 'Gepackte Daten werden nicht angenommen'
+          : status < 500
+            ? 'Ungültige Anfrage'
+            : 'Unerwarteter Serverfehler';
 
   if (status >= 500) console.error('[kliqtape]', err);
   res.status(status).json({ error: message });

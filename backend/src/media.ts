@@ -90,36 +90,42 @@ export function mediaInUse(mediaId: string): boolean {
 
 // Rohen Body statt multipart: der Client schickt genau einen Blob. Damit
 // sparen wir uns multer und eine weitere Abhaengigkeit.
-mediaRouter.post('/api/media', express.raw({ type: '*/*', limit: `${MAX_UPLOAD_MB}mb` }), (req, res) => {
-  // Vorher ohne jede Pruefung: wer die URL kannte, konnte beliebig Dateien
-  // auf die Platte schreiben. Ein gueltiger Zugangscode reicht — zu welcher
-  // Kassette das Medium gehoert, entscheidet erst der Beitrag, der es nutzt.
-  identityOf(req);
-  const mime = (req.get('content-type') ?? '').split(';')[0]?.trim() ?? '';
-  const ext = ALLOWED_MIME[mime];
-  if (!ext) throw new HttpError(415, `Medientyp nicht erlaubt: ${mime || 'unbekannt'}`);
+// inflate: false wie bei express.json in server.ts: gepackte Uploads werden
+// abgelehnt statt entpackt (GHSA-27r3-jxmh-p828).
+mediaRouter.post(
+  '/api/media',
+  express.raw({ type: '*/*', limit: `${MAX_UPLOAD_MB}mb`, inflate: false }),
+  (req, res) => {
+    // Vorher ohne jede Pruefung: wer die URL kannte, konnte beliebig Dateien
+    // auf die Platte schreiben. Ein gueltiger Zugangscode reicht — zu welcher
+    // Kassette das Medium gehoert, entscheidet erst der Beitrag, der es nutzt.
+    identityOf(req);
+    const mime = (req.get('content-type') ?? '').split(';')[0]?.trim() ?? '';
+    const ext = ALLOWED_MIME[mime];
+    if (!ext) throw new HttpError(415, `Medientyp nicht erlaubt: ${mime || 'unbekannt'}`);
 
-  const buf = req.body as Buffer;
-  if (!Buffer.isBuffer(buf) || buf.length === 0) {
-    throw new HttpError(400, 'Leerer Upload');
-  }
+    const buf = req.body as Buffer;
+    if (!Buffer.isBuffer(buf) || buf.length === 0) {
+      throw new HttpError(400, 'Leerer Upload');
+    }
 
-  const durationHeader = req.get('x-duration-ms');
-  const durationMs = durationHeader ? Number(durationHeader) : null;
+    const durationHeader = req.get('x-duration-ms');
+    const durationMs = durationHeader ? Number(durationHeader) : null;
 
-  const id = randomUUID();
-  writeFileSync(join(MEDIA_DIR, `${id}.${ext}`), buf);
+    const id = randomUUID();
+    writeFileSync(join(MEDIA_DIR, `${id}.${ext}`), buf);
 
-  db.prepare(`INSERT INTO media (id, mime, bytes, duration_ms, created_at) VALUES (?, ?, ?, ?, ?)`).run(
-    id,
-    mime,
-    buf.length,
-    Number.isFinite(durationMs) ? durationMs : null,
-    Date.now(),
-  );
+    db.prepare(`INSERT INTO media (id, mime, bytes, duration_ms, created_at) VALUES (?, ?, ?, ?, ?)`).run(
+      id,
+      mime,
+      buf.length,
+      Number.isFinite(durationMs) ? durationMs : null,
+      Date.now(),
+    );
 
-  res.status(201).json({ id, bytes: buf.length });
-});
+    res.status(201).json({ id, bytes: buf.length });
+  },
+);
 
 mediaRouter.get('/api/media/:id', (req, res) => {
   const row = db.prepare(`SELECT id, mime FROM media WHERE id = ?`).get(req.params.id) as
