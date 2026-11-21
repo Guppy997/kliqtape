@@ -5,8 +5,9 @@ Logo, Icon und Farbvarianten von Kliqtape.
 **Diese Dateien stehen nicht unter der AGPL-3.0.** Alle Rechte vorbehalten.
 Was erlaubt ist und was nicht, steht in [`TRADEMARKS.md`](../TRADEMARKS.md).
 
-Wer eine eigene Instanz oder einen Fork betreibt, entfernt diesen Ordner und verwendet einen
-eigenen Namen und ein eigenes Logo.
+Wer einen eigenen Server mit der offiziellen App betreibt, braucht diese Dateien nicht. Wer
+einen Fork mit eigener App baut, entfernt diesen Ordner und verwendet einen eigenen Namen und
+ein eigenes Logo.
 
 ## Inhalt
 

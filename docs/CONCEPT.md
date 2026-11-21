@@ -392,9 +392,12 @@ Jede fremde Verbindung wäre ein Datenleck.
 **Lizenz AGPL-3.0** — wer Kliqtape betreibt, muss seinen Quellcode offenlegen.
 
 **Betriebsmodell: zentral gehostet auf Hetzner als Standard, Selbstbetrieb erlaubt.**
-Nutzer:innen betreiben nichts selbst, sie melden sich an. Dank AGPL dürfen Communities aber
-eine eigene Instanz betreiben; ein dokumentiertes Paket dafür ist geplant. Eigene Instanzen
-stehen für sich, Föderation bleibt ausgeschlossen (siehe Abschnitt 11). Der Docker-Compose-Stack
+Nutzer:innen betreiben nichts selbst, sie melden sich an. Dank AGPL können Communities aber
+einen eigenen Server betreiben, auch auf einem Raspberry Pi; ein dokumentiertes Paket dafür ist
+geplant. Die offizielle App verbindet sich wahlweise mit dem zentralen oder einem eigenen Server,
+geschützt ist nur die Marke (TRADEMARKS.md). Jeder Server steht für sich und tauscht keine Daten
+mit anderen aus. Föderation ist für kleine, private Runden vorerst nicht nötig, bleibt aber als
+spätere Erweiterung offen (siehe Abschnitt 11). Der Docker-Compose-Stack
 hier ist derzeit die Entwicklungs-/Beta-Umgebung, nicht die Produktion. Die Zielplattform ist eine
 **React-Native-App**; der jetzige Web-Client ist ein funktionierender Prototyp, keine
 Endarchitektur.
@@ -466,8 +469,11 @@ Sammlung mit Regal (gesammelte Tapes, selbst beschriftet; eigene Tapes wie ein T
 **Als Nächstes:** Konto-/Namensmodell (Abschnitt 16) · Push-Benachrichtigungen ·
 E2EE für Seite B über das Signal-Protokoll · Onboarding für neue Nutzer
 
-**Bewusst nicht geplant:** Föderation, Suche über fremde Inhalte, öffentliche Profile,
-Reichweiten-Funktionen jeder Art.
+**Später denkbar:** Föderation zwischen Servern, falls Runden über Servergrenzen hinweg
+gebraucht werden.
+
+**Bewusst nicht geplant:** Suche über fremde Inhalte, öffentliche Profile, Reichweiten-Funktionen
+jeder Art.
 
 ## 12. Rechts-Checkliste (Deutschland/EU)
 

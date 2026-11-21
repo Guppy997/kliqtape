@@ -22,17 +22,28 @@ dir keine Rechte daran.
 
 ## Das geht nur mit Erlaubnis
 
-- einen Fork, eine eigene Instanz oder ein eigenes Produkt **Kliqtape** nennen oder einen
+- einen Fork, einen eigenen Server oder ein eigenes Produkt **Kliqtape** nennen oder einen
   Namen verwenden, der damit verwechselt werden kann
 - Wortmarke, Icon oder Brand-Dateien für eigene Angebote verwenden
 - den Eindruck erwecken, dein Angebot sei das offizielle Kliqtape oder von uns unterstützt
 - Name oder Logo in Domains, App-Store-Einträgen oder Social-Media-Profilen verwenden
 
-## Eigene Instanz oder Fork
+## Eigener Server
 
-Vereine, Hochschulgruppen und andere Communities sind ausdrücklich eingeladen, eine eigene
-Instanz zu betreiben. Bitte gib ihr dann einen **eigenen Namen** und ein **eigenes Logo** und
-entferne die Dateien aus `brand/`. Ein Hinweis wie „basiert auf Kliqtape“ ist willkommen.
+Vereine, Hochschulgruppen, Familien und andere Communities sind ausdrücklich eingeladen, einen
+eigenen Kliqtape-Server zu betreiben. Die Leute nutzen dann weiter die **offizielle App** und
+tragen dort die Adresse eures Servers ein. Dafür braucht ihr keine Erlaubnis.
+
+Gebt eurem Server einen eigenen Namen, z. B. „Kassettenregal der Fachschaft Informatik“. Sagen,
+dass er mit Kliqtape läuft, dürft ihr gern („läuft mit Kliqtape“). Nur „Kliqtape“ selbst oder
+etwas Verwechselbares darf der Server nicht heißen, und er darf nicht so tun, als würden wir ihn
+betreiben.
+
+## Fork mit eigener App
+
+Wer den Code verändert und daraus eine eigene App oder ein eigenes Produkt macht, gibt ihr einen
+**eigenen Namen** und ein **eigenes Logo** und entfernt die Dateien aus `brand/`. Ein Hinweis
+wie „basiert auf Kliqtape“ ist willkommen.
 
 ## Fragen
 
