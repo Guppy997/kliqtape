@@ -39,6 +39,41 @@ interface FeedItem extends Omit<
   noteStyle: NoteStyle | null;
   quotedPostId: string | null;
   quotedPost: { id: string; author: string; kind: Kind; body: string; mediaId: string | null } | null;
+  /** Nur Seite A: Antworten auf diesen Beitrag. Antworten sind die
+   *  Nachrichten auf Seite B, die ihn zitieren; die Karte zeigt darunter, wer
+   *  geantwortet hat und die neueste Antwort. null, wenn es keine gibt. */
+  replies: ReplySummary | null;
+}
+
+interface ReplySummary {
+  count: number;
+  /** Wer geantwortet hat, neueste zuerst, jede Person einmal, hoechstens drei. */
+  authors: string[];
+  latest: { author: string; kind: Kind; body: string };
+}
+
+/** Antworten auf Seite-A-Beitraege einer Kassette, gruppiert nach Beitrag. */
+function replySummaries(cassetteId: string): Map<string, ReplySummary> {
+  const rows = db
+    .prepare(
+      `SELECT p.quoted_post_id AS post_id, p.author, p.kind, p.body
+         FROM posts p
+        WHERE p.side = 'b' AND p.cassette_id = ? AND p.quoted_post_id IS NOT NULL AND ${RELEASED}
+        ORDER BY p.created_at DESC, p.rowid DESC`,
+    )
+    .all(cassetteId, Date.now()) as { post_id: string; author: string; kind: Kind; body: string }[];
+
+  const out = new Map<string, ReplySummary>();
+  for (const r of rows) {
+    const s = out.get(r.post_id);
+    if (!s) {
+      out.set(r.post_id, { count: 1, authors: [r.author], latest: { author: r.author, kind: r.kind, body: r.body } });
+      continue;
+    }
+    s.count++;
+    if (s.authors.length < 3 && !s.authors.includes(r.author)) s.authors.push(r.author);
+  }
+  return out;
 }
 
 postsRouter.get('/api/posts', (req, res) => {
@@ -111,6 +146,8 @@ postsRouter.get('/api/posts', (req, res) => {
     if (r.author === me) mineByPost.add(r.post_id);
   }
 
+  const replies = side === 'a' ? replySummaries(cassetteId) : new Map<string, ReplySummary>();
+
   // Track-Nummer: auf Seite A pro Tape (Kalendertag) neu ab 1 — wie bei
   // einer echten Kassette hat jedes Tape seine eigene Tracklist. Seite B
   // kennt kein Tape, dort bleibt es die durchgehende Position.
@@ -166,10 +203,57 @@ postsRouter.get('/api/posts', (req, res) => {
             mediaId: row.quoted_media_id,
           }
         : null,
+      replies: replies.get(row.id) ?? null,
     };
   });
 
   res.json(items);
+});
+
+// Alle Antworten auf einen Seite-A-Beitrag, aeltestes zuerst — dieselben
+// Nachrichten, die im Gruppenchat auf Seite B mit Zitat stehen. Lesen darf
+// nur, wer Mitglied der Kassette ist, wie beim Feed selbst.
+postsRouter.get('/api/posts/:id/replies', (req, res) => {
+  const me = String(req.query.me ?? '').trim();
+  const post = db
+    .prepare(`SELECT cassette_id, side FROM posts p WHERE id = ? AND ${RELEASED}`)
+    .get(req.params.id, Date.now()) as { cassette_id: string | null; side: Side } | undefined;
+  if (!post || !post.cassette_id) throw new HttpError(404, 'Beitrag nicht gefunden');
+  requireMember(req, post.cassette_id, me);
+  if (post.side !== 'a') throw new HttpError(400, 'Antworten gibt es nur zu Beiträgen auf Seite A');
+
+  const rows = db
+    .prepare(
+      `SELECT p.*, m.duration_ms AS duration_ms,
+              t.title AS tape_title, t.cover_id AS tape_cover,
+              (SELECT COUNT(*) FROM mixtape_tracks mt WHERE mt.mixtape_id = t.id) AS tape_tracks
+         FROM posts p
+         LEFT JOIN media m ON m.id = p.media_id
+         LEFT JOIN mixtapes t ON t.id = p.tape_id
+        WHERE p.side = 'b' AND p.quoted_post_id = ? AND ${RELEASED}
+        ORDER BY p.created_at ASC, p.rowid ASC`,
+    )
+    .all(req.params.id, Date.now()) as (PostRow & {
+    duration_ms: number | null;
+    tape_title: string | null;
+    tape_cover: string | null;
+    tape_tracks: number | null;
+  })[];
+
+  res.json(
+    rows.map((r) => ({
+      id: r.id,
+      author: r.author,
+      kind: r.kind,
+      body: r.body,
+      created_at: r.created_at,
+      mediaId: r.media_id,
+      durationMs: r.duration_ms,
+      source: r.source ?? 'camera',
+      tapeId: r.tape_id,
+      tape: r.tape_id ? { title: r.tape_title ?? '', coverId: r.tape_cover, trackCount: r.tape_tracks ?? 0 } : null,
+    })),
+  );
 });
 
 postsRouter.post('/api/posts', (req, res) => {

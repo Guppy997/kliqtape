@@ -750,7 +750,9 @@ export default function ChatThread({ variant, threadId, startWith, onStarted, ca
   );
 }
 
-function ChatBubbleContent({ msg }: { msg: ChatMessage }) {
+/** Inhalt einer Sprechblase. Auch fuer die Antworten unter einem Seite-A-
+ *  Beitrag (Replies.tsx), damit sie genauso aussehen wie im Gruppenchat. */
+export function ChatBubbleContent({ msg }: { msg: ChatMessage }) {
   switch (msg.kind) {
     case 'text':
       return (
