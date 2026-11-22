@@ -1,9 +1,11 @@
 <h1 align="center">
+  <a href="https://kliqtape.de"><img src="brand/logo/kliqtape-icon.svg" alt="" width="64" align="absmiddle"></a>
+  &nbsp;
   <a href="https://kliqtape.de">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="brand/logo/kliqtape-wortmarke-hell.svg">
       <source media="(prefers-color-scheme: light)" srcset="brand/logo/kliqtape-wortmarke-dunkel.svg">
-      <img src="brand/logo/kliqtape-wortmarke-dunkel.svg" alt="Kliqtape" width="360">
+      <img src="brand/logo/kliqtape-wortmarke-dunkel.svg" alt="Kliqtape" width="300" align="absmiddle">
     </picture>
   </a>
 </h1>
