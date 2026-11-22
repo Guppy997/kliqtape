@@ -1,7 +1,22 @@
-# Kliqtape
+<h1 align="center">
+  <a href="https://kliqtape.de">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="brand/logo/kliqtape-wortmarke-hell.svg">
+      <source media="(prefers-color-scheme: light)" srcset="brand/logo/kliqtape-wortmarke-dunkel.svg">
+      <img src="brand/logo/kliqtape-wortmarke-dunkel.svg" alt="Kliqtape" width="360">
+    </picture>
+  </a>
+</h1>
 
-[![CI](https://github.com/Guppy997/kliqtape/actions/workflows/ci.yml/badge.svg)](https://github.com/Guppy997/kliqtape/actions/workflows/ci.yml)
-[![Lizenz: AGPL-3.0](https://img.shields.io/badge/Lizenz-AGPL--3.0-blue.svg)](LICENSE)
+<p align="center">
+  <strong>Zwei Seiten. Eine Kassette.</strong><br>
+  <a href="https://kliqtape.de">kliqtape.de</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Guppy997/kliqtape/actions/workflows/ci.yml"><img src="https://github.com/Guppy997/kliqtape/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Lizenz-AGPL--3.0-blue.svg" alt="Lizenz: AGPL-3.0"></a>
+</p>
 
 > **In short (English):** Kliqtape is an ad-free, algorithm-free social app for small, fixed
 > groups of friends. Every group is a cassette: side A is the group's lasting archive, side B
