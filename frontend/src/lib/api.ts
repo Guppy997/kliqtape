@@ -285,9 +285,34 @@ export interface FeedItem {
    *  diese Nachricht eingeht ("dazu schreiben"). */
   quotedPostId: string | null;
   quotedPost: { id: string; author: string; kind: Kind; body: string; mediaId: string | null } | null;
+  /** Nur Seite A: wer auf den Beitrag geantwortet hat (Seite-B-Nachrichten mit
+   *  Zitat), neueste Antwort zuerst. null, wenn es keine gibt. */
+  replies?: ReplySummary | null;
   /** Nur lokal, nie vom Server — optimistisch angehaengt, waehrend der Post
    *  noch unterwegs ist (siehe lib/chat.ts). */
   pending?: boolean;
+}
+
+export interface ReplySummary {
+  count: number;
+  /** Neueste zuerst, jede Person einmal, hoechstens drei. */
+  authors: string[];
+  latest: { author: string; kind: Kind; body: string };
+}
+
+/** Eine Antwort auf einen Seite-A-Beitrag — dieselbe Nachricht wie im
+ *  Gruppenchat auf Seite B. */
+export interface Reply {
+  id: string;
+  author: string;
+  kind: Kind;
+  body: string;
+  created_at: number;
+  mediaId: string | null;
+  durationMs: number | null;
+  source: 'camera' | 'upload' | 'film' | 'imposter' | 'challenge' | null;
+  tapeId: string | null;
+  tape: { title: string; coverId: string | null; trackCount: number } | null;
 }
 
 export interface Tonfetzen {
@@ -353,6 +378,11 @@ export function fetchFeed(cassetteId: string, side: Side, me: string): Promise<F
   return apiFetch(`/api/posts?cassette=${cassetteId}&side=${side}&me=${encodeURIComponent(me)}`).then(
     unwrap<FeedItem[]>,
   );
+}
+
+/** Alle Antworten auf einen Seite-A-Beitrag, aeltestes zuerst. */
+export function fetchReplies(postId: string, me: string): Promise<Reply[]> {
+  return apiFetch(`/api/posts/${postId}/replies?me=${encodeURIComponent(me)}`).then(unwrap<Reply[]>);
 }
 
 /* --- Wochen-Challenge -------------------------------------------------------

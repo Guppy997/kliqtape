@@ -14,6 +14,7 @@ import { baseMime, pickAudioMime } from '@/lib/tapeAudio';
 import { useApp, type Side } from '@/store/appStore';
 import { useQuote } from '@/store/quoteStore';
 import Avatar from './Avatar';
+import { RepliesPreview, RepliesSheet } from './Replies';
 import ReportForm from './ReportForm';
 import Sheet from './Sheet';
 import TapePlayer from './TapePlayer';
@@ -34,6 +35,7 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
   const [openTape, setOpenTape] = useState(false);
   const [listening, setListening] = useState(false);
   const [reporting, setReporting] = useState(false);
+  const [repliesOpen, setRepliesOpen] = useState(false);
   const side = item.side;
   const mine = item.author === me;
 
@@ -268,14 +270,23 @@ export default function PostCard({ item, onReacted, onDelete }: Props) {
           </IconButton>
         )}
 
-        {/* Nur auf Seite A — klappt zu Seite B und haengt den Beitrag dort
-            als Zitat an. Fuer alle da, auch fuer eigene Beitraege. */}
+        {/* Nur auf Seite A — oeffnet die Antworten zu diesem Beitrag. Eine
+            Antwort geht weiter als Zitat in den Gruppenchat (Replies.tsx).
+            Fuer alle da, auch fuer eigene Beitraege. */}
         {side === 'a' && (
-          <IconButton label="Im Gruppenchat darauf eingehen" onClick={reactInChat}>
+          <IconButton label="Antworten ansehen und antworten" onClick={() => setRepliesOpen(true)}>
             <ChatIcon />
           </IconButton>
         )}
       </div>
+
+      {side === 'a' && item.replies && (
+        <RepliesPreview replies={item.replies} side={side} onOpen={() => setRepliesOpen(true)} />
+      )}
+
+      {side === 'a' && (
+        <RepliesSheet item={item} open={repliesOpen} onClose={() => setRepliesOpen(false)} onToChat={reactInChat} />
+      )}
 
       <Sheet open={reporting} onClose={() => setReporting(false)} title="Beitrag melden">
         {reporting && (

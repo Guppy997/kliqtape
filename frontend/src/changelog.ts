@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.65.0',
+    date: '2026-11-22',
+    changes: [
+      'Antworten auf einen Beitrag von Seite A stehen jetzt direkt darunter: wer geantwortet hat und die neueste Antwort',
+      'Ein Tipp öffnet alle Antworten, dort kannst du auch gleich antworten. Die Antworten stehen weiter im Gruppenchat auf Seite B',
+    ],
+  },
+  {
     version: '0.64.1',
     date: '2026-11-21',
     changes: [

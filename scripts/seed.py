@@ -391,9 +391,14 @@ def main() -> None:
 
     posts: dict[str, str] = {}
 
-    def post(cassette, side, author, kind, body="", media=None, tape=None, key=None, note_style=None):
+    def post(cassette, side, author, kind, body="", media=None, tape=None, key=None, note_style=None,
+             quoted=None):
         payload = {"cassetteId": tapes_by_name[cassette], "side": side,
                    "author": author, "kind": kind, "body": body}
+        if quoted:
+            # Antwort auf einen Seite-A-Beitrag: steht im Gruppenchat mit Zitat
+            # und unter dem Beitrag selbst (Vorschau, alle Antworten auf Tipp).
+            payload["quotedPostId"] = posts[quoted]
         if note_style:
             # Zettel-Art: tape, pin, staple, clip, fold oder label (Etikett)
             payload["noteStyle"] = note_style
@@ -419,6 +424,19 @@ def main() -> None:
     post("Alle Freunde", "a", me, "photo", "Erster Abend auf Miras Dach",
          media=photo("dach_pizza"), key="dach")
 
+    # Antworten auf die Beitraege, im Gruppenchat mit Zitat.
+    for who, key, body in [
+        ("Tarek", "wohnung", "Altbau! Wie hoch sind die Decken?"),
+        ("Mira", "wohnung", "3,40. Ich brauch eine Leiter."),
+        ("Jonas", "kartons", "Brauchst du noch Hände?"),
+        ("Noor", "kartons", "Ich hab noch Kartons im Keller."),
+        ("Lena", "dach", "Bestes Foto des Jahres."),
+        ("Ben", "dach", "Ich bin halb drauf, zählt das?"),
+        ("Noor", "dach", "Ohne mich?!"),
+        ("Mira", "dach", "Nächstes Mal mit Lichterkette."),
+    ]:
+        post("Alle Freunde", "b", who, "text", body, quoted=key)
+
     post("Alle Freunde", "b", "Mira", "text", "Wer hilft Samstag beim Schrank? Pizza geht auf mich.", key="schrank")
     post("Alle Freunde", "b", "Tarek", "text", "Ich, ab 11.")
     post("Alle Freunde", "b", "Jonas", "text", "Ich bring den Akkuschrauber mit.")
@@ -426,9 +444,11 @@ def main() -> None:
 
     # --- Die Kliqe: das Vertrauliche -------------------------------------
     print("Die Kliqe …", end="", flush=True)
-    post("Die Kliqe", "a", "Mira", "photo", "3 Uhr, konnte nicht schlafen", media=photo("regenfenster"))
+    post("Die Kliqe", "a", "Mira", "photo", "3 Uhr, konnte nicht schlafen", media=photo("regenfenster"),
+         key="dreiuhr")
     # Etikett: der Streifen nimmt das Lila der Kliqe an.
     post("Die Kliqe", "a", "Lena", "text", "Du kannst immer anrufen. Auch um 3.", note_style="label")
+    post("Die Kliqe", "b", me, "text", "Ich war auch wach. Nächstes Mal schreib einfach.", quoted="dreiuhr")
 
     post("Die Kliqe", "b", "Mira", "text",
          "Ich glaub ich kündige wirklich. Können wir morgen telefonieren?", key="kuendigen")
@@ -441,8 +461,9 @@ def main() -> None:
 
     # --- Freitagsrunde: kleiner Kreis ------------------------------------
     print("Freitagsrunde …", end="", flush=True)
-    post("Freitagsrunde", "a", "Jonas", "photo", "Nur eins, haben wir gesagt.", media=photo("bier"))
+    post("Freitagsrunde", "a", "Jonas", "photo", "Nur eins, haben wir gesagt.", media=photo("bier"), key="bier")
     post("Freitagsrunde", "a", "Jonas", "text", "Deckel: 14 Kölsch. Wer hat mitgezählt?", note_style="clip")
+    post("Freitagsrunde", "b", "Tarek", "text", "Nur eins. Klar.", quoted="bier")
     post("Freitagsrunde", "b", "Tarek", "text", "Nächsten Freitag wieder?")
     voice("Freitagsrunde", "b", "Jonas", "kurz zum Freitag", 5.0, 220.0)
     print(" fertig")
@@ -453,6 +474,8 @@ def main() -> None:
          media=photo("tomaten", as_="Mama"), key="tomaten")
     post("Familie", "a", "Mama", "text",
          "Für Sonntag: Rouladen, Gurken, Senf, Rotkohl. Nachtisch macht Jule.", note_style="staple")
+    for who, body in [("Jule", "Mama, das sind ja Riesen."), ("Papa", "Das war ich."), ("Mama", "Ich hab gegossen.")]:
+        post("Familie", "b", who, "text", body, quoted="tomaten")
     post("Familie", "b", "Mama", "text", "Sonntag Essen bei uns? Papa macht Rouladen.")
     post("Familie", "b", "Papa", "text", "Die Rouladen sind schon eingelegt.")
     post("Familie", "b", "Jule", "text", "Bin dabei. Ich bring Nachtisch mit.")
