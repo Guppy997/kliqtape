@@ -104,10 +104,15 @@ mediaRouter.post(
     const ext = ALLOWED_MIME[mime];
     if (!ext) throw new HttpError(415, `Medientyp nicht erlaubt: ${mime || 'unbekannt'}`);
 
-    const buf = req.body as Buffer;
-    if (!Buffer.isBuffer(buf) || buf.length === 0) {
+    // req.body ist fuer TypeScript `any`. Erst pruefen, dann als Buffer nutzen,
+    // und die Groesse ueber byteLength lesen: Das gibt es nur bei Buffern, nicht
+    // bei Arrays oder Strings (CodeQL: type confusion through parameter tampering).
+    const body: unknown = req.body;
+    if (!Buffer.isBuffer(body) || body.byteLength === 0) {
       throw new HttpError(400, 'Leerer Upload');
     }
+    const buf: Buffer = body;
+    const bytes = buf.byteLength;
 
     const durationHeader = req.get('x-duration-ms');
     const durationMs = durationHeader ? Number(durationHeader) : null;
@@ -118,12 +123,12 @@ mediaRouter.post(
     db.prepare(`INSERT INTO media (id, mime, bytes, duration_ms, created_at) VALUES (?, ?, ?, ?, ?)`).run(
       id,
       mime,
-      buf.length,
+      bytes,
       Number.isFinite(durationMs) ? durationMs : null,
       Date.now(),
     );
 
-    res.status(201).json({ id, bytes: buf.length });
+    res.status(201).json({ id, bytes });
   },
 );
 
