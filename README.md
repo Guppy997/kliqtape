@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Guppy997/kliqtape/actions/workflows/ci.yml"><img src="https://github.com/Guppy997/kliqtape/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/kliqtape/kliqtape/actions/workflows/ci.yml"><img src="https://github.com/kliqtape/kliqtape/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/Lizenz-AGPL--3.0-B8462C" alt="Lizenz: AGPL-3.0">
   <img src="https://img.shields.io/badge/React-19-B8462C" alt="React 19">
   <img src="https://img.shields.io/badge/Node-22-B8462C" alt="Node 22">

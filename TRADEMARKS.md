@@ -48,7 +48,7 @@ wie „basiert auf Kliqtape“ ist willkommen.
 ## Fragen
 
 Wenn du unsicher bist, ob deine Nutzung in Ordnung ist, frag einfach nach, am besten über ein
-[Issue in diesem Repo](https://github.com/Guppy997/kliqtape/issues).
+[Issue in diesem Repo](https://github.com/kliqtape/kliqtape/issues).
 
 ---
 

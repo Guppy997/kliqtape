@@ -8,7 +8,7 @@
 ohne Verschlüsselung · Zielplattform ist eine React-Native-App, zentral gehostet auf Hetzner
 (siehe Abschnitt 16)
 **Design-Richtung:** [Entwurf 01](https://claude.ai/code/artifact/256c8199-6b83-4916-b1e9-a30f88ea53c4)
-**Repo:** https://github.com/Guppy997/kliqtape (privat)
+**Repo:** https://github.com/kliqtape/kliqtape
 
 **Wortmarke:** `Kliq` steht, `tape` ist nur Kontur — der bedruckte Teil des Etiketts und der,
 den man selbst ausfüllt (`frontend/src/components/Lockup.tsx`).
