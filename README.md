@@ -425,6 +425,8 @@ Code gelten, steht in [CONTRIBUTING.md](CONTRIBUTING.md). Sicherheitslücken bit
 
 ## Lizenz, Name und Logo
 
+Copyright © 2026 Aaron Penalver Höfler.
+
 Der Code steht unter der [AGPL-3.0](LICENSE). Du darfst ihn nutzen, verändern und selbst
 betreiben. Wer veränderten Code als Dienst anbietet, muss seinen Quellcode ebenfalls offenlegen.
 
