@@ -1,0 +1,91 @@
+name: Fehler melden
+description: Etwas funktioniert nicht so, wie es soll.
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke, dass du dir die Zeit nimmst. Bitte keine echten Inhalte aus deinen Runden posten:
+        keine Namen, Fotos oder Nachrichten von anderen Leuten. Screenshots am besten mit den
+        Testdaten aus `scripts/seed.py`.
+
+        **Sicherheitslücken bitte nicht hier**, sondern vertraulich wie in SECURITY.md beschrieben.
+
+  - type: textarea
+    id: was
+    attributes:
+      label: Was ist passiert?
+      description: Kurz und konkret. Fehlermeldungen gern als Text einfügen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: erwartet
+    attributes:
+      label: Was hast du erwartet?
+    validations:
+      required: true
+
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Wie lässt sich das nachstellen?
+      placeholder: |
+        1. Kassette „Alle Freunde“ einlegen
+        2. Auf Seite B wechseln
+        3. O-Ton aufnehmen
+        4. …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: bereich
+    attributes:
+      label: Bereich
+      options:
+        - Fach und Kassetten
+        - Seite A (Archiv)
+        - Seite B (Gruppenchat)
+        - Mixtape
+        - Hot Line
+        - Wochen-Challenge oder Imposter-Woche
+        - Profil und Regal
+        - Einladung, Brief oder Album-PDF
+        - Push-Erinnerung
+        - Selbst betreiben (Docker, Tailscale, Caddy)
+        - Anderes
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Steht in der App unter „Was ist neu“, oder der Commit, von dem du gebaut hast.
+      placeholder: z. B. 0.65.0
+
+  - type: input
+    id: geraet
+    attributes:
+      label: Gerät und Browser
+      placeholder: z. B. iPhone 15, iOS 19, Safari, als PWA installiert
+
+  - type: dropdown
+    id: betrieb
+    attributes:
+      label: Wo läuft Kliqtape?
+      options:
+        - Lokal (localhost)
+        - Eigener Server über Tailscale
+        - Eigener Server öffentlich (Caddy)
+        - Weiß ich nicht
+
+  - type: checkboxes
+    id: check
+    attributes:
+      label: Kurz geprüft
+      options:
+        - label: Ich habe nach einem bestehenden Issue zum selben Fehler gesucht.
+          required: true
+        - label: Das ist keine Sicherheitslücke (sonst bitte vertraulich melden).
+          required: true
