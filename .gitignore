@@ -3,7 +3,8 @@ dist/
 build/
 *.log
 .env
-.env.local
+.env.*
+!.env.example
 .DS_Store
 data/
 media/
@@ -11,6 +12,16 @@ media/
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
+*.db
+*.db-journal
+backups/
+
+# Schlüssel und Zertifikate gehören nie ins Repo (z.B. VAPID, TLS)
+*.pem
+*.key
+*.crt
+*.p12
+vapid.json
 .vite/
 coverage/
 *.tsbuildinfo
