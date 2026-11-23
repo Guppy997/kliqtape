@@ -1,6 +1,6 @@
 # Mitmachen bei Kliqtape
 
-Kliqtape ist ein Prototyp in aktiver Entwicklung. Beiträge sind willkommen — am besten vorher ein
+Kliqtape ist ein Prototyp in aktiver Entwicklung. Beiträge sind willkommen. Am besten vorher ein
 Issue aufmachen, damit wir kurz abstimmen, ob die Idee zum Konzept passt
 ([docs/CONCEPT.md](docs/CONCEPT.md)).
 
@@ -26,7 +26,7 @@ GitHub Actions führt genau das bei jedem Push aus. `npm run format` formatiert 
 
 ## Regeln im Code
 
-- **Jede verändernde Route bekommt einen Test „Fremder darf das nicht“** — und eine Gegenprobe,
+- **Jede verändernde Route bekommt einen Test „Fremder darf das nicht“** und eine Gegenprobe,
   dass die berechtigte Person es darf (`backend/tests/`). Der Grund steht in CONCEPT.md §16.1:
   fehlende Berechtigungsprüfungen waren die häufigste Lücke.
 - **Berechtigungen nur über `backend/src/access.ts`** (`requireIdentity`, `requireMember`,
@@ -34,7 +34,7 @@ GitHub Actions führt genau das bei jedem Push aus. `npm run format` formatiert 
 - **Zeit nur über die Berlin-Helfer:** `backend/src/time.ts` und `frontend/src/lib/berlinDay.ts`.
   Beide rechnen dasselbe; `backend/tests/time.test.ts` prüft das gegeneinander.
 - **Druckmodule (`backend/src/print/`) bekommen ihre Daten übergeben** und importieren die
-  Datenbank nicht — so bleiben Seite B und Hot Line für den Export unerreichbar (Lint-Regel).
+  Datenbank nicht. So bleiben Seite B und Hot Line für den Export unerreichbar (Lint-Regel).
 - **Keine Verbindungen zu Dritten:** kein CDN, keine externen Schriften, kein Tracking.
 - **Ehrlichkeit in der App:** Nichts behauptet Verschlüsselung, solange es keine gibt. Neue
   Funktionen bekommen eine Zeile in „Was der Server sieht“ (`Settings.tsx`).

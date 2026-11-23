@@ -31,14 +31,14 @@
 > working web prototype (PWA, React + Express + SQLite); the target platform is React Native.
 > Documentation is in German.
 
-Ein Regal voller Kassetten. **Jede Kassette ist eine Runde von Leuten** — du legst die
+Ein Regal voller Kassetten. **Jede Kassette ist eine Runde von Leuten**: Du legst die
 ein, mit der du gerade redest. Man hat nicht *einen* Freundeskreis, sondern mehrere,
 und die zu vermischen funktioniert nicht.
 
 Jede Kassette hat zwei Seiten:
 
-- **Seite A — bleibt.** Das Archiv der Runde: Bilder, Absprachen, Infos. Filterbar nach Art.
-- **Seite B — läuft weiter.** Der Gruppenchat der Runde, dauerhaft.
+- **Seite A bleibt.** Das Archiv der Runde: Bilder, Absprachen, Infos. Filterbar nach Art.
+- **Seite B läuft weiter.** Der Gruppenchat der Runde, dauerhaft.
 
 Ein Tipp auf den A|B-Schalter oben dreht die Kassette um. Chronologisch, ohne Algorithmus, ohne Werbung,
 ohne Zahlen.
@@ -155,12 +155,12 @@ das Zurückspulen echt an? Macht die Kamera-Beschränkung Spaß oder nervt sie?
 ## Plattform und Betrieb
 
 **Plattform:** Dieser Prototyp ist eine **PWA** (React + Vite, im Browser und als installierte
-Web-App). Die **Zielplattform ist React Native** — der Web-Client hier dient dazu, das Konzept
+Web-App). Die **Zielplattform ist React Native**. Der Web-Client hier dient dazu, das Konzept
 anfassbar zu machen und mit echten Freundeskreisen zu testen, er ist nicht die Endarchitektur.
 Das Backend (Express + SQLite) bleibt davon unberührt.
 
 **Hosting-Modell:** Kliqtape läuft als **zentral betriebener Dienst auf Hetzner** und wird von
-dort aus skaliert — wie ein normaler Social-Media-Server. Das ist der Standard für alle:
+dort aus skaliert, wie ein normaler Social-Media-Server. Das ist der Standard für alle:
 Nutzer:innen legen keinen eigenen Server an, sie melden sich einfach an. Zielgruppe sind
 alle, nicht nur Leute, die selbst hosten würden.
 
@@ -226,7 +226,7 @@ geschickt, als Entwurf), Tonfetzen, neun Hot-Line-Verläufe mit Fotos, O-Tönen 
 Mixtape, ein eigenes Tape und eine gesammelte Kassette im Regal. Jede Kassette hat eine feste
 Bandsorte aus den Kernfarben. Genau diese Daten zeigen auch die Screens oben und auf der Website.
 
-Danach in der App als **Aaron** anmelden — das Skript gibt am Ende den Zugangscode aus.
+Danach in der App als **Aaron** anmelden, das Skript gibt am Ende den Zugangscode aus.
 Die Codes aller Testpersonen merkt es sich in `scripts/.seed-tokens.json` (nicht im Repo),
 damit `--reset` sie wieder löschen kann. Ist der Name auf dem Server schon vergeben:
 `--me-token <Zugangscode>`.
@@ -239,7 +239,7 @@ dieselben Leute. Ton entsteht als echtes WAV, weil der O-Ton-Spieler das Audio t
 dekodiert. Voraussetzung: Pillow zum Zuschneiden, z. B. in einer venv:
 `python3 -m venv .venv && .venv/bin/pip install Pillow`.
 
-**Clips fehlen in den Testdaten** — dafür bräuchte es ffmpeg. Videos lassen sich
+**Clips fehlen in den Testdaten**, dafür bräuchte es ffmpeg. Videos lassen sich
 in der App direkt mit der Kamera aufnehmen.
 
 ## Architektur
