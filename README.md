@@ -55,12 +55,14 @@ ohne Zahlen.
 - [Architektur](#architektur)
 - [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
 - [Entwicklung](#entwicklung)
+- [Releases und Versionen](#releases-und-versionen)
 - [Projektstruktur](#projektstruktur)
 - [API](#api)
 - [Datenmodell](#datenmodell)
 - [Gestaltung](#gestaltung)
 - [Grenzen und Ideen](#grenzen-und-ideen)
 - [Mitmachen](#mitmachen)
+- [Entstehung](#entstehung)
 - [Lizenz, Name und Logo](#lizenz-name-und-logo)
 
 ## So sieht es aus
@@ -314,6 +316,16 @@ Tag und GitHub Release entstehen automatisch: Sobald die CI für einen Merge auf
 und dort eine neue Version steht, legt `.github/workflows/release.yml` den Tag `vX.Y.Z` und ein
 Release mit den Punkten aus dem Changelog an.
 
+## Releases und Versionen
+
+Die Versionen folgen [SemVer](https://semver.org/lang/de/) und stehen gleich in
+`backend/package.json` und `frontend/package.json`. Was sich geändert hat, steht im Changelog der
+App ([`frontend/src/changelog.ts`](frontend/src/changelog.ts)), in der App unter Einstellungen.
+
+Tag und GitHub Release entstehen automatisch: Sobald auf `main` eine neue Version steht und die CI
+grün ist, legt [`.github/workflows/release.yml`](.github/workflows/release.yml) den Tag `vX.Y.Z`
+und das Release mit den Notizen aus dem Changelog an. Von Hand wird nichts getaggt.
+
 ## Projektstruktur
 
 ```
@@ -426,6 +438,13 @@ und 16.
 Wie man das Projekt lokal startet, welche Prüfungen vor einem Commit laufen und welche Regeln im
 Code gelten, steht in [CONTRIBUTING.md](CONTRIBUTING.md). Sicherheitslücken bitte nicht als
 öffentliches Issue melden, sondern wie in [SECURITY.md](SECURITY.md) beschrieben.
+
+Für alle, die mitmachen, gilt der [Verhaltenskodex](https://github.com/kliqtape/.github/blob/main/CODE_OF_CONDUCT.md)
+der Organisation.
+
+## Entstehung
+
+Entwickelt mit KI-Unterstützung (Claude). Idee, Architektur, Anforderungen, Tests und Betrieb liegen bei mir; jede Änderung ist geprüft und versioniert.
 
 ## Lizenz, Name und Logo
 
