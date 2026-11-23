@@ -7,8 +7,10 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends python3 make g++ ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-COPY package.json ./
-RUN npm install
+# Mit Lockfile und npm ci bekommt das Image genau die Versionen, die die CI
+# getestet hat, nicht die jeweils neuesten passenden.
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
