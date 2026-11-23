@@ -1,0 +1,24 @@
+# Einheitliche Grundeinstellungen für alle Editoren.
+# Formatiert wird trotzdem mit Prettier (npm run format), das hier
+# sorgt nur dafür, dass der Editor von Anfang an passend schreibt.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[*.md]
+# Zwei Leerzeichen am Zeilenende sind in Markdown ein Zeilenumbruch.
+trim_trailing_whitespace = false
+
+[{LICENSE,**/OFL-*.txt}]
+# Lizenztexte bleiben Zeichen für Zeichen wie geliefert.
+trim_trailing_whitespace = false
+insert_final_newline = unset
