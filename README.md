@@ -310,6 +310,10 @@ bei jedem Push aus (`.github/workflows/ci.yml`).
 Die Version steht in beiden `package.json` und im Changelog der App (`frontend/src/changelog.ts`),
 die Änderungen laufen über Pull Requests. Was wann neu ist, zeigt die App unter „Was ist neu“.
 
+Tag und GitHub Release entstehen automatisch: Sobald die CI für einen Merge auf `main` grün ist
+und dort eine neue Version steht, legt `.github/workflows/release.yml` den Tag `vX.Y.Z` und ein
+Release mit den Punkten aus dem Changelog an.
+
 ## Projektstruktur
 
 ```

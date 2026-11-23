@@ -53,3 +53,7 @@ GitHub Actions führt genau das bei jedem Push aus. `npm run format` formatiert 
 Versioniert wird von Hand: Version in `backend/package.json` und `frontend/package.json`
 synchron halten und einen Eintrag in `frontend/src/changelog.ts` ergänzen (der erscheint in der
 App). Fehlerbehebung = Patch, neue Funktion = Minor. Pro Funktion ein Commit.
+
+Tag und Release nicht von Hand anlegen: Nach dem Merge auf `main` und grüner CI macht das
+`.github/workflows/release.yml`. Bricht der Lauf ab, passen meist die Versionen in den beiden
+`package.json` nicht zusammen oder der Changelog-Eintrag fehlt.
